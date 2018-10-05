@@ -1,6 +1,6 @@
 ### Info
 
-Custom serverspec snippet collection for Windows and Unix. 
+Collection of over 100 custom serverspec snipets for Windows and almost 100 custom serverspec snippets for Unix. 
 
 These snippets turn out helpful for integration testing on complex application stacks provisioned by Puppet, Chef etc.
 
