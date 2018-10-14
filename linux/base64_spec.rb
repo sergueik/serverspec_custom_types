@@ -6,12 +6,12 @@ context 'Base64 Encoded Data', :if => ENV.has_key?('URU_INVOKER') do
 
   context 'Standard tools' do # NOTE: not all tests will pass, exercise slightly corrupt data intentionally
     [
-    # NOTE: sometimes small modifications of the input do not change result
-    'Zm9vOmJhcgp=',   # foo:bar
-    'Zm9vOmJhcgq=',   # foo:bar
-    'Zm9vOmJhcaagq=', # foo:baq▒▒base64: invalid input
-    'Zm9vOmJhcgp==',  # foo:bar base64: invalid input
-    'Zm==',           # f
+      # NOTE: sometimes small modifications of the input do not change result
+      'Zm9vOmJhcgp=',   # foo:bar
+      'Zm9vOmJhcgq=',   # foo:bar
+      # 'Zm9vOmJhcaagq=', # foo:baq▒▒base64: invalid input
+      # 'Zm9vOmJhcgp==',  # foo:bar base64: invalid input
+      # 'Zm==',           # f
     ].each do |sample_data|
       username = 'foo'
       # NOTE: do not store password in real serverspec
@@ -44,37 +44,46 @@ context 'Base64 Encoded Data', :if => ENV.has_key?('URU_INVOKER') do
   end
 
   context 'Ruby side processing' do
-    # encoded_string = base64('encode', 'foo:bar')
-    encoded_string = Base64.encode64('foo:bar')
-    username = 'foo'
-    jvm_setting = 'package.Class.method.header'
-    command_result = command("/bin/echo '-Dfile.encoding=UTF-8 -D#{jvm_setting}=#{encoded_string}'").stdout
-    answer = begin
-      $stderr.puts 'Base64 test'
-      $stderr.puts command_result
-      # extract base 64 auth header in jvm argument
-      scan_result = command_result.scan(/(?:\-D#{jvm_setting}=)(.*)\b/i)
-      pp scan_result
-      if scan_result != []
-        data = scan_result[0][0]
-        $stderr.puts data
-        if data.nil?
-          data = encoded_string
+    [
+      # NOTE: sometimes small modifications of the input do not change result
+      'Zm9vOmJhcgp=',   # foo:bar
+      'Zm9vOmJhcgq=',   # foo:bar
+      # NOTE: some errors will go undetected, other will break report processor
+      # json_formatter.rb:56:in `encode': "\xA6" from ASCII-8BIT to UTF-8 (Encoding::UndefinedConversionError)
+      # 'Zm9vOmJhcaagq=', # foo:baq▒▒base64: invalid input
+      'Zm9vOmJhcgp==',  # foo:bar base64: invalid input
+      'Zm==',           # f
+    ].each do |sample_data|
+      # encoded_string = base64('encode', 'foo:bar')
+      encoded_string = Base64.encode64('foo:bar')
+      encoded_string = sample_data
+      username = 'foo'
+      jvm_setting = 'package.Class.method.header'
+      command_result = command("/bin/echo '-Dfile.encoding=UTF-8 -D#{jvm_setting}=#{encoded_string}'").stdout
+      answer = begin
+        # extract base64auth header in jvm argument
+        scan_result = command_result.scan(/(?:\-D#{jvm_setting}=)(.*)\b/i)
+        PP.pp(scan_result, $stderr)
+        if scan_result != []
+          data = scan_result[0][0]
+          $stderr.puts data
+          begin
+            Base64.decode64(data)
+          rescue
+            nil        
+          end        
+        else
+          nil
         end
-        @res = Base64.decode64(data)
-        $stderr.puts @res
-        @res
-      else
+      rescue => e
+        $stderr.puts e.to_s
         nil
       end
-    rescue => e
-      $stderr.puts e.to_s
-      nil
-    end
-    pp answer
+      PP.pp(answer, $stderr)
 
-    describe String(answer) do
-      it { should match Regexp.new("#{username}:.*", Regexp::IGNORECASE) }
+      describe String(answer) do
+        it { should match Regexp.new("#{username}:.*", Regexp::IGNORECASE) }
+      end
     end
   end
 end
