@@ -15,7 +15,7 @@ context 'verify set of patch directories' do
     Specinfra::Runner::run_command( <<-EOF
       path_to_dir='#{path_to_dir}'
       patches='#{patches.join(' ')}'
-      for folder in ${patches} ; do 
+      for folder in ${patches} ; do
         echo $folder
         mkdir -p "${path_to_dir}/${folder}"
       done
@@ -26,12 +26,15 @@ context 'verify set of patch directories' do
 
   describe file(path_to_dir) do
     it { should be_a_directory }
-    # count the patch difectories in the directory
-    it 'should contain set of patches in staging directory' do
-      patch_glob = 'patch*' # to prevent dummy from being globbed
+    # list the patch directories
+    it 'should contain known set of patches in staging directory' do
+      patch_glob = 'patch*' # to prevent non-patch directories from being globbed
       folder_list = Dir.glob("#{path_to_dir}/#{patch_glob}").map {|entry| entry.gsub(Regexp.new('^.*/'),'') }
-      $stderr.puts folder_list 
+      $stderr.puts 'folders found: ' + folder_list.join(',')
       (folder_list - patches).should eq []
+      (patches - folder_list).should eq []
+      (folder_list.sort == patches.sort).should be_truthy
     end
   end
 end
+
