@@ -25,14 +25,16 @@ context 'verify set of patch directories' do
   end
 
   describe file(path_to_dir) do
-    it { should be_a_directory }
+    debug = false
     # list the patch directories
     it 'should contain known set of patches in staging directory' do
       patch_glob = 'patch*' # to prevent non-patch directories from being globbed
       folder_list = Dir.glob("#{path_to_dir}/#{patch_glob}").map {|entry| entry.gsub(Regexp.new('^.*/'),'') }
-      $stderr.puts 'folders found: ' + folder_list.join(',')
-      (folder_list - patches).should eq []
-      (patches - folder_list).should eq []
+      if debug
+        $stderr.puts 'folders found: ' + folder_list.join(',')
+      end
+      $stderr.puts 'Extra folders: ' + (folder_list - patches).join(', ')
+      $stderr.puts 'Missing folders: ' + (patches - folder_list).join(', ')
       (folder_list.sort == patches.sort).should be_truthy
     end
   end
