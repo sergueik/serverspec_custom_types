@@ -50,4 +50,70 @@ context 'Jenkins jobs' do
       end
     end
   end
+
+
+   # jenkins multi job plugin offers UI for creating multi job phases and phase jobs
+   # resulting in the following XML
+   #  <builders>
+   #    <com.tikal.jenkins.plugins.multijob.MultiJobBuilder>
+   #      <phaseName>phase1</phaseName>
+   #      <phaseJobs>
+   #        <com.tikal.jenkins.plugins.multijob.PhaseJobsConfig>
+   #          <jobName>test-naginator</jobName>
+   #          <jobAlias/>
+   #          <currParams>true</currParams>
+   #          <aggregatedTestResults>false</aggregatedTestResults>
+   #          <exposedSCM>false</exposedSCM>
+   #          <disableJob>false</disableJob>
+   #          <parsingRulesPath></parsingRulesPath>
+   #          <maxRetries>1</maxRetries>
+   #          <enableRetryStrategy>true</enableRetryStrategy>
+   #          <enableCondition>false</enableCondition>
+   #          <abortAllJob>true</abortAllJob>
+   #          <condition/>
+   #          <configs class="empty-list"/>
+   #          <killPhaseOnJobResultCondition>FAILURE</killPhaseOnJobResultCondition>
+   #          <buildOnlyIfSCMChanges>false</buildOnlyIfSCMChanges>
+   #          <applyConditionOnlyIfNoSCMChanges>false</applyConditionOnlyIfNoSCMChanges>
+   #  ...
+   # it is frequently complement with a uno parameter plugin entry for selecting those jobs or groups of jobs
+    # the test below exercises both
+
+  context 'Confirm able to find reuired set of multijob job selections config.xml' do
+    job_name = 'multijob'
+    jobs_dir = '/opt/jenkins/jobs'
+    xml = "#{jobs_dir}/#{job_name}/config.xml"
+    context 'Phase Jobs' do
+      java_class = 'com.tikal.jenkins.plugins.multijob.PhaseJobsConfig'
+      describe command( <<-EOF
+        CLASS='#{java_class}'
+        xmllint --xpath "//${CLASS}/jobName" '#{xml}' | sed -e 's|\\(<jobName>\\)|\\1\\n|g' | sed -e 's|</*jobName>||g'
+      EOF
+      ) do
+        [
+          'name of job 1',
+          'name of job 2'
+        ].each do |job_name|
+          its(:stdout) { should match Regexp.new(job_name, Regexp::IGNORECASE) }
+        end
+      end
+    end
+    context 'Uno Plugin Job selector' do
+      select_name = 'Group'
+      java_class = 'org.biouno.unochoice.ChoiceParameter'
+      describe command( <<-EOF
+        CLASS='#{java_class}'
+        SELECT_NAME = '#{select_name}'
+        xmllint --xpath "//${CLASS}/name[contains(text(),'${SELECT_NAME}')]/../script" '#{xml}'
+      EOF
+      ) do
+        [
+          'name of job 1',
+          'name of job 2'
+        ].each do |job_name|
+          its(:stdout) { should match Regexp.new(job_name, Regexp::IGNORECASE) }
+        end
+      end
+    end
+  end
 end
