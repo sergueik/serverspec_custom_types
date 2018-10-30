@@ -25,11 +25,11 @@ DATA
       LOG='/tmp/a.txt'
       URL='#{url}'
       echo $PAYLOAD 1>&2
-      curl -# -X POST -H 'Content-Type: application/json' -d $PAYLOAD -k $URL 2>&1 | tee $LOG
-      cat '/tmp/a.txt' 1>&2
+      curl -# -X POST -H 'Content-Type: application/json' -d "${PAYLOAD}" -k $URL 2>&1 | tee $LOG
+      cat $LOG 1>&2
     EOF
-    # the hash #
-    # will be ignored by YAML
+    # the hash line ###### 100%
+    # will be ignored by YAML load method since it is a comment line and comments are allowed in yaml spec
     key = 'body'
     value = 'bar'
     describe command(rest_api_command) do
