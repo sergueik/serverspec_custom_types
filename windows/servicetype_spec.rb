@@ -55,6 +55,46 @@ context  'ServiceType' do
       end
     end
   end
+  # based on: https://mikefrobbins.com/2015/12/24/use-powershell-to-determine-services-with-a-starttype-of-automatic-or-manual-with-trigger-start/
+  context 'function' do
+    [
+      'Appinfo',
+      'DeviceInstall',
+      'RemoteRegistry',
+      'W32Time',
+    ].each do |service_name|
+      describe command( <<-EOF
+      function Get-MrTriggerStartService {
+        [CmdletBinding(DefaultParameterSetName='Name')]
+        param (
+            [Parameter(ParameterSetName='Name',
+                       Position=0)]
+            [ValidateNotNullOrEmpty()]
+            [string]$Name = '*',
+            [Parameter(ParameterSetName='DisplayName')]
+            [ValidateNotNullOrEmpty()]
+            [string]$DisplayName = '*'
+        )
+          $Services = get-wmiObject -class Win32_Service -Filter "StartMode != 'Disabled' and Name like '$($Name -replace '\\*', '%')' and DisplayName like '$($DisplayName -replace '\\*', '%')'"
+          foreach ($Service in $Services) {
+            if (Test-Path -Path "HKLM:\SYSTEM\\CurrentControlSet\\Services\\$($Service.Name)\\TriggerInfo\\") {
+              New-Object -TypeName PSObject -Property @{
+                Status = $Service.State
+                Name = $Service.Name
+                DisplayName = $Service.DisplayName
+                StartMode = "$($Service.StartMode) (Trigger Start)"
+                }
+              }
+            }
+          }
+          Get-MrTriggerStartService -name
+        EOF
+      ) do
+        its (:stdout) { should eq 'True' }
+      end
+    end
+
+  end
   context 'Cmdlet' do
     {
       'usbohci' => 'KernelDriver',
@@ -71,4 +111,5 @@ context  'ServiceType' do
        end
     end
   end
+
 end
