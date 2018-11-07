@@ -35,7 +35,7 @@ end
 
 def port_with_retry(tcp_port, max_retry, default_delay )
   # pure ruby implemetation
-  # origin https://github.com/bootstraponline/waiting_rspec_matchers/blob/master/lib/waiting_rspec_matchers.rb#L82
+  # based on https://github.com/bootstraponline/waiting_rspec_matchers/blob/master/lib/waiting_rspec_matchers.rb#L82
   start_time = Time.now
   begin
     describe port (tcp_port) do
