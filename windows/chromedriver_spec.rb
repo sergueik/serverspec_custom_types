@@ -42,6 +42,7 @@ context 'Chromedriver session creation test' do
       exit 1
     }
     $id = $process.Id
+    write-output "Chromedriver Process Id is ${id}"
     $body = [byte[]][char[]]'{"desiredCapabilities":{"browserName":"chrome"}}'
     $request = [System.Net.HttpWebRequest]::CreateHttp($hub_url)
     $request.Method = 'POST'
@@ -67,6 +68,7 @@ context 'Chromedriver session creation test' do
   EOF
   ) do
     its(:stdout) { should match /"status":0/ }
+    its(:stdout) { should match /Chromedriver Process Id is \d+/ }
     # Would respond with the following JSON
     #  {
     #    "sessionId": "2721a58c9c96ece4360ac5693c29b2a7",
@@ -109,9 +111,11 @@ context 'Chromedriver session creation test' do
   end
   describe command(<<-EOF
     $hub_url = '#{hub_url}'
-    $webdriver_filepath = '#{webdriver_dir}\\#{webdriver_executable}'
+    $webdriver_filepath = "#{webdriver_dir}\\#{webdriver_executable}"
     $process = start-process -windowstyle hidden $webdriver_filepath -passthru
-    write-output "Chromedriver Process Id is ${process.Id}"
+    # NOTE: poweshell start-process passthru does not seem to reliably return the pid.
+    $id = $process.id
+    write-output "Chromedriver Process Id is ${id}"
     $body = [byte[]][char[]]'{"desiredCapabilities":{"browserName":"chrome"}}'
     $request = [System.Net.HttpWebRequest]::CreateHttp($hub_url)
     $request.Method = 'POST'
@@ -124,7 +128,7 @@ context 'Chromedriver session creation test' do
     $response = $request.GetResponse().GetResponseStream()
     $obj = convertFrom-json -InputObject ((new-object System.IO.StreamReader($response) ).ReadToEnd())
     write-output ('"status":{0}' -f $obj.'status')
-    if ($obj.'status' -ne 0){
+    if ($obj.'status' -ne 0 ){
       write-error 'Failed to launch chrome via the chromedriver'
     }
     try {
@@ -144,9 +148,11 @@ context 'Chromedriver session creation test' do
     }
   EOF
   ) do
+    its(:stdout) { should match /Chromedriver Process Id is \d+/ }
     its(:stdout) { should include '"status":0' }
     its(:stdout) { should include 'Successfully killed the chrome browser processes' }
     its(:stderr) { should be_empty}
     its(:exit_status) { should eq 0 }
   end
 end
+
