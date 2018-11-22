@@ -33,7 +33,7 @@ context 'Augeas' do
       its(:exit_status) {should eq 0 }
     end
   end
-  context 'Use Puppet Augeas Provider to no-op modify the Tomcat server.xml' do
+  context 'Use Puppet Augeas Provider against Tomcat server.xml' do
     tcp_port = '8443'
     describe command(<<-EOF
       puppet apply -e 'augeas {"tomcat sever aug": show_diff=> true, lens => "Xml.lns", incl => "#{catalina_home}/conf/server.xml", changes => [ "set Server/Service/Connector[#attribute/port=\\"#{tcp_port}\\"]/#attribute/port \\"#{tcp_port}\\""],}'
@@ -47,7 +47,7 @@ context 'Augeas' do
       its(:exit_status) {should eq 0 }
     end
   end
-  context 'Use Puppet Augeas Provider to no-op modify the Apache httpd.conf' do
+  context 'Use Puppet Augeas Provider against Apache httpd.conf' do
     apache_home = '/apps/apache/current'
     node_server_name = 'node-server-name'
     describe command(<<-EOF
