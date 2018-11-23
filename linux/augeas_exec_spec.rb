@@ -2,7 +2,8 @@ require 'spec_helper'
 
 context 'Augeas' do
 
-  catalina_home = '/apps/tomcat/current'
+  # default yum instll
+  catalina_home = '/usr/share/tomcat'
   aug_script = '/tmp/example.aug'
   xml_file = "#{catalina_home}/conf/server.xml"
 
@@ -47,6 +48,7 @@ context 'Augeas' do
       its(:exit_status) {should eq 0 }
     end
   end
+  # NOTE: hanging
   context 'Use Puppet Augeas Provider against Apache httpd.conf' do
     apache_home = '/apps/apache/current'
     node_server_name = 'node-server-name'
@@ -59,128 +61,6 @@ context 'Augeas' do
       its(:stdout) { should match /Notice: Applied catalog/ }
       its(:stderr) { should be_empty }
       its(:exit_status) {should eq 0 }
-    end
-  end
-  context 'Use Augeas Commands to inspect the Tomcat server.xml' do
-    context 'Multiple nodes' do
-      class_names = [
-        'org.apache.catalina.startup.VersionLoggerListener',
-        'org.apache.catalina.security.SecurityListener',
-        'org.apache.catalina.core.AprLifecycleListener',
-        'org.apache.catalina.core.JreMemoryLeakPreventionListener',
-        'org.apache.catalina.mbeans.GlobalResourcesLifecycleListener',
-        'org.apache.catalina.core.ThreadLocalLeakPreventionListener',
-      ]
-      aug_path = 'Server/Listener/#attribute/className'
-      program=<<-EOF
-        set /augeas/load/xml/lens "Xml.lns"
-        set /augeas/load/xml/incl "#{xml_file}"
-        load
-        print /files#{xml_file}/#{aug_path}
-      EOF
-      describe command(<<-EOF
-        echo '#{program}' > #{aug_script}
-        augtool -f #{aug_script}
-      EOF
-      ) do
-        let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-        class_names.each do |class_name|
-          its(:stdout) { should match class_name }
-        end
-        its(:stderr) { should be_empty }
-        its(:exit_status) {should eq 0 }
-      end
-    end
-    context 'Single node' do
-      class_name = 'org.apache.catalina.startup.VersionLoggerListener'
-      aug_path = "Server/Listener[1][#attribute/className=\"#{class_name}\"]/#attribute/className"
-      program=<<-EOF
-        set /augeas/load/xml/lens "Xml.lns"
-        set /augeas/load/xml/incl "#{xml_file}"
-        load
-        print /files#{xml_file}/#{aug_path}
-     EOF
-     describe command(<<-EOF
-       echo '#{program}' > #{aug_script}
-       augtool -f #{aug_script}
-     EOF
-     ) do
-       let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-       its(:stdout) { should match class_name }
-       its(:stderr) { should be_empty }
-       its(:exit_status) {should eq 0 }
-     end
-   end
- end
- context 'Matched node' do
-   class_name = 'org.apache.catalina.startup.VersionLoggerListener'
-   aug_path = "Server/Listener[#attribute/className=\"#{class_name}\"]/#attribute/className"
-   # the augtool match command returns a set of matching nodes via their abbreviated aug path e.g.
-   aug_path_response = 'Server/Listener[1]/#attribute/className'
-   program=<<-EOF
-     set /augeas/load/xml/lens "Xml.lns"
-     set /augeas/load/xml/incl "#{xml_file}"
-     load
-     match /files#{xml_file}/#{aug_path} #{class_name}
-   EOF
-   describe command(<<-EOF
-     echo '#{program}' > #{aug_script}
-     augtool -f #{aug_script}
-   EOF
-   ) do
-     let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-     its(:stdout) { should match Regexp.escape(aug_path_response) }
-     its(:stderr) { should be_empty }
-     its(:exit_status) {should eq 0 }
-   end
-   class_name = 'org.apache.catalina.security.SecurityListener'
-   aug_path = "//Listener[#attribute/className=\"#{class_name}\"]"
-   # the augtool print command returns a matching node with all of its contents expressed in abbreviated aug path e.g.
-   aug_node_index = '2'
-   program=<<-EOF
-     set /augeas/load/xml/lens "Xml.lns"
-     set /augeas/load/xml/incl "#{xml_file}"
-     load
-     print #{aug_path}
-   EOF
-   describe command(<<-EOF
-     echo '#{program}' > #{aug_script}
-     augtool -f #{aug_script}
-   EOF
-   ) do
-     let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-     its(:stderr) { should be_empty }
-     its(:exit_status) {should eq 0 }
-     [
-       "/files/apps/tomcat/current/conf/server.xml/Server/Listener[#{aug_node_index}]",
-       "/files/apps/tomcat/current/conf/server.xml/Server/Listener[#{aug_node_index}]/#attribute",
-       "/files/apps/tomcat/current/conf/server.xml/Server/Listener[#{aug_node_index}]/#attribute/className = \"#{class_name}\"",
-     ].each do |aug_response|
-       its(:stdout) { should match Regexp.escape(aug_response) }
-     end
-   end
- end
- context 'Text of the node' do
-   # generated text attriute we do now know in advance the exact value
-   aug_script = '/tmp/test.aug'
-   xml_file = '/opt/app/wso2/apim/store/repository/conf/registry.xml'
-   aug_path = "wso2registry/indexingConfiguration/lastAccessTimeLocation/#text"
-   aug_path_response = '/_system/local/repository/components/org.wso2.carbon.registry/indexing/lastaccesstime_\d{10}'
-   program=<<-EOF
-     set /augeas/load/xml/lens "Xml.lns"
-     set /augeas/load/xml/incl "#{xml_file}"
-     load
-     match /files#{xml_file}/#{aug_path}
-   EOF
-   describe command(<<-EOF
-     echo '#{program}' > #{aug_script}
-     augtool -f #{aug_script}
-   EOF
-   ) do
-     let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-     its(:stdout) { should match /#{aug_path_response}/i }
-     its(:stderr) { should be_empty }
-     its(:exit_status) {should eq 0 }
     end
   end
 end
