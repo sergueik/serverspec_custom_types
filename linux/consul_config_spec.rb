@@ -39,7 +39,7 @@ context 'Consul Response Headers' do
     #   "CreatrIndex": 5
     # }
 
-    describe command(<<-OF
+    describe command(<<-EOF
       CONSUL_NODE_NAME = '#{node}'
       curl -I -X GET http://localhost:8500/v1/health/state/any | jq '.[]| select(.Node == "#{node}")'
     EOF
@@ -108,8 +108,8 @@ context 'Consul Response Headers' do
 END
     fi
     # shell HEREDOC delimiter must stay in the first column
-        EOF
-        )
+      EOF
+      )
       end
     end
     custom_headers.each do |name, value|
@@ -122,6 +122,48 @@ END
         its(:exit_status) { should eq 0 }
         its(:stderr) { should be_empty }
       end
+    end
+  end
+end
+
+context 'Misc. consul configuration tests' do
+  consul_config_dir = '/etc/consul.d'
+  consul_config_file = "#{consul_config_dir}/config.json"
+
+  # minimal consul config
+  # {
+  #   "bootstrap_expect": 2,
+  #   "client_addr": "0.0.0.0",
+  #   "data_dir": "/tmp/consul",
+  #   "server": true,
+  #   "retry_join": [
+  #     "192.168.51.10",
+  #     "192.168.51.11"
+  #   ],
+  #   "ui": true,
+  #   "verify_incoming": false,
+  #   "verify_outgoing": false
+  # }
+  #
+  {
+   'ui'               => true,
+   'bootstrap_expect' => 2,
+   'data_dir'         => '/tmp/consul',
+   } .each do |name, value|
+    describe command("jq '.#{name}' '#{consul_config_file}' | tr -d '\"'") do
+      its(:stdout) { should contain /"?#{value}"?/ }
+      its(:exit_status) { should eq 0 }
+      its(:stderr) { should be_empty }
+    end
+  end
+  [
+    '192.168.51.10',
+    '192.168.51.11'
+  ].each do |hostname|
+    # demo of some jq transformations
+    describe command("jq '.retry_join| join(\",\") |split(\",\")' '#{consul_config_file}'") do
+      its(:stdout) { should contain /"#{hostname}"/ }
+      its(:exit_status) { should eq 0 }
     end
   end
 end
