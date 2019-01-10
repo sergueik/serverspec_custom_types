@@ -17,14 +17,48 @@ context 'Consul Response Headers' do
       'X-Frame-Options'             => 'sameorigin, allow-from https://example.com/',
       'X-Xss-Protection'            => '1; mode=block'
   }
-  
+  describe 'Service health state response' do
+    node = %x|hostname|.chomp
+    peer_node = 'consul2' # peer node
+    # uses REST call in case the default TCP port 8500 is disabled and unclear how to compose the
+    # alternate consul info command
+    # NOTE: tricky to compose with bash shell quoting,e.g.
+    # jq: error: syntax error, unexpected INVALID_CHARACTER, expecting $end
+    # and similar errors
+    # healthy output would look like
+    # {
+    #   "Node": "$CONSUL_NODE_NAME",
+    #   "CheckID": "serfHealth",
+    #   "Status": "passing",
+    #   "Notes":"",
+    #   "Output": "Agent alive and reachable",
+    #   'ServiceID": "",
+    #   "SerciceName": ""
+    #   "ServiceTags": [],
+    #   "CreatrIndex": 5
+    #   "CreatrIndex": 5
+    # }
+
+    describe command(<<-OF
+      CONSUL_NODE_NAME = '#{node}'
+      curl -I -X GET http://localhost:8500/v1/health/state/any | jq '.[]| select(.Node == "#{node}")'
+    EOF
+    ), Specinfra::Runner::run_command("ps ax | grep consu[l]").exit_status.eql?(0) do
+   end
+  end
   describe 'Service checks' do
     custom_headers.each do |name, value|
       describe command(<<-EOF
         curl -I -X GET http://localhost:8500/v1/health/state/any
       EOF
       ), Specinfra::Runner::run_command("ps ax | grep consu[l]").exit_status.eql?(0) do
-        its(:stdout) { should contain "#{name}: #{value}" }
+        its(:stdout) { should contain /#{name}: #{value}/i }
+      end
+      describe command(<<-EOF
+        curl -k -I -X GET https://127.0.0.1:8543/v1/agent/services
+      EOF
+      ), Specinfra::Runner::run_command("ps ax | grep consu[l]").exit_status.eql?(0) do
+        its(:stdout) { should contain Regexp.new("#{name}: #{value}", Regexp::IGNORECASE  )  }
       end
     end
   end
@@ -67,7 +101,7 @@ context 'Consul Response Headers' do
     "response_headers": {
       "X-XSS-Protection": "1; mode=block",
       "X-Frame-Options": "sameorigin, allow-from https://example.com/",
-      "Access-Control-Allow-Origin": "*"            
+      "Access-Control-Allow-Origin": "*"
     }
   }
 }

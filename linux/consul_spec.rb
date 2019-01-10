@@ -1,5 +1,6 @@
 require 'spec_helper'
 
+# Xenial based 2 node consul cluster https://github.com/chavo1/consul-lab
 context 'consul checks' do
   # this expectation flags the node which did not join the cluster
   # though did try to boostrap consul
