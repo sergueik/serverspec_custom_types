@@ -53,8 +53,9 @@ context 'Desktop Window Size' do
     end
   end
   context 'Display Scaling' do
-    # Registry check - will work for older Windows releases
-    # reflexts 'Control Panel\Appearance and Personalization\Display' Make text and other items on the desktop smaller and larger information
+    # Registry check 'Control Panel\Appearance and Personalization\Display' 
+    # Make text and other items on the desktop smaller and larger information
+    # - will work for pre-10 Windows releases
     # based on: https://stackoverflow.com/questions/32607468/get-scale-of-screen
     #
     # see also: https://stackoverflow.com/questions/13228185/how-to-configure-an-app-to-run-correctly-on-a-machine-with-a-high-dpi-setting-e/13228495#13228495
@@ -63,29 +64,54 @@ context 'Desktop Window Size' do
     # about DisplayProperties
     # https://docs.microsoft.com/en-us/uwp/api/windows.graphics.display.displayinformation
     # about DisplayInformation
-    display_scale = '1.25'
+    display_scale = '125'
     describe command(<<-EOF
       $hive ='HKCU:'
       $path = 'Control Panel/Desktop'
       $name = 'LogPixels'
-      $currentDPI = $null
-      $currentDPI = Get-ItemProperty -Path ('{0}/{1}' -f $hive,$path) -Name $name -ErrorAction 'SilentlyContinue'
+      $registry_value = 96.0
       # https://stackoverflow.com/questions/27642169/looping-through-each-noteproperty-in-a-custom-object
-      # foreach ($noteProperty in $currentDPI) { write-Host $noteProperty }
-      #
-      # @{LogPixels=120; PSPath=Microsoft.PowerShell.Core\\Registry::HKEY_CURRENT_USER\\Control Panel\\Desktop; PSParentPath=Microsoft.PowerShell.Core\\Registry::HKEY_CURRENT_USER\\Control Panel; PSChildName=Desktop; PSDrive=HKCU; PSProvider=Microsoft.PowerShell.Core\\Registry}
-      # $currentDPI | get-member -type NoteProperty -name 'LogPixels' | select-object -expandProperty Definition | format-list
-      # System.Int32 LogPixels=120
-      #
-      $currentDPIValue = $currentDPI.PSObject.Properties | where-object {$_.Name -eq $name }| foreach-object { write-output $_.Value }
-      # Method invocation failed because [System.Management.Automation.PSObject] does not contain a method named 'op_Division'.
-      if ($currentDPIValue -eq $null)  { $currentDPIValue = 96.0 }
-      if ($currentDPI -eq $null)  { $currentDPI = 96 } else { $currentDPI = $currentDPI.LogPixels }
-      $display_scale = ($currentDPIValue + 0.00 )/96
+      $o = get-itemproperty -path ('{0}/{1}' -f $hive,$path) -name $name -erroraction 'SilentlyContinue'
+      $registry_value = $o.PSObject.Properties |
+                        where-object {$_.Name -eq $name } |
+                        foreach-object { write-output $_.Value }
+      $display_scale = [int]((([float]$registry_value + 0.00 )/96)* 100)  # e.g. 125
+      # one cannot print string to STDOUT for the sake of available subset of RSPec mathers
+      # so print different to STDERR and STDOUT 
+      # https://relishapp.com/rspec/rspec-expectations/docs/built-in-matchers
+      # NOTE: format errors become Microsoft.PowerShell.Commands.WriteErrorException 
+      # NOTE: some  discrepncy between running this as a standlaone PS1 snippet and serverspec
+      # 
+      # <?xml version="1.0"?>
+      # <Objs xmlns="http://schemas.microsoft.com/powershell/2004/04" Version="1.1.0.1">
+      #   <Obj S="progress" RefId="0">
+      #     <TN RefId="0">
+      #       <T>System.Management.Automation.PSCustomObject</T>
+      #       <T>System.Object</T>
+      #     </TN>
+      #     <MS>
+      #       <I64 N="SourceId">1</I64>
+      #       <PR N="Record">
+      #         <AV>Preparing modules for first use.</AV>
+      #         <AI>0</AI>
+      #         <Nil/>
+      #         <PI>-1</PI>
+      #         <PC>-1</PC>
+      #         <T>Completed</T>
+      #         <SR>-1</SR>
+      #         <SD> </SD>
+      #       </PR>
+      #     </MS>
+      #   </Obj>
+      # </Objs>
+      # 
+      $error_message = ('Display scale: {0}' -f $display_scale ) 
+      write-error $error_message -erroraction 'SilentlyContinue'
+      [System.Console]::Error.WriteLine($error_message)
       write-output $display_scale
     EOF
     ) do
-      # https://relishapp.com/rspec/rspec-expectations/docs/built-in-matchers
+      its (:stderr) { should match /Dislay scale: \d+/ }
       its (:stdout) { should be >= display_scale }
       # The following will raise NoMethodError: undefined method `call' for nil:NilClass
       # its (:stdout) { should satisfy { |val| $stderr.puts val; val.chomp! =~ Regexp.new(display_scale) } }
