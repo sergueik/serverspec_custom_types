@@ -5,18 +5,20 @@ require 'ostruct'
 
 $DEBUG = true
 
-# this example may be considered as a clean way to compose the JSON payload for consul REST API post deployment checks
+# this example may be used as a somewhat cleaner way of composing the JSON payload for consul REST API post deployment checks, Artifactory queries and the like.
 # also for constructing jenkins config.xml
 # https://jsonplaceholder.typicode.com/
 # and https://github.com/typicode/jsonplaceholder#how-to
 context 'REST API' do
   context 'JSON payoad' do
     url = 'https://jsonplaceholder.typicode.com/posts'
+    body_param = 'bar'
     rest_api_command = <<-EOF
+      BODY='"#{body_param}"'
       PAYLOAD=$(cat<<DATA| jq -c '.'
       {
         "title": "foo",
-        "body": "bar",
+        "body": $BODY,
         "userId": 1
       }
 DATA
