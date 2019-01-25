@@ -47,5 +47,15 @@ context 'consul checks' do
         its(:stdout) { should match( Regexp.new(Regexp.escape("\"name\": \"#{service}\""))) }
       end
     end
+    # nore targeted configuration extraction command presumably matching the Spring route
+    {
+      'service_api_serivce' => 'api_service/health'
+    }.each  do |service_alias, service_route|
+      describe command("jq '.service.checks[].http'i < '/etc/consul.d/#{service_alias}.json'") do
+        let(:path) { '/bin:/usr/bin:/usr/local/bin'}
+        its(:stdout) { should match( Regexp.new(Regexp.escape("\"https://127.0.0.1:8443/#{service_route}\""))) }
+      end
+    end
+
   end
 end
