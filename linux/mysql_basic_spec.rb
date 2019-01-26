@@ -146,6 +146,19 @@ context 'MySQL' do
     end
   end
 
+  # NOTE: there may be inconsistency between the actual datadir and contents of '/etc/my.cnf'
+  context 'Datadir' do
+    custom_datadir = '/opt/mysql/var/lib/mysql/'
+    # NOTE: not every flag is really necessary: silent, batch, vertical column, execute and quit
+    describe command(<<-EOF
+      mysql -sBEe 'select @@datadir;'
+    EOF
+    ) do
+      its(:exit_status) {should eq 0 }
+      its(:stdout) { should match /@@datadir: #{custom_datadir}/i }
+    end
+  end
+
   # NOTE: this may fail on a vanilla db
   context 'Grants' do
     {
