@@ -150,12 +150,15 @@ context 'MySQL' do
   context 'Datadir' do
     custom_datadir = '/opt/mysql/var/lib/mysql/'
     # NOTE: not every flag is really necessary: silent, batch, vertical column, execute and quit
+    # the correct flags are -NBe 
     describe command(<<-EOF
       mysql -sBEe 'select @@datadir;'
+      mysql -NBe 'select @@datadir;'
     EOF
     ) do
       its(:exit_status) {should eq 0 }
       its(:stdout) { should match /@@datadir: #{custom_datadir}/i }
+      its(:stdout) { should match custom_datadir }
     end
 
     # NOTE trailing slash processing
@@ -199,5 +202,17 @@ context 'MySQL' do
     ) do
       its(:stderr) { should match /There is no such grant defined for user '#{user}' on host '#{host}'/i }
     end
+  end
+  context 'Socket and configuration' do
+    mysql_cnf = '/etc/my.cnf'
+    root_mysql_cnf = '/root/.my.cnf'
+    describe command(<<-EOF
+      stat $(grep socket '#{mysql_cnf}' | head -1 | sed 's/socket=//')
+      stat $(sed -n '/socket=\\(.*\\)/{s//\\1/p;q}' '#{root_mysql_cnf}')
+    EOF
+    ) do
+      its(:stdout) { should match /socket$/ }
+    end
+
   end
 end
