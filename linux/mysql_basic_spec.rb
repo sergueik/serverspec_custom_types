@@ -213,6 +213,19 @@ context 'MySQL' do
     ) do
       its(:stdout) { should match /socket$/ }
     end
-
+  end
+  context 'Stale socket discovery' do
+    mysql_server = 'mysqld'
+    socket_filename = 'mysql.sock'
+    socket_path = '/var/lib/mysql'
+    # NOTE: recent versions of lsof are helpful in this topic
+    # see also https://unix.stackexchange.com/questions/16300/whos-got-the-other-end-of-this-unix-socketpair
+    describe command(<<-EOF
+      lsof -c '#{mysql_server}'| grep 'unix' | grep  '#{socket_filename}')
+    EOF
+    ) do
+      its(:exit_status) {should eq 0 }
+      its(:stdout) { should match /\b#{socket_path}\// }
+    end
   end
 end
