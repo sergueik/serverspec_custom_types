@@ -15,7 +15,7 @@ context 'Jenkins Command' do
       Specinfra::Runner::run_command( <<-EOF
         LOGFILE='#{logfile}'
         AGE=#{age_diff}
-        cat /dev/null > $$LOGFILE
+        cat /dev/null > $LOGFILE
         pushd '#{parentdir}' > /dev/null
         # initialize directories
         for CNT in  $(seq 1 10)
