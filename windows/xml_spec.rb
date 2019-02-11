@@ -80,5 +80,59 @@ context 'XML configuration' do
       end
     end
   end
-end
 
+  context 'A somewhat buggy way is to extract DOM information from XML' do
+    # origin: http://www.cyberforum.ru/powershell/thread2399334.html
+    # http://www.cyberforum.ru/powershell/thread2401922.html
+    # only works when DOM node has some attributes like e.g.
+    # <Logo attribute="">images\logo.png</Logo>
+    # fails for
+    # <Logo>images\logo.png</Logo>
+    tmpfile = "#{ENV['TEMP']}/temp.xml"
+    xml_data = <<-EOF
+<?xml version="1.0" encoding="utf8"?>
+    <table>
+      <rows>
+        <row>
+          <object id="37085"/>
+          <column column="0" name="item_id">000130</column>
+          <column column="7" name="name">dba</column>
+          <Logo>images/logo.png</Logo>
+        </row>
+      </rows>
+    </table>
+    EOF
+    describe command (<<-EOF
+    # NOTE: No characters are allowed after a here-string header but before the end of the line.
+    # The XML declaration needs to be at the beginning of the first line following here-string
+      $rawdata = @'
+#{xml_data}
+'@
+      $tempfile = '#{tmpfile}'
+      write-output $rawdata |out-file $tempfile -enc Default
+      [xml]$xml = get-content $tempfile -enc Default
+
+      $data = $xml.SelectNodes('//row') |foreach-object {
+        $obj = New-Object PSCustomObject
+        $_.column |foreach-object {Add-Member -Type NoteProperty -Name $_.name -Value $_.'#Text' -InputObject $obj}
+        $_.Logo | foreach-object {
+          Add-Member -Type NoteProperty -Name 'Logo (broken)' -Value $_.'#Text' -InputObject $obj
+          Add-Member -Type NoteProperty -Name 'Logo' -Value $_ -InputObject $obj
+        }
+        $obj
+      }
+      $data | format-list
+      rm -force $tempfile
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      [
+        '000130',
+        'dba',
+        'images/logo.png',
+      ].each do |line|
+        its(:stdout) { should match Regexp.new(line) }
+      end
+    end
+  end
+end
