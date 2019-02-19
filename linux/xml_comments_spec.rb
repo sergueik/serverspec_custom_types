@@ -31,9 +31,9 @@ EOF
 
   # Fragment of real Appdynamics "controller-info.xml"
   # origin: https://github.com/xebialabs-community/xld-appDynamics-plugin/blob/master/src/main/resources/appdynamics/controller-info.xml
-
-    controller_info_datafile = '/tmp/controller-info.xml'
-    controller_info_content = <<-EOF
+  # https://docs.appdynamics.com/display/PRO14S/Install+the+App+Agent+for+Java#InstalltheAppAgentforJava-5.ConfigurehowtheagentidentifiestheAppDynamicsbusinessapplication,tier,andnode.
+  controller_info_datafile = '/tmp/controller-info.xml'
+  controller_info_content = <<-EOF
 <?xml version="1.0"?>
 <controller-info>
   <controller-host>${container.controllerHost}</controller-host>
@@ -67,9 +67,12 @@ DATA2
     )
     end
     [
+      # both --format or -format option would work
+      "xsltproc '#{identity_transform_datafile}' '#{controller_info_datafile}' | xmllint --format -",
       # cannot make xmllint apply style sheet, it appears
       # for the spec simply getting a fearment is a good enough
-      "xmllint --xpath '//*' '#{controller_info_datafile}'",
+      # comments will remain
+      # "xmllint --xpath '//*' '#{controller_info_datafile}'",
       "xmlstarlet c14n --without-comments '#{controller_info_datafile}'",
     ].each do |commandline|
       describe command(<<-EOF
