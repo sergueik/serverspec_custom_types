@@ -354,4 +354,15 @@ context 'JDBC tests' do
       end
     end
   end
+  # When JSBC SQL DriverSpy class is engaged to log the database operation,
+  #  the JDBC Connection string would switch the URL prefix to the "jdbc:log4jdbc" instead of "jdbc:" 
+  # and would read like "jdbc:log4jdbc:mysql://<URL>:<PORT>/<CONNECTION ARGUMENTS>"
+  # the driverClassName would become "net.sf.log4jdbc.DriverSpy"
+  # the "org.slf4j.slf4j-api" will be responsible for loading the driver jar from classpath
+  # it will be specified, usually through the appliction properties, what is to be logged
+  # and the bare bones code in this example would stop work
+  # further info:
+  # https://stackoverflow.com/questions/17988231/how-to-log-jdbc-connection-activity
+  # http://kveeresham.blogspot.com/2015/03/logging-jdbc-activities-using-log4jdbc.html
+  # http://www.java2s.com/Tutorials/Java/log4j/0080__log4j_Log_to_Database.htm
 end
