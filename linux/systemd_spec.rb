@@ -2,6 +2,19 @@ require 'spec_helper'
 
 context 'Exact Match test' do
   # alternatively command systemctl to format output in the list format
+  # NOTE:  for AppDynamics and Javaagent see
+  # https://zeroturnaround.com/rebellabs/how-to-inspect-classes-in-your-jvm/
+  # https://github.com/zeroturnaround/callspy/
+  # https://docs.appdynamics.com/
+  # AppDynmics simply suggests make its javaagent jar the instrumentation agent
+  # that utilizes the Instrumentation API that the JVM provides
+  # via pretty simple means, by executing the javaAgent class premain method before 
+  # the main method of the subject application class
+  # and allowing "java.lang.instrument.Instrumentation" instrument the bytecode of the application
+  # to allow appDynamics do its wonders to the available JVM instance:
+  # JAVA_OPTS=...-javaagent:/home/appdynamics/AppServerAgent/javaagent.jar...
+  # this demistifies the mehanism behind what is offered by AppDynamics as "information points" 
+  # metrics of the particular  target appliction method invocation
   info = {
     'Description' => 'The Apache HTTP Server',
     'LoadState'   => 'loaded',
@@ -27,9 +40,9 @@ context 'Exact Match test' do
       $stderr.puts 'Cannot find ' + line
     end
     describe key do
-    $stderr.puts "status = #{status}"
-    subject { status }
-    it { should eq 0 }
+      $stderr.puts "status = #{status}"
+      subject { status }
+      it { should eq 0 }
     end
   end
 end
