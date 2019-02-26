@@ -79,8 +79,8 @@ DATA2
         #{commandline}
       EOF
       ) do
-          its(:exit_status) { should eq 0 }
-          its(:stdout) { should_not contain 'want to override that move by specify' }
+        its(:exit_status) { should eq 0 }
+        its(:stdout) { should_not contain 'want to override that move by specify' }
     end
   end
 end
