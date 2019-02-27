@@ -2,11 +2,43 @@ require_relative '../windows_spec_helper'
 
 context 'Shortcuts' do
 
+  context 'Basic Test' do
+    link_basename = 'cmd - Administrator'
+    # NOTE: WMI routinely returns *collections* of objects
+    # E.g. 'get-wmiobject' a.k.a. 'gwmi' cmdlet with 'win32_userprofile' will contain *every* profile found in the system
+    # including auto-created accounts: 'ASP.NET v4.0', 'DefaultAppPool', 'Classic .Net AppPool' without predictable SIDs
+    # the (incorrect) example below demonstrate syntax to exclude known accounts like
+    # 'NetworkService', 'LocalService', 'System' through SID filtering
+    describe command(<<-END_COMMAND
+      $link_basename = '#{link_basename}'
+      # NOTE: oldskool
+      [byte[]] $bytes = get-content -encoding byte -path "$env:USERPROFILE\\Desktop\\${link_basename}.lnk" -totalcount 20
+      # NOTE: the following line is likely to return a random user's desktop, not what we need
+      $link_path = join-path -path (get-WmiObject win32_userprofile | where-object { $_.sid -notin @('S-1-5-18','S-1-5-19','S-1-5-20')}| select-object -first 1 | select-object -expandProperty LocalPath) -childpath "\\Desktop\\${link_basename}.lnk"
+      # NOTE: slow!
+      Add-Type -AssemblyName 'System.DirectoryServices.AccountManagement'
+      <# current_user #> $sid = ([System.DirectoryServices.AccountManagement.UserPrincipal]::Current).SID.Value
+      $link_path = join-path -path (get-WmiObject win32_userprofile -filter "sid='$sid'" | select-object -expandProperty LocalPath) -childpath "\\Desktop\\${link_basename}.lnk"
+      # NOTE: System.Management.ManagementBaseObject#\Win32_FolderRedirectionHealth returned e.g. for 'Desktop' property of the profile
+      [byte[]] $bytes = get-content -encoding byte -path $link_path -totalcount 20
+        foreach ( $byte in $bytes ) {
+          $output += '{0:X2} ' -f $byte
+        }
+      write-output $output
+    END_COMMAND
+    ) do
+      # HeaderSize
+      its(:stdout) { should match /4C 00 00 00/ }
+      # LinkCLSID
+      its(:stdout) { should match /01 14 02 00 00 00 00 00 C0 00 00 00 00 00 00 46/ }
+    end
+  end
+
   context 'Dump Shortcut File' do
     link_basename = 'puppet_test'
     link_basename = 'puppet_test(admin)'
     link_hexdump  = "c:/windows/temp/#{link_basename}.hex"
-
+    # NOTE: errors from running command before test.
     before(:all) do
       Specinfra::Runner::run_command(<<-END_COMMAND
           $link_basename = '#{link_basename}'
