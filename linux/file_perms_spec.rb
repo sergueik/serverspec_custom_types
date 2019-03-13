@@ -5,7 +5,7 @@ $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
 
 # https://serverfault.com/questions/48109/how-to-find-files-with-incorrect-permissions-on-unix
 context 'Permission scan' do
-  context 'world-writable and world-executable file detection' do
+  context 'Counting world-writable/-executable files' do
     result = true
     total_count = 0
     basedir = '/tmp'
@@ -22,8 +22,7 @@ context 'Permission scan' do
       EOF
       )
     end
-    # NOTE: fix possible poor synchronization between `before` through sleep - not very reliable
-    context 'test' do
+    if File.exist?(basedir)
       $stderr.puts "Scanning #{basedir}"
       Find.find(basedir) do |filepath|
         unless FileTest.directory?(filepath)
@@ -40,13 +39,15 @@ context 'Permission scan' do
           end	
         end
       end
-      $stderr.puts "total count: #{total_count}"
-      $stderr.puts result
+      $stderr.puts "Total count: #{total_count}"
+      $stderr.puts ('Success: ' + result.to_s )
       it { result.should be_falsy }
       it { expect(total_count).to be >= 2  }
+    else
+      $stderr.puts ('Skipped missing directory ' + basedir )
     end
   end
-  context 'File permissions file fix validation' do
+  context 'File permissions file fix validation "unless" condition' do
     result = true
     total_count = 0
     basedir = '/tmp'
@@ -59,10 +60,14 @@ context 'Permission scan' do
       EOF
       )
     end
-    context 'test' do
+    if File.exist?(basedir)
       $stderr.puts "Scanning #{basedir}"
       # NOTE: this will fail for combination of undesired permission bits detected
-      perms = {1 => 'execute' , 2 => 'write' 4 => 'read' }
+      perms = {
+        1 => 'execute' ,
+        2 => 'write',
+        4 => 'read'
+      }
       Find.find(basedir) do |filepath|
         unless FileTest.directory?(filepath)
           begin	
@@ -83,8 +88,8 @@ context 'Permission scan' do
           end	
         end
       end
-      $stderr.puts "total count: #{total_count}"
-      $stderr.puts result
+      $stderr.puts "Total count: #{total_count}"
+      $stderr.puts ('Success: ' + result.to_s )
       it { result.should be_truthy }
     end
   end
@@ -99,4 +104,4 @@ end
 #   logoutput => on_failure,
 #   unless    => 'test $(find . -type f -and \( -perm /o=w -or -perm /o=x \)) -eq 0'
 # }
-# with n obvious modification of the file mode is required to be set to 750 obo
+# with an obvious modification if the file mode is required to be set to 750 obo
