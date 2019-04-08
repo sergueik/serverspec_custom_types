@@ -203,11 +203,13 @@ context 'MySQL' do
       its(:stderr) { should match /There is no such grant defined for user '#{user}' on host '#{host}'/i }
     end
   end
+  # see https://toster.ru/q/620562
   context 'Socket and configuration' do
     mysql_cnf = '/etc/my.cnf'
     root_mysql_cnf = '/root/.my.cnf'
     describe command(<<-EOF
       stat $(grep socket '#{mysql_cnf}' | head -1 | sed 's/socket=//')
+      stat $(grep -Po 'socket=.*' '#{root_mysql_cnf}' | head -1 | sed 's/socket=//)
       stat $(sed -n '/socket=\\(.*\\)/{s//\\1/p;q}' '#{root_mysql_cnf}')
     EOF
     ) do
