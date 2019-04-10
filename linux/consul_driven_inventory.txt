@@ -16,11 +16,33 @@ export VERSION_BUILD='192'; \
 expoer CONSUL_HTTP_SSL=true; \
 export LEADER=$(hostname -f); \
 consul exec -http-adds https://$LEADER:8543 \
-rpm -q $PACKAGE \&\& hostname -f |grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
+rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
 # this command can run from any node that has consul service running, but best run from service discovery role and produces output in the format:
 # [node_role]: $PACKAGE-$VERSION_MAJOR-$VERSION_BUILD
 
+# alternative formatting:
+# rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_MAJOR | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
+
+export PACKAGE='oracle-java8-jdk'; \
+export VERSION_MAJOR='1.8.0'; \
+export VERSION_BUILD='192'; \
+expoer CONSUL_HTTP_SSL=true; \
+export LEADER=$(hostname -f); \
+consul exec -http-adds https://$LEADER:8543 \
+rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
+
+# formatting of the command to find outliers, not running the $VERSION_BUILD
+
+export PACKAGE='oracle-java8-jdk'; \
+export VERSION_MAJOR='1.8.0'; \
+export VERSION_BUILD='192'; \
+expoer CONSUL_HTTP_SSL=true; \
+export LEADER=$(hostname -f); \
+consul exec -http-adds https://$LEADER:8543 \
+rpm -q $PACKAGE \&\& hostname -f | grep $VERSION_MAJOR |grep -v $VERSION_BUILD 
+
+# produces the same listing but queries the version in as Puppet knows it
 
 export PACKAGE='oracle-java8-jdk'; \
 export VERSION_MAJOR='1.8.0'; \
@@ -29,8 +51,6 @@ expoer CONSUL_HTTP_SSL=true; \
 export LEADER=$(hostname -f); \
 consul exec -http-adds https://$LEADER:8543 \
 \( puppet resource package $PACKAGE \| grep -Po "'[0-9].+'" \) \&\& hostname -f | grep -A 1 $VERSION_MAJOR
-
-# produces the same listing but queries the version in  the format Puppet knows it
 
 # the following command checks puppet mcollective log $LOG to list the nodes
 # reporting some specific error message $MESSAGE
