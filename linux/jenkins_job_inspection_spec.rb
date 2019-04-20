@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'pp'
 
 
-# In some situations Jenkins is use  as a parallel Artifactory
+# In some situations Jenkins serves as a parallel Artifactory
 # pull engine
 context 'Jenkins Artifactory Job Command' do
   {
@@ -61,3 +61,88 @@ context 'Jenkins Artifactory Job Command' do
      end
   end
 end
+# For DOM of few common Jenkins job types see
+# https://github.com/andrewwardrobe/serverspec-extra-types/blob/master/spec/helpers/jenkins_job_helper.rb
+# * freestyle 
+#  <?xml version="1.0" encoding="UTF-8"?>
+#  <project>
+#    <keepDependencies>false</keepDependencies>
+#    <displayName>displayName</displayName>
+#    <description>description</description>
+#    <properties/>
+#    <scm class="hudson.scm.NullSCM"/>
+#    <canRoam>false</canRoam>
+#    <disabled>false</disabled>
+#    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+#    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+#    <triggers/>
+#    <concurrentBuild>false</concurrentBuild>
+#    <builders/>
+#    <publishers/>
+#    <buildWrappers/>
+#  </project>
+#  * pipeline
+#  <?xml version="1.0" encoding="UTF-8"?>
+# <flow-definition plugin="workflow-job@2.32">
+#   <displayName>displayName</displayName>
+#   <description>description</description>
+#   <keepDependencies>false</keepDependencies>
+#   <properties>
+#     <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.11">
+#       <gitLabConnection/>
+#     </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
+#   </properties>
+#   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.65">
+#     <script/>
+#     <sandbox>true</sandbox>
+#   </definition>
+#   <triggers/>
+#   <disabled>false</disabled>
+# </flow-definition>
+# 
+#  * maven
+#  <?xml version="1.0" encoding="UTF-8"?>
+# <maven2-moduleset plugin="maven-plugin@3.2">
+#   <displayName>displayName</displayName>
+#   <description>description</description>
+#   <keepDependencies>false</keepDependencies>
+#   <properties>
+#     <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.11">
+#       <gitLabConnection/>
+#     </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
+#   </properties>
+#   <scm class="hudson.scm.NullSCM"/>
+#   <canRoam>true</canRoam>
+#   <disabled>false</disabled>
+#   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+#   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+#   <triggers/>
+#   <concurrentBuild>false</concurrentBuild>
+#   <aggregatorStyleBuild>true</aggregatorStyleBuild>
+#   <incrementalBuild>false</incrementalBuild>
+#   <ignoreUpstremChanges>false</ignoreUpstremChanges>
+#   <ignoreUnsuccessfulUpstreams>false</ignoreUnsuccessfulUpstreams>
+#   <archivingDisabled>false</archivingDisabled>
+#   <siteArchivingDisabled>false</siteArchivingDisabled>
+#   <fingerprintingDisabled>false</fingerprintingDisabled>
+#   <resolveDependencies>false</resolveDependencies>
+#   <processPlugins>false</processPlugins>
+#   <mavenValidationLevel>-1</mavenValidationLevel>
+#   <runHeadless>false</runHeadless>
+#   <disableTriggerDownstreamProjects>false</disableTriggerDownstreamProjects>
+#   <blockTriggerWhenBuilding>true</blockTriggerWhenBuilding>
+#   <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+#   <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+#   <reporters/>
+#   <publishers/>
+#   <buildWrappers/>
+#   <prebuilders/>
+#   <postbuilders/>
+#   <runPostStepsIfResult>
+#     <name>FAILURE</name>
+#     <ordinal>2</ordinal>
+#     <color>RED</color>
+#     <completeBuild>true</completeBuild>
+#   </runPostStepsIfResult>
+# </maven2-moduleset>
+# 
