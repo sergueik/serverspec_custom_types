@@ -3,14 +3,22 @@ if File.exists?( 'spec/windows_spec_helper.rb')
 end
 
 
+# In the default Puppet MSI install, neither the ruby-augeas bindings nor augeas native libraries are provided,
+# therefore the provider is not suitable out of the box
+# one is advised to compile augeas for windows and install the ruby-augeas gem oneself
+# https://tickets.puppetlabs.com/browse/PA-1163 is still open|unresolved
+# the augtool availability for windows is still uncertain
+# https://github.com/MikaelSmith/augeas/tree/windows
 
-# The vanilla tomcat application comes with welcome pages and is testable through
+# vanilla tomcat application comes out of the box with welcome pages in $env:{CATALINA_HOME}/webapps/ROOT and is testable through
 # http://localhost:8080/index.jsp
-# but the enterprise version could be locked
-# generally tomcat allows
-# the <Context docBase="/var/static" path="/static" />
-# configuration suggested in
+# but the enterprise version is likely locked from displaying static content
+
 # https://www.moreofless.co.uk/static-content-web-pages-images-tomcat-outside-war/
+# tomcat allows simple configuration
+# the <Context docBase="c:/temp" path="/static"/>
+# for directory listing see
+# https://webmasters.stackexchange.com/questions/37855/tomcat-serving-static-content-with-directory-listings
 
 context 'Tomcat static page test' do
 

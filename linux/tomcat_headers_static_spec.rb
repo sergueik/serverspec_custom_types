@@ -1,14 +1,16 @@
 require 'spec_helper'
 
 
-# The vanilla tomcat application comes with welcome pages and is testable through
-# http://localhost:8080/index.jsp and also supports 
-# the  <Context docBase="/var/static" path="/static" /> 
-# configuration suggested in
+# vanilla tomcat application comes out of the box with welcome pages in in $CATALINA_HOME/webapps/ROOT and is testable through
+# http://localhost:8080/index.jsp
+# but the enterprise version is likely locked from displaying static content
+
 # https://www.moreofless.co.uk/static-content-web-pages-images-tomcat-outside-war/
+# tomcat allows simple configuration
+# the <Context docBase="/var/static" path="/static" />
+# for directory listing see
 # https://webmasters.stackexchange.com/questions/37855/tomcat-serving-static-content-with-directory-listings
-# but the enterprise version could be locked
-# 
+
 
 context 'Tomcat static page test' do
 
@@ -72,7 +74,7 @@ DATA1
     # X-XSS-Protection: 1; mode=block
     # Accept-Ranges: bytes
     # ETag: W/"62-1555625608000"
-    # 
+    #
   describe command(<<-EOF
     echo '#{program}' > #{aug_script}
     augtool -f #{aug_script}
@@ -83,12 +85,12 @@ DATA1
     its(:stderr) { should be_empty }
     its(:exit_status) {should eq 0 }
   end
-  
+
   describe command(<<-EOF
     /opt/tomcat/bin/shutdown.sh
     /opt/tomcat/bin/shutdown.sh
     sleep 30
-    curl -k -I http://localhost:8080/static/#{static_page}   
+    curl -k -I http://localhost:8080/static/#{static_page}
   EOF
   ) do
     its(:stdout) { should contain 'X-Frame-Options: SAMEORIGIN' }
