@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 
-# vanilla tomcat application comes out of the box with welcome pages in in $CATALINA_HOME/webapps/ROOT and is testable through
+# vanilla tomcat application comes out of the box with static welcome pages in $CATALINA_HOME/webapps/ROOT and is testable through
 # http://localhost:8080/index.jsp
-# but the enterprise version is likely locked from displaying static content
+# but one is likely observe the enterprise version locked from displaying static content
 
 # https://www.moreofless.co.uk/static-content-web-pages-images-tomcat-outside-war/
 # tomcat allows simple configuration
@@ -14,10 +14,11 @@ require 'spec_helper'
 
 context 'Tomcat static page test' do
 
+  puppet_home = '/opt/puppetlabs/puppet/bin'
   catalina_home = '/opt/tomcat'
   static_page_path = '/var/static'
   static_page = 'index.html'
-  xml_file = "#{catalina_home}/conf/server.xml"
+  server_xml_file = "#{catalina_home}/conf/server.xml"
   static_page_datafile = "#{static_page_path}/#{static_page}"
   static_page_content = <<-EOF
 <!DOCTYPE html>
@@ -27,8 +28,8 @@ context 'Tomcat static page test' do
 <body>
 </body>
 </html>
-EOF
-   before(:each) do
+  EOF
+  before(:each) do
     $stderr.puts "Writing #{static_page_datafile}"
     Specinfra::Runner::run_command( <<-EOF
       mkdir -p $(dirname #{static_page_datafile})
@@ -47,12 +48,12 @@ DATA1
   aug_path = "Server/Service/Engine/Host[#attribute/name=\"localhost\"]/#attribute/name"
   program=<<-EOF
     set /augeas/load/xml/lens "Xml.lns"
-    set /augeas/load/xml/incl "#{xml_file}"
+    set /augeas/load/xml/incl "#{server_xml_file}"
     load
-    insert 'Context' after '/files/opt/tomcat/conf/server.xml/Server/Service/Engine/Host[#attribute/name="localhost"]/Valve'
+    insert 'Context' after '/files#{server_xml_file}/Server/Service/Engine/Host[#attribute/name="localhost"]/Valve'
     save
-    set '/files/opt/tomcat/conf/server.xml/Server/Service/Engine/Host[#attribute/name="localhost"]/Context/#attribute/path' '/static'
-    set '/files/opt/tomcat/conf/server.xml/Server/Service/Engine/Host[#attribute/name="localhost"]/Context/#attribute/docBase' '/var/static'
+    set '/files#{server_xml_file}/Server/Service/Engine/Host[#attribute/name="localhost"]/Context/#attribute/path' '/static'
+    set '/files#{server_xml_file}/Server/Service/Engine/Host[#attribute/name="localhost"]/Context/#attribute/docBase' '/var/static'
     save
   EOF
     # curl -I -k http://localhost:8080/index.jsp
@@ -80,15 +81,15 @@ DATA1
     augtool -f #{aug_script}
   EOF
   ) do
-    let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
+    let(:path) { "/bin:/usr/bin:/sbin:#{puppet_home}"}
     its(:stdout) { should match '.*#attribute/name = "localhost"' }
     its(:stderr) { should be_empty }
     its(:exit_status) {should eq 0 }
   end
 
   describe command(<<-EOF
-    /opt/tomcat/bin/shutdown.sh
-    /opt/tomcat/bin/shutdown.sh
+    #{catalina_home}/bin/shutdown.sh
+    #{catalina_home}/bin/startup.sh
     sleep 30
     curl -k -I http://localhost:8080/static/#{static_page}
   EOF
@@ -96,8 +97,6 @@ DATA1
     its(:stdout) { should contain 'X-Frame-Options: SAMEORIGIN' }
     its(:stderr) { should be_empty }
     its(:exit_status) {should eq 0 }
-
-    # curl -I -k http://localhost:8080/index.jsp
 
   end
 end
