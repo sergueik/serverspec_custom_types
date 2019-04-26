@@ -1,5 +1,5 @@
 require 'spec_helper'
-
+require 'base64'
 
 # vanilla tomcat application comes out of the box with manager in $CATALINA_HOME/webapps/manager
 # and is queryable after
@@ -65,11 +65,12 @@ DATA
     its(:exit_status) {should eq 0 }
   end
 
+  enc_auth = Base64.encode64("#{username}:#{password}")
   describe command(<<-EOF
     #{catalina_home}/bin/shutdown.sh
     #{catalina_home}/bin/startup.sh
     sleep #{tomcat_boot_delay}
-    curl -u #{username}:#{password} http://127.0.0.1:8080/manager/text/list
+    curl -H 'Authorization: Basic #{enc_auth}' http://127.0.0.1:8080/manager/text/list
   EOF
   ) do
     its(:stdout) { should contain 'OK - Listed applications for virtual host'}
