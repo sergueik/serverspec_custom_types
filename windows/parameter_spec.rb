@@ -1,8 +1,6 @@
 require 'spec_helper'
 
 require 'yaml'
-require 'json'
-require 'csv'
 context 'parameter test' do
 
   parameters = YAML.load_file(File.join(__dir__, '../../parameters/parameters.yml'))

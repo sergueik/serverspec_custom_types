@@ -1,6 +1,12 @@
 require 'pp'
 require 'yaml'
-require 'json'
+begin
+  require 'json_pure' # support no-rubydev gems
+  test_pure_ruby_json = true
+rescue LoadError => e
+  require 'json' # allow fail with LoadError now
+  test_pure_ruby_json = false
+end
 require 'csv'
 
 # use embedded XML  class

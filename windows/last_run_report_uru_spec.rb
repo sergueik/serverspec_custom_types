@@ -1,6 +1,4 @@
 require 'yaml'
-require 'json'
-require 'csv'
 
 if => ENV.has_key?('URU_INVOKER')
   if File.exists?( 'spec/windows_spec_helper.rb')

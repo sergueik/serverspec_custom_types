@@ -1,6 +1,12 @@
 # Custom type to perform inspection of Puppet lastrun reports
 $LOAD_PATH.insert(0, '/opt/puppetlabs/puppet/lib/ruby/vendor_ruby/')
-require 'json'
+begin
+  require 'json_pure' # support no-rubydev gems
+  test_pure_ruby_json = true
+rescue LoadError => e
+  require 'json' # allow fail with LoadError now
+  test_pure_ruby_json = false
+end
 require 'yaml'
 require 'puppet'
 require 'pp'
