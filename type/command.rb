@@ -1,15 +1,26 @@
 require 'pp'
 require 'yaml'
-begin
-  require 'json_pure' # support no-rubydev gems
-  test_pure_ruby_json = true
-rescue LoadError => e
-  require 'json' # allow fail with LoadError now
+USE_PURE_JSON_GEM = false
+if  USE_PURE_JSON_GEM
+  begin
+    # NOTE: not json_pure
+    require 'json/pure' # support no-rubydev gems
+    test_pure_ruby_json = true
+    # NOTE: json_pure-2.2.0/lib/json/pure/generator.rb:309:in `to_json': wrong
+    # argument type JSON::Pure::Generator::State (expected JSON/Generator/State) (TypeError)
+  rescue LoadError => e
+    $stderr.puts ('Failed to load json_pure for JSON parsing: ' + e.to_s)
+    require 'json' # allow fail with LoadError now
+    test_pure_ruby_json = false
+  end
+else
+  require 'json'
   test_pure_ruby_json = false
 end
+$stderr.puts ('JSON parsing in pure Ruby: ' +   test_pure_ruby_json.to_s)
 require 'csv'
 
-# use embedded XML  class
+# use embedded XML class
 # https://www.xml.com/pub/a/2005/11/09/rexml-processing-xml-in-ruby.html
 require 'rexml/document'
 include REXML
@@ -54,7 +65,7 @@ module Serverspec::Type
         nil
       end
     end
-    
+
     def stdout_as_yaml
       begin
         @res = YAML.load(command_result.stdout)
@@ -69,13 +80,14 @@ module Serverspec::Type
     def stdout_as_data
       begin
         # hack around logstash logging its operations together with rubydebug output
-        rawdata = command_result.stdout.split(/\r?\n/).reject { |line|
+        # NOTE: invalid multibyte char (UTF-8) (SyntaxError)
+        rawdata = command_result.stdout.split(/\r?\n/).reject { |line|
           line =~ /(?:No log4j2 configuration file found|Sending Logstash's)/ ;
         }.reject { |line|
           line =~ /@timestamp/i
         }.reject {|line|
           line =~ /(?:_dateparsefailure|_grokparsefailure)/
-        } 
+        }
         @res = eval(rawdata.join("\n"))
         # pp @res
         @res
