@@ -100,4 +100,88 @@ DATA1
 
   end
 end
+context 'Security Headers' do
+  puppet_home = '/opt/puppetlabs/puppet/bin'
+  catalina_home = '/opt/tomcat'
+  web_xml = "#{catalina_home}/conf/web.xml"
+  aug_script = '/tmp/example.aug'
+  aug_path = "Server/Service/Engine/Host[#attribute/name=\"localhost\"]/#attribute/name"
+  program=<<-EOF
 
+set '/augeas/load/xml/lens' 'Xml.lns'
+set '/augeas/load/xml/incl' '#{web_xml}'
+load
+# Arbirtarily places the new config close to an end ot web-app
+# NOTE: assumes the session-config is present
+insert 'filter' before '/files#{web_xml}/web-app/session-config/session-timeout[#text="30"][parent::*]'
+# a safer place would be above the mime mapping group
+# insert 'filter' before '/files#{web_xml}/web-app/mime-mapping[1]'
+# NOTE: assumes there is only one "/web-app/filter" node.
+# # protect against "too many matches for path expression" augeas error when dulicate nodes are found in the XML
+set '/files#{web_xml}/web-app/filter[last()]/filter-name/#text' 'httpHeaderSecurity'
+set '/files#{web_xml}/web-app/filter[last()]/filter-class/#text' 'org.apache.catalina.filters.HttpHeaderSecurityFilter'
+set '/files#{web_xml}/web-app/filter[last()]/async-supported/#text' 'true'
+save
+print '/files#{web_xml}//web-app/filter[last()]'
+
+insert 'filter-mapping' before '/files#{web_xml}/web-app/session-config'
+
+set '/files#{web_xml}/web-app/filter-mapping[last()]/filter-name/#text' 'httpHeaderSecurity'
+set '/files#{web_xml}/web-app/filter-mapping[last()]/url-pattern/#text' '/*'
+set '/files#{web_xml}/web-app/filter-mapping[last()]/dispatcher/#text' 'REQUEST'
+save
+print '/files#{web_xml}/web-app/filter-mapping[last()]'
+
+insert 'init-param' after '/files#{web_xml}/web-app/filter/async-supported'
+
+# write the children of /web-app/filter/init-param'
+set '/files#{web_xml}/web-app/filter[last()]/init-param[1]/param-name/#text' 'antiClickJackingEnabled'
+set '/files#{web_xml}/web-app/filter[last()]/init-param[1]/param-value/#text' 'true'
+insert 'init-param' after '/files#{web_xml}/web-app/filter/async-supported'
+set '/files#{web_xml}/web-app/filter[last()]/init-param[1]/param-name/#text' 'antiClickJackingOption'
+set '/files#{web_xml}/web-app/filter[last()]/init-param[1]/param-value/#text' 'SAMEORIGIN'
+save
+print '/files#{web_xml}/web-app/filter[last()]'
+# finally print errors
+print '/augeas/error'
+
+  EOF
+  describe command(<<-EOF
+    echo '#{program}' > #{aug_script}
+    augtool -f #{aug_script}
+  EOF
+  ) do
+    let(:path) { "/bin:/usr/bin:/sbin:#{puppet_home}"}
+    # its(:stdout) { should match '.*#attribute/name = "localhost"' }
+    its(:stderr) { should be_empty }
+    its(:exit_status) {should eq 0 }
+  end
+
+  describe command(<<-EOF
+    xmllint --xpath \\
+    '/*[local-name()="web-app"]/*[local-name()="filter"]/*[local-name()="filter-name"][text() = "httpHeaderSecurity"]/../*[local-name()="dispatcher"]/text()' \\
+    #{web_xml}
+  EOF
+  ) do
+    its(:stdout) { should contain 'REQUEST' }
+    its(:stderr) { should be_empty }
+    its(:exit_status) {should eq 0 }
+  end
+
+    # NOTE: commenting the line containing an undefined variable inside HEREDOC
+    # does not suppress NameError exception
+    # undefined local variable or method `static_page' for RSpec::ExampleGroups::SecurityHeaders:Class
+    # curl -k -I http://localhost:8080/static/#{static_page}
+  describe command(<<-EOF
+    #{catalina_home}/bin/shutdown.sh
+    #{catalina_home}/bin/startup.sh
+    sleep 30
+    # NOTE: may refuse the specific response headers
+    curl -k -I http://localhost:8080/
+  EOF
+  ) do
+    its(:stdout) { should contain 'X-Frame-Options: SAMEORIGIN' }
+    its(:stderr) { should be_empty }
+    its(:exit_status) {should eq 0 }
+  end
+end
