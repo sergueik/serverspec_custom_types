@@ -2,7 +2,6 @@ if File.exists?( 'spec/windows_spec_helper.rb')
   require_relative '../windows_spec_helper'
 end
 
-
 # In the default Puppet MSI install, neither the ruby-augeas bindings nor augeas native libraries are provided,
 # therefore the provider is not suitable out of the box
 # one is advised to compile augeas for windows and install the ruby-augeas gem oneself
