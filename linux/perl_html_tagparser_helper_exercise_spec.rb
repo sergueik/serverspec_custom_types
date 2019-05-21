@@ -5,25 +5,30 @@ context 'HTML TagParser exercise' do
   perl_html_tag_parser_module_datafile = 'TagParser.pm'
   perl_html_tag_parser_module_directory_name = "#{basedir}/HTML"
   exampe_html_datafile = "#{basedir}/exampe_html.html"
+  # NOTE: - removed several closing tags from HTML making it more challenging for XML DOM-based tools
   exampe_html_EOF = <<-EOF
 <html>
-  <body>
-    <div id="foo">
-      <span>AAA</span>
-      <div id="bar">
-BBB
-<span>CCC</span>
-DDD
-<div/>
-EEE
-</div>
-      <span>FFF</span>
+  <body class="page">
+    <p id="skip-link">
+      <a href="#main-content" class="element">Skip to main content</a>
+    </p>
+    <header class="region-header" role="banner"/>
+    <div class="example">
+      <div id="block-1" class="block odd">
+        <a class="arrow-link" href="/user/login">Login</a>
+      </div>
+      <div id="block-2" class="block even">
+      <a href="/user/register">Sign up</a>
+    </div>
+  </body>
+</html>
   EOF
-  # note - removed several closing tags
   # origin: https://github.com/kawanet/HTML-TagParser
+  # modified to include getElementsByAttributeValueContaining
   # NOTE: escaped \'s  and #'s (in $# Perl expressions)
   perl_html_tag_parser_module_EOF = <<-EOF
 =head1 NAME
+
 HTML::TagParser - Yet another HTML document parser with DOM-like methods
 
 =head1 SYNOPSIS
@@ -212,7 +217,7 @@ The DOM tree is read-only, as this is just a parser.
 This module natively understands the character encoding used in document
 by parsing its meta element.
 
-    <meta http-equiv="EOF-Type" EOF="text/html; charset=Shift_JIS">
+    <meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
 
 The parsed document's encoding is converted
 as this class's fixed internal encoding "UTF-8".
@@ -251,7 +256,7 @@ my $SEC_OF_DAY = 60 * 60 * 24;
 #  [000]        '/' if closing tag.
 #  [001]        tagName
 #  [002]        attributes string (with trailing /, if self-closing tag).
-#  [003]        EOF until next (nested) tag.
+#  [003]        content until next (nested) tag.
 #  [004]        attributes hash cache.
 #  [005]        innerText combined strings cache.
 #  [006]        index of matching closing tag (or opening tag, if [000]=='/')
@@ -289,7 +294,7 @@ sub fetch {
     Carp::croak "URI::Fetch failed: $url" unless ref $res;
     return if $res->is_error();
     $self->{modified} = $res->last_modified();
-    my $text = $res->EOF();
+    my $text = $res->content();
     $self->parse( \\$text );
 }
 
@@ -639,7 +644,7 @@ sub html_to_flat {
         #  [001]  $2  tagName
         #  [002]  $3  attributes
         #         $4  comment element
-        #  [003]  $5  EOF
+        #  [003]  $5  content
         next if defined $4;
         my $array = [ $1, $2, $3, $5 ];
         $array->[001] =~ tr/A-Z/a-z/;
@@ -713,7 +718,7 @@ sub find_closing
 sub find_meta_charset {
     my $txtref = shift;    # reference
     while ( $$txtref =~ m{
-        <meta \\s ((?: [^>]+\\s )? http-equiv\\s*=\\s*['"]?EOF-Type [^>]+ ) >
+        <meta \\s ((?: [^>]+\\s )? http-equiv\\s*=\\s*['"]?Content-Type [^>]+ ) >
     }sxgi ) {
         my $args = $1;
         return $1 if ( $args =~ m# charset=['"]?([^'"\\s/]+) #sxgi );
@@ -748,14 +753,14 @@ sub encode_from_to {
   end
   context 'inspection' do
     describe command( <<-EOF
-      pushd #{basedir}
-      perl -I . -MHTML::TagParser -e 'use HTML::TagParser; print "->" . $HTML::TagParser::VERSION;my $filename = "#{exampe_html_datafile}";my $html = HTML::TagParser->new($filename);@elem = $html->getElementsByTagName("body");print $elem[0]->innerText;'
+      >/dev/null pushd #{basedir}
+      perl -I . -MHTML::TagParser -e 'use HTML::TagParser; my $filename = "#{exampe_html_datafile}";my $html = HTML::TagParser->new($filename);my @elem = $html->getElementsByAttributeValueContaining("class","block");map { my $text = $_->innerText; $text =~ s|\s+| |g; print $text. $/ } @elem;'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
       [
-      'BBB',
-      'CCC',
+      'Login',
+      'Sign up',
       ].each do |text|
         its(:stdout) { should match Regexp.new("\\b#{text}\\b", Regexp::IGNORECASE) }
       end
