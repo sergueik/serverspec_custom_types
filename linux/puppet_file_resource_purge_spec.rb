@@ -30,22 +30,26 @@ context 'Puppet Exotic resource usage exercise' do
       for VERSION in 1 2 3 4 5 6 7 8 9 10 ; do 
         mkdir -p "${VERSION}/stuff/inside"
       done
+      ln -s ${KEEP_VERSION} 'keep_version'
       cd #{base_dir}
+      echo "Protecting puppet from uru environment" 
+      mv /root/.gem/ /root/.gem.MOVED
       echo puppet apply -e "${PUPPPET_SCRIPT}"
       puppet apply -e "${PUPPPET_SCRIPT}"
+      mv /root/.gem.MOVED /root/.gem
     EOF
     ) do
       its(:exit_status) { should eq 0 }
       [
       'keep_version',
       keep_version,
-      ].each do |text|
-        # its(:stdout) { should match Regexp.new("\\b#{text}\\b", Regexp::IGNORECASE) }
+      ].each do |filename| 
+        describe file("#{parent_dir}/#{filename}") do
+          it { should exist}
+        end
       end
       let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-      # Failed to load feature test for microsoft_windows: ERROR: Failed to build gem native extension
-      # logged to /root/.gem/ruby/2.1.0/extensions/x86_64-linux/2.1.0/nokogiri-1.8.1/gem_make.out
-      # its(:stderr) { should be_empty }
+      its(:stderr) { should be_empty }
     end
   end
 end
