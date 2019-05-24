@@ -11,7 +11,6 @@ require 'spec_helper'
 # for directory listing see
 # https://webmasters.stackexchange.com/questions/37855/tomcat-serving-static-content-with-directory-listings
 
-
 context 'Tomcat static page test' do
 
   puppet_home = '/opt/puppetlabs/puppet/bin'
@@ -104,9 +103,7 @@ context 'Security Headers' do
   puppet_home = '/opt/puppetlabs/puppet/bin'
   catalina_home = '/opt/tomcat'
   web_xml = "#{catalina_home}/conf/web.xml"
-  aug_script = '/tmp/example.aug'
-  aug_path = "Server/Service/Engine/Host[#attribute/name=\"localhost\"]/#attribute/name"
-  program=<<-EOF
+  aug_script = '/tmp/example.aug'  program=<<-EOF
 
 set '/augeas/load/xml/lens' 'Xml.lns'
 set '/augeas/load/xml/incl' '#{web_xml}'
