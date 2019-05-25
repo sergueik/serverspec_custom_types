@@ -4,6 +4,7 @@ require 'fileutils'
 context 'Puppet Exotic resource usage exercise' do
   base_dir = '/tmp'
   parent_dir = '/tmp/application'
+  extra_file = 'dummy' 
   keep_version = '7'
 
   # for Ruby $ is not a special character, but for shell it is
@@ -15,9 +16,8 @@ context 'Puppet Exotic resource usage exercise' do
       backup       => false,
       recurselimit => 1,
       recurse      => true,
-      ignore       => ['keep_version', '${KEEP_VERSION}'],
+      ignore       => ['keep_version', '${KEEP_VERSION}', '#{extra_file}'],
     }
-
   EOF
   puppet_script.gsub!(/\r?\n/, '').gsub!(/\s+/ ,' ')
   shell_script = <<-EOF
@@ -74,6 +74,7 @@ context 'Puppet Exotic resource usage exercise' do
       PUPPPET_SCRIPT="#{puppet_script}"
       test -d $PARENT_DIR || mkdir $PARENT_DIR
       cd $PARENT_DIR
+      touch -c '#{extra_file}'
       for VERSION in 1 2 3 4 5 6 7 8 9 10 ; do
         mkdir -p "${VERSION}/stuff/inside"
       done
@@ -85,6 +86,9 @@ context 'Puppet Exotic resource usage exercise' do
       fi
       echo puppet apply -e "${PUPPPET_SCRIPT}"
       puppet apply -e "${PUPPPET_SCRIPT}"
+      find $PARENT_DIR -maxdepth 1 -type d -print
+      find $PARENT_DIR -maxdepth 1 -type f -print
+      find $PARENT_DIR -maxdepth 1 -type l -print
       if [ ! -z $URU_INVOKER ] ; then
         echo "Restoring uru environment"
         mv /root/.gem.MOVED /root/.gem
@@ -95,13 +99,31 @@ context 'Puppet Exotic resource usage exercise' do
       [
         'keep_version',
         keep_version,
-      ].each do |filename|
-        describe file("#{parent_dir}/#{filename}") do
+      ].each do |dirname|
+        describe file("#{parent_dir}/#{dirname}") do
           it { should exist}
         end
       end
       let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
       its(:stderr) { should be_empty }
+      [
+        parent_dir,
+        "#{parent_dir}/#{keep_version}"
+      ].each do |dirname|
+        its(:stdout) { should include dirname }
+      end
+      # NOTE: this will fail
+      [
+        extra_file,
+      ].each do |filename|
+        its(:stdout) { should include "#{parent_dir}/#{filename}" }
+      end
+      [
+        'keep_version',
+      ].each do |filename|
+        its(:stdout) { should include "#{parent_dir}/#{filename}" }
+      end
+      
     end
   end
 end
