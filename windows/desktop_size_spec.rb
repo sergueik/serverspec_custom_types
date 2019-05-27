@@ -112,6 +112,7 @@ context 'Desktop Window Size' do
     EOF
     ) do
       its (:stderr) { should match /Dislay scale: \d+/ }
+	  # https://relishapp.com/rspec/rspec-expectations/docs/built-in-matchers
       its (:stdout) { should be >= display_scale }
       # The following will raise NoMethodError: undefined method `call' for nil:NilClass
       # its (:stdout) { should satisfy { |val| $stderr.puts val; val.chomp! =~ Regexp.new(display_scale) } }
