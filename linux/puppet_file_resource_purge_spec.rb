@@ -37,16 +37,8 @@ context 'Puppet Exotic resource usage exercise' do
     cd #{base_dir}
     # uncomment fro interactive run
     # read -p 'Press [Enter] key to start cleanup...'
-    if [ ! -z $URU_INVOKER ] ; then
-      echo "Protecting Puppet from uru environment"
-      mv /root/.gem/ /root/.gem.MOVED
-    fi
     echo puppet apply -e "${PUPPPET_SCRIPT}"
     puppet apply -e "${PUPPPET_SCRIPT}"
-    if [ ! -z $URU_INVOKER ] ; then
-      echo "Restoring uru environment"
-      mv /root/.gem.MOVED /root/.gem
-    fi
   EOF
   context 'wrapping ' do
     before(:each) do
@@ -87,19 +79,11 @@ context 'Puppet Exotic resource usage exercise' do
       done
       ln -fs ${KEEP_VERSION} 'keep_version'
       cd #{base_dir}
-      if [ ! -z $URU_INVOKER ] ; then
-        echo "Protecting Puppet from uru environment"
-        mv /root/.gem/ /root/.gem.MOVED
-      fi
       echo puppet apply -e "${PUPPPET_SCRIPT}"
       puppet apply -e "${PUPPPET_SCRIPT}"
       find $PARENT_DIR -maxdepth 1 -type d -print
       find $PARENT_DIR -maxdepth 1 -type f -print
       find $PARENT_DIR -maxdepth 1 -type l -print
-      if [ ! -z $URU_INVOKER ] ; then
-        echo "Restoring uru environment"
-        mv /root/.gem.MOVED /root/.gem
-      fi
     EOF
     ) do
       its(:exit_status) { should eq 0 }
