@@ -6,6 +6,7 @@ context 'Puppet Exotic resource usage exercise' do
   parent_dir = '/tmp/application'
   extra_file = 'dummy' 
   keep_version = '7'
+  shell_script_file = '/tmp/example.sh'
 
   # for Ruby $ is not a special character, but for shell it is
   puppet_script = <<-EOF
@@ -16,21 +17,26 @@ context 'Puppet Exotic resource usage exercise' do
       backup       => false,
       recurselimit => 1,
       recurse      => true,
-      ignore       => ['keep_version', '${KEEP_VERSION}', '#{extra_file}'],
+      ignore       => ['keep_version', '${KEEP_VERSION}', '${EXTRA_FILE}'],
     }
   EOF
   puppet_script.gsub!(/\r?\n/, '').gsub!(/\s+/ ,' ')
   shell_script = <<-EOF
+#!/bin/bash
+    EXTRA_FILE='#{extra_file}'
     PARENT_DIR='#{parent_dir}'
     KEEP_VERSION='#{keep_version}'
     PUPPPET_SCRIPT="#{puppet_script}"
     test -d $PARENT_DIR || mkdir $PARENT_DIR
     cd $PARENT_DIR
+    touch $EXTRA_FILE
     for VERSION in 1 2 3 4 5 6 7 8 9 10 ; do
       mkdir -p "${VERSION}/stuff/inside"
     done
     ln -fs ${KEEP_VERSION} 'keep_version'
     cd #{base_dir}
+    # uncomment fro interactive run
+    # read -p 'Press [Enter] key to start cleanup...'
     if [ ! -z $URU_INVOKER ] ; then
       echo "Protecting Puppet from uru environment"
       mv /root/.gem/ /root/.gem.MOVED
@@ -42,7 +48,6 @@ context 'Puppet Exotic resource usage exercise' do
       mv /root/.gem.MOVED /root/.gem
     fi
   EOF
-  shell_script_file = '/tmp/example.sh'
   context 'wrapping ' do
     before(:each) do
       $stderr.puts "Writing #{shell_script_file}"
@@ -65,6 +70,7 @@ context 'Puppet Exotic resource usage exercise' do
       end
       let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
       its(:stderr) { should be_empty }
+      # Press [Enter] key to start cleanup...
     end
   end
   context 'version 2' do
@@ -72,9 +78,10 @@ context 'Puppet Exotic resource usage exercise' do
       PARENT_DIR='#{parent_dir}'
       KEEP_VERSION='#{keep_version}'
       PUPPPET_SCRIPT="#{puppet_script}"
+      EXTRA_FILE='#{extra_file}'
       test -d $PARENT_DIR || mkdir $PARENT_DIR
       cd $PARENT_DIR
-      touch -c '#{extra_file}'
+      touch $EXTRA_FILE
       for VERSION in 1 2 3 4 5 6 7 8 9 10 ; do
         mkdir -p "${VERSION}/stuff/inside"
       done
@@ -112,7 +119,6 @@ context 'Puppet Exotic resource usage exercise' do
       ].each do |dirname|
         its(:stdout) { should include dirname }
       end
-      # NOTE: this will fail
       [
         extra_file,
       ].each do |filename|
