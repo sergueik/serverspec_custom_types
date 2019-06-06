@@ -40,6 +40,7 @@ if (-not (New-Object Security.Principal.WindowsPrincipal(
 }
 # based on: https://www.gamedev.net/forums/topic/310631-shellexecuteex-api-call-in-c/
 # https://csharp.hotexamples.com/examples/-/ShellExecuteInfo/-/php-shellexecuteinfo-class-examples.html
+<# 
 add-type @'
 using System;
 using System.Windows.Forms;
@@ -126,6 +127,8 @@ namespace Nt
 	}
 }
 '@  -ReferencedAssemblies 'System.Windows.Forms.dll','System.Drawing.dll','System.Net.dll','System.Runtime.InteropServices.dll'
+
+#>
 
 
 # one of MS-recommended locations for "Finding an Application Executable" by ShellExecuteEx 
