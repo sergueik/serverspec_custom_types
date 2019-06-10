@@ -1,18 +1,65 @@
 require 'spec_helper'
 
+# omitted a whole can of worms of hand mande to_boolean in Ruby
+# see https://stackoverflow.com/questions/36228873/ruby-how-to-convert-a-string-to-boolean
+
+$DEBUG = ENV.fetch('DEBUG', 'false')
+$stderr.puts "Literal $DEBUG='#{$DEBUG}'"
+$DEBUG = (ENV.fetch('DEBUG', 'false') =~ /^(true|t|yes|y|1)$/i)
+$stderr.puts "Evaluated $DEBUG='#{$DEBUG ? 'true': 'false'}'"
+;
+class String
+  def to_boolean
+    self =~ /^(true|t|yes|y|1)$/i
+  end
+end
+
+class NilClass
+  def to_boolean
+    false
+  end
+end
+
+class TrueClass
+  def to_boolean
+    true
+  end
+
+  def to_i
+    1
+  end
+end
+
+class FalseClass
+  def to_boolean
+    false
+  end
+
+  def to_i
+    0
+  end
+end
+
+class Integer
+  def to_boolean
+    to_s.to_boolean
+  end
+end
+
+
 # Illustration of decorating the rspec with environment checks in various ways
 # to suppress the tests, unset SPECIFIC_ENVIRONMENT
 # to engage the tests, export SPECIFIC_ENVIRONMENT=somevalue
 # NOTE:the value is not properly tested atm
-
-
-$DEBUG = false
 
 context 'Tests limited to a Specific Environment' do
 
   $specific_environment = ENV.fetch('SPECIFIC_ENVIRONMENT', nil)
   if $DEBUG
     $stderr.puts "DEBUG: $specific_environment = '#{$specific_environment}'"
+  end
+  if $DEBUG
+    $stderr.puts "DEBUG: $specific_environment = '#{$specific_environment.to_boolean}'"
   end
   unless $specific_environment.nil?
     context 'test1' do
@@ -21,7 +68,7 @@ context 'Tests limited to a Specific Environment' do
         it { should_not be_file }
       end
     end
-  else  
+  else
     $stderr.puts "Skipped test ($specific_environment = '#{$specific_environment}')"
   end
   $specific_environment = ENV.has_key?('SPECIFIC_ENVIRONMENT')
@@ -35,7 +82,7 @@ context 'Tests limited to a Specific Environment' do
         it { should be_directory }
       end
     end
-  else  
+  else
     $stderr.puts "Skipped test ($specific_environment = '#{$specific_environment}')"
   end
   context 'test3', :if => ENV.has_key?('SPECIFIC_ENVIRONMENT') do
@@ -46,3 +93,4 @@ context 'Tests limited to a Specific Environment' do
     end
   end
 end
+
