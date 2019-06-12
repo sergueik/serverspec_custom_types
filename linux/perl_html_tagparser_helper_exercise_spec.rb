@@ -1,12 +1,15 @@
 require 'spec_helper'
 require 'fileutils'
+
+# loading HTML::TagParser - HTML document parser with DOM-like methods written in pure Perl monolithic module
+
 context 'HTML TagParser exercise' do
   basedir = '/tmp'
   perl_html_tag_parser_module_datafile = 'TagParser.pm'
   perl_html_tag_parser_module_directory_name = "#{basedir}/HTML"
   exampe_html_datafile = "#{basedir}/exampe_html.html"
   # NOTE: - removed several closing tags from HTML making it more challenging for XML DOM-based tools
-  exampe_html_EOF = <<-EOF
+  exampe_html_data = <<-EOF
 <html>
   <body class="page">
     <p id="skip-link">
@@ -24,9 +27,10 @@ context 'HTML TagParser exercise' do
 </html>
   EOF
   # origin: https://github.com/kawanet/HTML-TagParser
+  # see also https://jsoup.org/
   # modified to include getElementsByAttributeValueContaining
-  # NOTE: escaped \'s  and #'s (in $# Perl expressions)
-  perl_html_tag_parser_module_EOF = <<-EOF
+  # NOTE: escaped \'s and #'s (in $# Perl expressions) in here-doc
+  perl_html_tag_parser_module_content = <<-EOF
 =head1 NAME
 
 HTML::TagParser - Yet another HTML document parser with DOM-like methods
@@ -742,13 +746,13 @@ sub encode_from_to {
   before(:each) do
     $stderr.puts "Writing #{exampe_html_datafile}"
     file = File.open(exampe_html_datafile, 'w')
-    file.puts exampe_html_EOF
+    file.puts exampe_html_data
     file.close
     $stderr.puts "Writing #{perl_html_tag_parser_module_datafile}"
     FileUtils.mkdir_p perl_html_tag_parser_module_directory_name unless File.exists?(perl_html_tag_parser_module_directory_name)
     Dir.chdir perl_html_tag_parser_module_directory_name
     file = File.open(perl_html_tag_parser_module_datafile, 'w')
-    file.puts perl_html_tag_parser_module_EOF
+    file.puts perl_html_tag_parser_module_content
     file.close
   end
   context 'inspection' do
