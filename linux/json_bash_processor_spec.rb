@@ -2130,14 +2130,17 @@ EOF
       JS_SH='#{js_sh_script}'
       JSON_DATA='#{json_filename}'
       chmod +x $JS_SH
-      $JS_SH -C '.' $JSON_DATA
+
+      $JS_SH -M < $JSON_DATA '.'
       $JS_SH -C '.testsuite.testcase[] | .name' $JSON_DATA
+      $JS_SH -Mdc < $JSON_DATA '.[]| { action:Click}'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
       [
         'OutofStock',
-        'AddtoCart'
+        'AddtoCart',
+        '{"action":"Click"}' # TODO: expect to be printed 3 times
       ].each do |text|
         its(:stdout) { should match Regexp.new("\\b#{text}\\b", Regexp::IGNORECASE) }
       end
