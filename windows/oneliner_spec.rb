@@ -39,5 +39,9 @@ context 'Partially debugged Powershell one-liner' do
       its(:stdout) { should match status }
       its(:exit_status) { should be_in( [0,1] ) }
     end
+    describe command("$service_name = '#{servicename}'; .({if( !$$ ){ throw };'service is running'},{'service is stopped'})[($$ = gsv $service -ea 0).Status -eq 1]") do
+      its(:stdout) { should match status }
+      its(:exit_status) { should be_in( [0,1] ) }
+    end
   end
 end
