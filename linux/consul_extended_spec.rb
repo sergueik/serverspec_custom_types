@@ -1,12 +1,14 @@
 require 'spec_helper'
+
+require 'fileutils'
+
 require 'json'
 require 'yaml'
 require 'ostruct'
 
 $DEBUG = true
 
-# this example may be considred a bulding block for specinfra  monitored_by? -style expectaton with consul
-
+# this example may be considred a bulding block for specinfra  monitored_by?-style expectaton with consul
 context 'Consul' do
 
   datafile = '/tmp/consul_data.json'
@@ -35,11 +37,11 @@ END
       'web' => 8080,
     }.each do |monitored_service_name, tcp_port|
 
-      api_command = "curl http://localhost:8500/v1/catalog/service/#{monitored_service_name} | /usr/bin/jq '.' - "
+      api_command = "curl http://localhost:8500/v1/catalog/service/#{monitored_service_name} | jq '.' - "
       # mock
       consul_service_config_file = "/etc/consul.d/service_#{monitored_service_name}.json"
       # mock
-      api_command = "/usr/bin/jq -M '.' #{datafile}"
+      api_command = "jq -M '.' #{datafile}"
       api_command = "cat #{datafile}"
       $stderr.puts "api_command: " + api_command if $DEBUG
 
@@ -79,4 +81,3 @@ END
     end
   end
 end
-

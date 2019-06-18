@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fileutils'
 require 'json'
 require 'yaml'
 require 'ostruct'
@@ -13,9 +14,9 @@ context 'Consul Response Headers' do
   consul_config_dir = '/etc/consul.d'
   consul_config_file = "#{consul_config_dir}/config.json"
   custom_headers = {
-      'Access-Control-Allow-Origin' => '*',
-      'X-Frame-Options'             => 'sameorigin, allow-from https://example.com/',
-      'X-Xss-Protection'            => '1; mode=block'
+    'Access-Control-Allow-Origin' => '*',
+    'X-Frame-Options'             => 'sameorigin, allow-from https://example.com/',
+    'X-Xss-Protection'            => '1; mode=block'
   }
   describe 'Service health state response' do
     node = %x|hostname|.chomp
