@@ -86,6 +86,7 @@ set #comment[last()] '#{comment}'
       its(:stdout) { should match Regexp.new("Applying configuration version '\\d+'") }
       its(:stderr) { should be_empty }
       its(:exit_status) {should eq 0 }
+      # inspect the result
       describe file(unit_file) do
         its(:content) {should include 'PermissionsStartOnly=false' }
       end
