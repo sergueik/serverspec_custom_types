@@ -18,12 +18,12 @@ require 'yaml'
 # https://github.com/ericchiang/pup
 # (in go)
 context 'YAML' do
-  context 'Using jq to process YAML' do
+  context 'Using jq to traverse YAML' do
     datafile = '/tmp/example.yaml'
     before(:each) do
       # NOTE: indent and white space matters
       Specinfra::Runner::run_command( <<-EOF
-        cat<<END>#{datafile}
+        cat<<END>'#{datafile}'
 ---
 node-ad8c3125:
   datacenter: 'miami'
@@ -54,20 +54,19 @@ END
     end
 
   end
-  # NOTE: handy feature called 'anchors' explained in https://learnxinyminutes.com/docs/yaml/
-  # appears to be breaking Ruby's 2.1.9p490 YAML processor
-  # keep here for exploring with newer releases
+  # NOTE: YAML 'anchors' feature explained in https://learnxinyminutes.com/docs/yaml/
   context 'YAML with anchors' do
-    datafile = '/tmp/beoken.yaml'
+    datafile = '/tmp/anchors.yaml'
     before(:each) do
-      # NOTE: indent and white space matters
+      # NOTE: YAML data is indent and white space sensitive
+      # based on: https://raw.githubusercontent.com/andrewwardrobe/serverspec-extra-types/master/.gitlab-ci.yml
       Specinfra::Runner::run_command( <<-EOF
-        cat<<END>#{datafile}
+        cat<<END>'#{datafile}'
 ---
 dc: &dc
   datacenter: 'miami'
 node: &node
-  : << *dc
+  <<: *dc
   environment: 'prod'
 END
       EOF
@@ -79,9 +78,15 @@ END
     ) do
       its(:exit_status) { should eq 0 }
       its(:stderr) { should be_empty }
-      # /uru/ruby/lib/ruby/2.1.0/psych.rb:370:in `parse': (<unknown>):
-      # did not find expected key while parsing a block mapping at line 5 column 3 (Psych::SyntaxError)
-      # TODO: yamllint (easier outside uru sandbox)
+    end
+    describe command(<<-EOF
+      yamllint '#{datafile}'
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should contain 'YamlLint found no errors' }
+      its(:stderr) { should be_empty }
+      # [DEPRECATION] This gem has been renamed to optimist and will no longer be supported. Please switch to optimist as soon as possible.
     end
   end
 end
