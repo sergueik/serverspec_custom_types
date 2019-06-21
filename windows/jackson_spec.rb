@@ -79,8 +79,8 @@ roles:
     private static ObjectMapper objectMapper = new ObjectMapper(yamlFactory);
 
     private static String yamlString = null;
-
-    private static final Logger log = LogManager.getLogger(JacksonExample.class);
+    // TODO: ERROR StatusLogger No log4j2 configuration file found. Using default configuration: logging only e...
+    // private static final Logger log = LogManager.getLogger(#{java_class_name}.class);
 
     public static void main(String[] args) {
 
@@ -151,7 +151,8 @@ roles:
   describe command(<<-EOF
     pushd '#{homedir}'
     $env:PATH = "${env:PATH};c:\\java\\jdk#{java_version}\\bin"
-    javac -cp -cp #{jars_cp} '#{java_class_name}.java'
+    javac -cp target/lib/* '#{java_class_name}.java'
+    # javac -cp -cp #{jars_cp} '#{java_class_name}.java'
     cmd %%- /c "java -cp #{jars_cp}#{path_separator}. #{java_class_name}"
   EOF
   ) do
@@ -193,7 +194,7 @@ roles:
 
   import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
   import org.apache.commons.lang3.builder.ToStringStyle;
-    public class #{java_class_name} {
+    public class #{java_class2_name} {
 
     private static boolean debug = false;
 
@@ -211,7 +212,7 @@ roles:
     private static String yamlString = null;
     private static String jsonString = null;
 
-    private static final Logger log = LogManager.getLogger(JacksonExample.class);
+    // private static final Logger log = LogManager.getLogger(#{java_class_name}.class);
 
     public static void main(String[] args) { 
     // converting YAML to JSON: the JSON loading tools are easier to find
@@ -222,13 +223,9 @@ roles:
                 Arrays.asList(System.getProperty("user.dir"), dataFileName))),
                 User.class);
           jsonString = ouputObjectMapper.writeValueAsString(user);
-          System.err.println(
+          System.out.println(
           String.format("JSON serialization with Jackson: \\n%s\\n", jsonString));
-        // System.out.println(ReflectionToStringBuilder.toString(user,
-        //   ToStringStyle.MULTI_LINE_STYLE));
       } catch (Exception e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
       }
     }
 
@@ -286,10 +283,8 @@ roles:
   describe command(<<-EOF
     pushd '#{homedir}'
     $env:PATH = "${env:PATH};c:\\java\\jdk#{java_version}\\bin"
-    # javac -cp #{jars_cp} '#{java_class2_name}.java'
-    # temprarily glob
     javac -cp target/lib/* '#{java_class2_name}.java'
-    cmd %%- /c "java -cp #{jars_cp}#{path_separator}. #{java_class_name}"
+    cmd %%- /c "java -cp #{jars_cp}#{path_separator}. #{java_class2_name}"
   EOF
   ) do
     [
@@ -302,12 +297,12 @@ roles:
     end
     its(:exit_status) { should eq 0 }
     [
-      'name=Test User',
-      'age=30',
+      '"name":"Test User"',
+      '"age":30',
       'address={line1=My Address Line 1, line2=null, city=Washington D.C., zip=20000}',
-      'roles={User,Editor}',
+      '"roles":["User","Editor"]',
     ].each do |line|
-      its(:stdout) { should match line}
+      its(:stdout) { should contain line}
     end
   end
   anchor_reference_yaml_data = <<-EOF
