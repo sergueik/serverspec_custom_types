@@ -47,6 +47,7 @@ roles:
   - User
   - Editor
   EOF
+  yaml_filename = 'user.yaml'
   java_class_name = 'JacksonExample'
 
   java_source = <<-EOF
@@ -309,4 +310,22 @@ roles:
       its(:stdout) { should match line}
     end
   end
+  anchor_reference_yaml_data = <<-EOF
+---
+# https://learnxinyminutes.com/docs/yaml/
+person: &person
+  'familyname': 'John Doe'
+  age: 30
+  address:
+    line1: My Address Line 1
+    line2: ~
+    city: Washington D.C.
+    zip: 20000
+user:
+  name: Test User
+  <<: *person
+  roles:
+    - User
+    - Editor
+  EOF
 end
