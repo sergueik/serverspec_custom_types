@@ -1,11 +1,13 @@
 require 'serverspec'
 require 'winrm'
 
-# additional requirements
+# This windows_spec_helper.rb is to run serverspec remotely on a Windows box guest via winrm
+
+# loading custom type
 require 'type/my_type'
 
 set :backend, :winrm
-set :os, :family => 'windows' 
+set :os, :family => 'windows'
 
 user = 'vagrant'
 pass = 'vagrant'
@@ -13,7 +15,7 @@ pass = 'vagrant'
 winrm_port_use = '5985'
 
 # NOTE:
-# vagrant port --machine-readable is not more readable 
+# vagrant port --machine-readable is not more readable
 # the entry format looks like below
 # 1456627866,windows,forwarded_port,5985,2200
 
