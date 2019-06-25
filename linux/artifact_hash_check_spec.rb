@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'yaml'
 require 'pp'
 
-$DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
-
+# $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
+$DEBUG = true
 # expects the Puppet hieradata configuration to match
 # the file hash of artifact of some war installed in tomcat container
 context 'Artifact hash check' do
@@ -11,7 +11,7 @@ context 'Artifact hash check' do
   config_key = 'artifact_checksum'
   config_path = '.'
   artifact_filename = 'dummy.file'
-  hiera_path_check='hieradata'
+  hiera_path_check = 'hieradata'
   tomcat_appdir = '/opt/tomcat'
   context 'Shell script' do
     describe command(<<-EOF
@@ -60,14 +60,15 @@ context 'Artifact hash check' do
       its(:stderr) { should be_empty }
     end
   end
-  context 'Ruby script' do
-    command = ''
-    output = %x(mount -t vboxsf | grep "#{hiera_path_check}" | head -1 | cut -f 3 -d ' ' | tr -d '\n')
+
+  context 'Ruby Inline Code with some logic takend from shell script version' do
+  
+    command = "mount -t vboxsf | grep '#{hiera_path_check}' | head -1 | cut -f 3 -d ' ' | tr -d '\\n'"
+    output = %x|#{command}|
     result = $?.success?
     if $DEBUG
+      $stderr.puts ('command : "' + command + '"')
       $stderr.puts ('output : "' + output + '"')
-      # no implicit conversion of true into String
-      # $stderr.puts ('result = ' + result )
     end
     basedir = '/tmp/vagrant-puppet/hieradata'
     basedir = output
@@ -84,7 +85,6 @@ context 'Artifact hash check' do
           end
           artifact_checksum = @res['artifact_checksum']
           artifact_filename = @res['artifact_filename']
-          # no implicit conversion of nil into String
           if $DEBUG
             $stderr.puts ('Artifact_filename = '  + artifact_filename)
             $stderr.puts "Artifact checksum = #{artifact_checksum}"
@@ -93,9 +93,9 @@ context 'Artifact hash check' do
           $stderr.puts e.to_s
           result = false
         end	
-        output = %x(sha256sum "#{tomcat_appdir}/webapps/#{artifact_filename}" | cut -d ' ' -f 1| tr -d '\n')
+        command = "sha256sum '#{tomcat_appdir}/webapps/#{artifact_filename}' | cut -d ' ' -f 1| tr -d '\\n'"
+        output = %x|#{command}|
         if $DEBUG
-          # result = $?.success?
           $stderr.puts ('output : "' + output + '"')
         end
         actual_checksum = output
@@ -105,7 +105,70 @@ context 'Artifact hash check' do
         else
           result = false
         end
-        $stderr.puts ('Success: ' + result.to_s )
+      end
+      it { artifact_checksum.should_not be_nil }
+      it { result.should be_truthy }
+    end
+  end
+  context 'Ruby Inline Code (version 2, no complex pipe commands)' do
+    output = %x|mount -t vboxsf|
+    # TODO
+    # no implicit conversion of true into String
+    # $stderr.puts ('result = ' + result )
+    result = $?.success?
+    if $DEBUG
+      $stderr.puts ('output : "' + output + '"')
+    end
+    basedir = nil
+    output.split(/\n/).each do |line|
+      if line.include? hiera_path_check
+        if $DEBUG
+          $stderr.puts ('Found : "' + line + '" to match "' + hiera_path_check + '"')
+        end
+        basedir = line.split(/\s+/)[2]
+      end
+    end
+    context 'Hashes check' do
+      result = true
+      artifact_checksum = nil
+      artifact_filename = nil
+      if File.exist?(basedir)
+        begin	
+          @res = File.open( "#{basedir}/./common.yaml") { |f| YAML::load(f ) }
+          if $DEBUG
+            $stderr.puts 'configuration: '
+            PP.pp(@res, $stderr)
+          end
+          artifact_checksum = @res['artifact_checksum']
+          artifact_filename = @res['artifact_filename']
+          if $DEBUG
+            $stderr.puts ('Artifact_filename = '  + artifact_filename)
+            $stderr.puts "Artifact checksum = #{artifact_checksum}"
+          end
+        rescue => e
+          $stderr.puts e.to_s
+          result = false
+        end
+        command = "sha256sum '#{tomcat_appdir}/webapps/#{artifact_filename}'"
+        actual_checksum = nil
+        output = %x|#{command}|
+        if $DEBUG
+          $stderr.puts ('output : "' + output + '"')
+        end
+        output.split(/\n/).each do |line|
+          if line.include? artifact_filename
+            if $DEBUG
+              $stderr.puts ('Found : "' + line + '" to match "' + artifact_filename + '"')
+            end
+            actual_checksum = line.split(/\s+/)[0]
+          end
+        end
+        if actual_checksum.eql? artifact_checksum
+          result = true
+          $stderr.puts ('Valid : "' + artifact_filename + '"')
+        else
+          result = false
+        end
       end
       it { artifact_checksum.should_not be_nil }
       it { result.should be_truthy }
