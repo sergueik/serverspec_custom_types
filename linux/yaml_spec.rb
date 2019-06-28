@@ -73,19 +73,21 @@ END
       )
     end
     describe command(<<-EOF
-      cat '#{datafile}' | ruby -rpp -ryaml -rjson -e 'yaml_object = YAML.load(ARGF); pp yaml_object'
+      cat '#{datafile}' | ruby -rpp -ryaml -rjson -e 'y = YAML.load(ARGF); pp y; puts y["node"]["datacenter"]'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
+      its(:stdout) { should contain 'miami' }
       its(:stderr) { should be_empty }
     end
+    # implies gem install --no-rdoc --no-ri yamllint
     describe command(<<-EOF
       yamllint '#{datafile}'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
       its(:stdout) { should contain 'YamlLint found no errors' }
-      its(:stderr) { should be_empty }
+      # its(:stderr) { should be_empty }
       # [DEPRECATION] This gem has been renamed to optimist and will no longer be supported. Please switch to optimist as soon as possible.
     end
   end
