@@ -16,7 +16,6 @@ context 'Jackson YAML', :if => os[:family] == 'windows' do
   # expect dependency jars to be somehow present in #{target_lib_path}
   jackson_version = '2.9.9'
   commons_lang3_version = '3.0.1'
-  log4j_version = '2.5'
   snakeyaml_version = '1.24'
   jars = [
     "commons-lang3-#{commons_lang3_version}.jar",
@@ -24,8 +23,6 @@ context 'Jackson YAML', :if => os[:family] == 'windows' do
     "jackson-core-#{jackson_version}.jar",
     "jackson-databind-#{jackson_version}.jar",
     "jackson-dataformat-yaml-#{jackson_version}.jar",
-    "log4j-api-#{log4j_version}.jar",
-    "log4j-core-#{log4j_version}.jar",
     "snakeyaml-#{snakeyaml_version}.jar", # dependency of the jackson jar!
   ]
   path_separator = ';'
@@ -56,9 +53,6 @@ roles:
   import java.util.Map;
   import java.io.File;
 
-  import org.apache.logging.log4j.LogManager;
-  import org.apache.logging.log4j.Logger;
-
   import com.fasterxml.jackson.databind.ObjectMapper;
   import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
   import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
@@ -79,8 +73,6 @@ roles:
     private static ObjectMapper objectMapper = new ObjectMapper(yamlFactory);
 
     private static String yamlString = null;
-    // TODO: ERROR StatusLogger No log4j2 configuration file found. Using default configuration: logging only e...
-    // private static final Logger log = LogManager.getLogger(#{java_class_name}.class);
 
     public static void main(String[] args) {
 
@@ -181,9 +173,6 @@ roles:
   import java.util.Arrays;
   import java.util.Map;
   import java.io.File;
-
-  import org.apache.logging.log4j.LogManager;
-  import org.apache.logging.log4j.Logger;
 
   import com.fasterxml.jackson.databind.ObjectMapper;
   import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -323,4 +312,9 @@ user:
     - User
     - Editor
   EOF
+  java_class3_name = 'JacksonExample3'
+
+  java_source3 = <<-EOF
+  EOF
+
 end
