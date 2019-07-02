@@ -40,8 +40,20 @@ context 'JDBC tests' do
     # http://www.java2s.com/Tutorials/Java/JDBC/0015__JDBC_PostgreSQL.htm
     # hack: New password:
     # BAD PASSWORD: The password is the same as the old one
-
+    # By default PostgreSQL uses IDENT-based authentication and this will never allow you to login via -U and -W options. Allow username and password based authentication from your application by appling 'trust' as the authentication method for the JIRA database user. You can do this by modifying the pg_hba.conf file. 
+    
+    # # IPv4 local connections:
+    # host    all             all             127.0.0.1/32            ident
+    # + host    all             all             127.0.0.1/32            trust
+    # IPv6 local connections:
+    # host    all             all             ::1/128                 ident
+    # + host    all             all             ::1/128                 trust
     context 'Basic' do
+      describe file('/var/lib/pgsql/data/pg_hba.conf') do
+        its(:content) { should match Regexp.new '^\s*host\s+all\s+all\s+127.0.0.1/32\s+trust' }
+        its(:content) { should_not match Regexp.new '^\s*host\s+all\s+all\s+127.0.0.1/32\s+ident' }
+      end
+      jdbc_driver_class_name = 'org.postgresql.Driver'
       username = 'postgres'
       database = 'template1'
       password = 'i011155'
@@ -49,22 +61,33 @@ context 'JDBC tests' do
       jars = ['postgresql-42.2.6.jar']
       jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
       # http://www.java2s.com/Tutorials/Java/JDBC/0015__JDBC_PostgreSQL.htm
-      class_name = 'TestConnectionWithCredentialsBasic'
+      class_name = 'TestPgJdbc'
       sourcfile = "#{class_name}.java"
       source = <<-EOF
 import java.sql.Connection;
 import java.sql.DriverManager;
 
 public class #{class_name} {
+  static private final String applicationName = "Driver Tests";
+  static private final String logLevel = "DEBUG";
+  static private final int protocolVersion =  0;
+  static private String connectionURL = null;
+  static private String host = "127.0.0.1";
+  static private String port = "5432";
+  static private String database = "#{database}";
+  
   public static void main(String[] argv) throws Exception {
-    Class.forName("org.postgresql.Driver");
-    Connection connection
-    /*
-         = DriverManager.getConnection( "jdbc:postgresql://127.0.0.1:5432/#{database}");
-        // Exception in thread "main" org.postgresql.util.PSQLException: FATAL: Ident authentication failed for user "postgres"
-        */
-    = DriverManager.getConnection(
-        "jdbc:postgresql://127.0.0.1:5432/#{database}", "#{username}",
+    Class.forName("#{jdbc_driver_class_name}");
+    
+    // based on: https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/test/java/org/postgresql/test/jdbc2/ConnectionTest.java
+    connectionURL = "jdbc:postgresql://"
+        + host + ":" + port + "/" + database
+        + "?ApplicationName=" + applicationName
+        + ((logLevel != null && !logLevel.equals("")) ? 
+        ("&loggerLevel=" + logLevel ) : "");
+        
+    Connection connection = DriverManager.getConnection(
+        connectionURL, "#{username}",
         "#{password}");
     
     if (connection != null) {
@@ -73,63 +96,6 @@ public class #{class_name} {
       System.out.println("Failed to connect");
     }
   }
-  // origin: https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/test/java/org/postgresql/test/jdbc2/ConnectionTest.java
-  /*
-  public static String getURL(String hostport, String database) {
-    String logLevel = "";
-    if (getLogLevel() != null && !getLogLevel().equals("")) {
-      logLevel = "&loggerLevel=" + getLogLevel();
-    }
-
-    String logFile = "";
-    if (getLogFile() != null && !getLogFile().equals("")) {
-      logFile = "&loggerFile=" + getLogFile();
-    }
-
-    String protocolVersion = "";
-    if (getProtocolVersion() != 0) {
-      protocolVersion = "&protocolVersion=" + getProtocolVersion();
-    }
-
-    String options = "";
-    if (getOptions() != null) {
-      options = "&options=" + getOptions();
-    }
-
-    String binaryTransfer = "";
-    if (getBinaryTransfer() != null && !getBinaryTransfer().equals("")) {
-      binaryTransfer = "&binaryTransfer=" + getBinaryTransfer();
-    }
-
-    String receiveBufferSize = "";
-    if (getReceiveBufferSize() != -1) {
-      receiveBufferSize = "&receiveBufferSize=" + getReceiveBufferSize();
-    }
-
-    String sendBufferSize = "";
-    if (getSendBufferSize() != -1) {
-      sendBufferSize = "&sendBufferSize=" + getSendBufferSize();
-    }
-
-    String ssl = "";
-    if (getSSL() != null) {
-      ssl = "&ssl=" + getSSL();
-    }
-
-    return "jdbc:postgresql://"
-        + hostport + "/"
-        + database
-        + "?ApplicationName=Driver Tests"
-        + logLevel
-        + logFile
-        + protocolVersion
-        + options
-        + binaryTransfer
-        + receiveBufferSize
-        + sendBufferSize
-        + ssl;
-  }
-  */
 }
       EOF
       describe command(<<-EOF
@@ -143,7 +109,8 @@ public class #{class_name} {
       ) do
         its(:exit_status) { should eq 0 }
         # Exception in thread "main" org.postgresql.util.PSQLException: FATAL: Ident authentication failed for user "postgres"
-        its(:stderr) { should be_empty }
+        its(:stderr) { should contain Regexp.new(Regexp.escape('FINE: Connecting with URL: jdbc:postgresql://127.0.0.1:5432/template1?ApplicationName=Driver Tests&loggerLevel=DEBUG')) }
+        its(:stderr) { should contain 'FINE: PostgreSQL JDBC Driver 42.2.6' }
         its(:stdout) { should contain 'Connected' }
       end
     end
@@ -232,11 +199,11 @@ public class #{class_name} {
         }
       EOF
       describe command(<<-EOF
-        pushd /tmp
+        1>/dev/null 2>/dev/null pushd /tmp
         echo '#{source}' > '#{sourcfile}'
         javac '#{sourcfile}'
         java -cp #{jars_cp}#{path_separator}. '#{class_name}'
-        popd
+        1>/dev/null 2>/dev/null popd
       EOF
       ) do
         its(:exit_status) { should eq 0 }
@@ -300,11 +267,11 @@ public class #{class_name} {
         }
       EOF
       describe command(<<-EOF
-        pushd /tmp
+        1>/dev/null 2>/dev/null pushd /tmp
         echo '#{source}' > '#{sourcfile}'
         javac '#{sourcfile}'
         java -cp #{jars_cp}#{path_separator}. '#{class_name}'
-        popd
+        1>/dev/null 2>/dev/null popd
       EOF
       ) do
         its(:exit_status) { should eq 0 }
@@ -419,11 +386,11 @@ public class #{class_name} {
         }
     EOF
     describe command(<<-EOF
-      pushd /tmp
+      1>/dev/null 2>/dev/null pushd /tmp
       echo '#{source}' > '#{sourcfile}'
       javac '#{sourcfile}'
       java -cp #{jars_cp}#{path_separator}. '#{class_name}'
-      popd
+      1>/dev/null 2>/dev/null popd
     EOF
     ) do
       its(:exit_status) { should eq 0 }
@@ -479,11 +446,11 @@ public class #{class_name} {
     EOF
     describe command(<<-EOF
       pushd $env:TEMP
-      pushd /tmp
+      1>/dev/null 2>/dev/null pushd /tmp
       echo '#{source}' > '#{sourcfile}'
       javac '#{sourcfile}'
       java -cp #{jars_cp}#{path_separator}. '#{class_name}'
-      popd
+      1>/dev/null 2>/dev/null popd
     EOF
     ) do
         its(:exit_status) { should eq 0 }
