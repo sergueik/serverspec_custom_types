@@ -12,6 +12,143 @@ context 'JDBC tests' do
   jdbc_path = "#{catalina_home}/webapps/#{application}/WEB-INF/lib/"
   config_file_path = "#{catalina_home}/conf/context.xml"
 
+  # yum erase -q -y java-1.8.0-openjdk
+  # yum install -q -y java-1.8.0-openjdk-devel
+  context 'Postgresql' do
+    # for quick setup of a dummy Postgresql database, see
+    # https://www.linode.com/docs/databases/postgresql/how-to-install-postgresql-relational-databases-on-centos-7/
+    # yum install -q -y postgresql-server postgresql-contrib
+    # postgresql-setup initdb
+    # systemctl start postgresql
+    # systemctl enable postgresql
+    # passwd #{username}
+    # su - #{username}
+    # psql -d template1 -c "ALTER USER postgres WITH PASSWORD '...';"
+    # psql postgres
+    # postgres=#
+    #     \list
+    #                                      List of databases
+    #       Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
+    #    -----------+----------+----------+-------------+-------------+-----------------------
+    #     postgres  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+    #     template0 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres
+    #               |          |          |             |             | postgres=CTc/postgres
+    #     template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres
+    #               |          |          |             |             | postgres=CTc/postgres
+    #     \q
+    # https://jdbc.postgresql.org/download.html
+    # http://www.java2s.com/Tutorials/Java/JDBC/0015__JDBC_PostgreSQL.htm
+    # hack: New password:
+    # BAD PASSWORD: The password is the same as the old one
+
+    context 'Basic' do
+      username = 'postgres'
+      database = 'template1'
+      password = 'i011155'
+      jdbc_path = '/tmp'
+      jars = ['postgresql-42.2.6.jar']
+      jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
+      # http://www.java2s.com/Tutorials/Java/JDBC/0015__JDBC_PostgreSQL.htm
+      class_name = 'TestConnectionWithCredentialsBasic'
+      sourcfile = "#{class_name}.java"
+      source = <<-EOF
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+public class #{class_name} {
+  public static void main(String[] argv) throws Exception {
+    Class.forName("org.postgresql.Driver");
+    Connection connection
+    /*
+         = DriverManager.getConnection( "jdbc:postgresql://127.0.0.1:5432/#{database}");
+        // Exception in thread "main" org.postgresql.util.PSQLException: FATAL: Ident authentication failed for user "postgres"
+        */
+    = DriverManager.getConnection(
+        "jdbc:postgresql://127.0.0.1:5432/#{database}", "#{username}",
+        "#{password}");
+    
+    if (connection != null) {
+      System.out.println("Connected");
+    } else {
+      System.out.println("Failed to connect");
+    }
+  }
+  // origin: https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/test/java/org/postgresql/test/jdbc2/ConnectionTest.java
+  /*
+  public static String getURL(String hostport, String database) {
+    String logLevel = "";
+    if (getLogLevel() != null && !getLogLevel().equals("")) {
+      logLevel = "&loggerLevel=" + getLogLevel();
+    }
+
+    String logFile = "";
+    if (getLogFile() != null && !getLogFile().equals("")) {
+      logFile = "&loggerFile=" + getLogFile();
+    }
+
+    String protocolVersion = "";
+    if (getProtocolVersion() != 0) {
+      protocolVersion = "&protocolVersion=" + getProtocolVersion();
+    }
+
+    String options = "";
+    if (getOptions() != null) {
+      options = "&options=" + getOptions();
+    }
+
+    String binaryTransfer = "";
+    if (getBinaryTransfer() != null && !getBinaryTransfer().equals("")) {
+      binaryTransfer = "&binaryTransfer=" + getBinaryTransfer();
+    }
+
+    String receiveBufferSize = "";
+    if (getReceiveBufferSize() != -1) {
+      receiveBufferSize = "&receiveBufferSize=" + getReceiveBufferSize();
+    }
+
+    String sendBufferSize = "";
+    if (getSendBufferSize() != -1) {
+      sendBufferSize = "&sendBufferSize=" + getSendBufferSize();
+    }
+
+    String ssl = "";
+    if (getSSL() != null) {
+      ssl = "&ssl=" + getSSL();
+    }
+
+    return "jdbc:postgresql://"
+        + hostport + "/"
+        + database
+        + "?ApplicationName=Driver Tests"
+        + logLevel
+        + logFile
+        + protocolVersion
+        + options
+        + binaryTransfer
+        + receiveBufferSize
+        + sendBufferSize
+        + ssl;
+  }
+  */
+}
+      EOF
+      describe command(<<-EOF
+        1>/dev/null 2>/dev/null pushd /tmp
+        echo '#{source}' > '#{sourcfile}'
+        javac '#{sourcfile}'
+        su #{username} -c "java -cp #{jars_cp}#{path_separator}. '#{class_name}'"
+        1>/dev/null 2>/dev/null popd
+      EOF
+      
+      ) do
+        its(:exit_status) { should eq 0 }
+        # Exception in thread "main" org.postgresql.util.PSQLException: FATAL: Ident authentication failed for user "postgres"
+        its(:stderr) { should be_empty }
+        its(:stdout) { should contain 'Connected' }
+      end
+    end
+  end
+
   context 'Oracle' do
     context 'Using tomcat context.xml' do
       # <Resource
@@ -355,7 +492,7 @@ context 'JDBC tests' do
     end
   end
   # When JSBC SQL DriverSpy class is engaged to log the database operation,
-  #  the JDBC Connection string would switch the URL prefix to the "jdbc:log4jdbc" instead of "jdbc:" 
+  #  the JDBC Connection string would switch the URL prefix to the "jdbc:log4jdbc" instead of "jdbc:"
   # and would read like "jdbc:log4jdbc:mysql://<URL>:<PORT>/<CONNECTION ARGUMENTS>"
   # the driverClassName would become "net.sf.log4jdbc.DriverSpy"
   # the "org.slf4j.slf4j-api" will be responsible for loading the driver jar from classpath
@@ -365,4 +502,6 @@ context 'JDBC tests' do
   # https://stackoverflow.com/questions/17988231/how-to-log-jdbc-connection-activity
   # http://kveeresham.blogspot.com/2015/03/logging-jdbc-activities-using-log4jdbc.html
   # http://www.java2s.com/Tutorials/Java/log4j/0080__log4j_Log_to_Database.htm
+  # note this is a diferent matter than JDBC log appender.
+  # https://coderanch.com/t/529904/databases/log-jdbcplus-JDBCAppender-log-xml
 end
