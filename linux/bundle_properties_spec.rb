@@ -106,19 +106,18 @@ Tool: Bnd-2.4.0.201411031534
 
 EOF
   path_separator = ':'
+  tmp_path = '/tmp'
+  jdbc_path = '/tmp'
+  # not needed in CLASSPATH
+  jar_version = '42.2.6'
+  jdbc_jar = "postgresql-#{jar_version}.jar"
+  # TODO: extract manifest from the jar
   # pushd #{tmp_path}
   # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/maven/org.postgresql/postgresql/pom.properties
   # inflated: META-INF/maven/org.postgresql/postgresql/pom.properties
   # grep -q 'version=#{jar_version}' 'META-INF/maven/org.postgresql/postgresql/pom.properties'
   # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/MANIFEST.MF
-  # grep -q 'Bundle-Version: #{jar_version}' 
-  tmp_path = '/tmp'
-  jdbc_path = '/tmp'
-  # not needed here
-  jar_version = '42.2.6'
-  jdbc_jar = "postgresql-#{jar_version}.jar" 
-  jars = [jdbc_jar]
-  jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
+  # grep -q 'Bundle-Version: #{jar_version}'
 
   fixed_file = "#{basedir}/MANIFEST.MF.properties"
   before(:each) do
@@ -126,28 +125,25 @@ EOF
     file = File.open(input_file, 'w')
     file.puts sample_data
     file.close
-    
+
+     # ruby -e 'path = "MANIFEST.MF"; text = File.read(path); text.gsub!(/^\s+/, "" ).gsub!(/\r?\n/," ").gsub!(/\s+([^ :]+: )/, "\n\1"); puts text'
+
     $stderr.puts "Converting #{input_file}"
-    path = input_file; 
-    text = File.read(path); 
-    fixed_lines = []; 
-    text.gsub!(/\n  */, ''   ) 
-    text.split(/\n/).each do |line| 
+    path = input_file;
+    text = File.read(path);
+    fixed_lines = [];
+    text.gsub!(/\n  */, ''   )
+    text.split(/\n/).each do |line|
       fixed_lines.push (line.gsub(/^  */, '' ))
     end
-    $stderr.puts fixed_lines.join("\n") 
+    $stderr.puts fixed_lines.join("\n")
     $stderr.puts "Writing #{fixed_file}"
     file = File.open(fixed_file, 'w')
-    file.puts fixed_lines.join("\n") 
+    file.puts fixed_lines.join("\n")
     file.close
 
   end
 
-   # ruby -e 'path = "/tmp/MANIFEST.MF"; text = File.read(path); text.gsub!(/^  */, ""   ).gsub!(/\r?\n/," "); puts text'
-   # ./uru_rt  ruby -e 'path = "/tmp/MANIFEST.MF"; text = File.read(path); text.gsub!(/^\s+/, "" ).gsub!(/\r?\n/," ").gsub!(/\s+([^ :]+: )/, "\n\1"); puts text'
-
-  # java.util.Propetries 
-  # can not handle bundle manifest format
   context 'inspection' do
     class_name = 'TestProperties'
     sourcfile = "#{class_name}.java"
@@ -162,20 +158,18 @@ EOF
 
       public class #{class_name} {
         private static final String fileName = "#{fixed_file}";
-        // private static final StringBuilder sb = new StringBuilder();
-        // private static final Formatter f = new Formatter(sb, Locale.US)
         public static void main(String[] argv) throws Exception {
-          Properties p = new Properties();
-          Map<String, String> m = new HashMap<>();
+          Properties propertiesObj = new Properties();
+          Map<String, String> propertiesMap = new HashMap<>();
           try {
-            p.load(new FileInputStream(fileName));
+            propertiesObj.load(new FileInputStream(fileName));
             @SuppressWarnings("unchecked")
-            Enumeration<String> e = (Enumeration<String>) p.propertyNames();
-            for (; e.hasMoreElements();) {
-              String k = e.nextElement();
-              String v = p.get(k).toString();
-              System.out.println(String.format("Read: '%s' = '%s'", k, v));
-              m.put(k, v);
+            Enumeration<String> propertyNames = (Enumeration<String>) propertiesObj.propertyNames();
+            for (; propertyNames.hasMoreElements();) {
+              String key = propertyNames.nextElement();
+              String val = propertiesObj.get(key).toString();
+              // System.out.println(String.format("Extracted: '%s' = '%s'", key, val));
+              propertiesMap.put(key, val);
             }
           } catch (FileNotFoundException e) {
             System.err.println( String.format("Properties file was not found: '%s'", fileName));
@@ -184,8 +178,8 @@ EOF
             System.err.println( String.format("Properties file is not readable: '%s'", fileName));
             e.printStackTrace();
           }
-          String res = m.get("Export-Package");
-          System.err.println( String.format("Result: '%s'", res));
+          String res = propertiesMap.get("Export-Package");
+          System.out.println( String.format("Result: '%s'", res.substring(0,31)));
         }
       }
 
@@ -194,17 +188,14 @@ EOF
       1>/dev/null 2>/dev/null pushd '#{tmp_path}'
       echo '#{source}' > '#{sourcfile}'
       javac '#{sourcfile}'
-      export CLASSPATH=#{jars_cp}#{path_separator}.
       java '#{class_name}'
       1>/dev/null 2>/dev/null popd
     EOF
-    
+
     ) do
       its(:exit_status) { should eq 0 }
-      its(:stderr) { should contain Regexp.new(Regexp.escape('Bundle-Description = Java JDBC 4.2 (JRE 8+) driver for PostgreSQL database')) }
+      its(:stderr) { should be_empty }
       its(:stdout) { should contain 'Result: org.postgresql;version="42.2.6"' }
     end
   end
 end
-
-# as sample data use the META-INF/MANIFEST.MF of 'postgresql-42.2.6.jar'

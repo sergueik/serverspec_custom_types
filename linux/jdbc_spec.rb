@@ -37,7 +37,6 @@ context 'JDBC tests' do
     #               |          |          |             |             | postgres=CTc/postgres
     #     \q
     # https://jdbc.postgresql.org/download.html
-    # http://www.java2s.com/Tutorials/Java/JDBC/0015__JDBC_PostgreSQL.htm
     # hack: New password:
     # BAD PASSWORD: The password is the same as the old one
     # By default PostgreSQL uses IDENT-based authentication and this will never allow you to login via -U and -W options. Allow username and password based authentication from your application by appling 'trust' as the authentication method for the JIRA database user. You can do this by modifying the pg_hba.conf file. 
@@ -49,60 +48,77 @@ context 'JDBC tests' do
     # host    all             all             ::1/128                 ident
     # + host    all             all             ::1/128                 trust
     context 'Basic' do
+      $POSTRGES_PASSWORD = ENV.fetch('POSTRGES_PASSWORD', 'postgres') # BAD PASSWORD: The password is the name of the user
       describe file('/var/lib/pgsql/data/pg_hba.conf') do
         its(:content) { should match Regexp.new '^\s*host\s+all\s+all\s+127.0.0.1/32\s+trust' }
         its(:content) { should_not match Regexp.new '^\s*host\s+all\s+all\s+127.0.0.1/32\s+ident' }
       end
+      jar_version = '42.2.6'
+      # pushd #{tmp_path}
+      # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/maven/org.postgresql/postgresql/pom.properties
+      # inflated: META-INF/maven/org.postgresql/postgresql/pom.properties
+      # grep -q 'version=#{jar_version}' 'META-INF/maven/org.postgresql/postgresql/pom.properties'
+      # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/MANIFEST.MF
+      # grep -q 'Bundle-Version: #{jar_version}' 
+      
       jdbc_driver_class_name = 'org.postgresql.Driver'
       username = 'postgres'
       database = 'template1'
-      password = 'i011155'
+      password = $POSTRGES_PASSWORD
+      tmp_path = '/tmp'
       jdbc_path = '/tmp'
-      jars = ['postgresql-42.2.6.jar']
+      jdbc_jar = "postgresql-#{jar_version}.jar" 
+      jars = [jdbc_jar]
       jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
       # http://www.java2s.com/Tutorials/Java/JDBC/0015__JDBC_PostgreSQL.htm
+      # see also:
+      # https://www.mkyong.com/jdbc/jdbc-callablestatement-postgresql-stored-function/
       class_name = 'TestPgJdbc'
       sourcfile = "#{class_name}.java"
       source = <<-EOF
-import java.sql.Connection;
-import java.sql.DriverManager;
+        import java.sql.Connection;
+        import java.sql.DriverManager;
 
-public class #{class_name} {
-  static private final String applicationName = "Driver Tests";
-  static private final String logLevel = "DEBUG";
-  static private final int protocolVersion =  0;
-  static private String connectionURL = null;
-  static private String host = "127.0.0.1";
-  static private String port = "5432";
-  static private String database = "#{database}";
-  
-  public static void main(String[] argv) throws Exception {
-    Class.forName("#{jdbc_driver_class_name}");
-    
-    // based on: https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/test/java/org/postgresql/test/jdbc2/ConnectionTest.java
-    connectionURL = "jdbc:postgresql://"
-        + host + ":" + port + "/" + database
-        + "?ApplicationName=" + applicationName
-        + ((logLevel != null && !logLevel.equals("")) ? 
-        ("&loggerLevel=" + logLevel ) : "");
-        
-    Connection connection = DriverManager.getConnection(
-        connectionURL, "#{username}",
-        "#{password}");
-    
-    if (connection != null) {
-      System.out.println("Connected");
-    } else {
-      System.out.println("Failed to connect");
-    }
-  }
-}
+        public class #{class_name} {
+          static private final String applicationName = "Driver Tests";
+          static private final String logLevel = "DEBUG";
+          static private final int protocolVersion =  0;
+          static private String connectionURL = null;
+          static private String host = "127.0.0.1";
+          static private String port = "5432";
+          static private String database = "#{database}";
+          
+          public static void main(String[] argv) throws Exception {
+            Class.forName("#{jdbc_driver_class_name}");
+            
+            // based on: https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/test/java/org/postgresql/test/jdbc2/ConnectionTest.java
+            connectionURL = "jdbc:postgresql://"
+                + host + ":" + port + "/" + database
+                + "?ApplicationName=" + applicationName
+                + ((logLevel != null && !logLevel.equals("")) ? 
+                ("&loggerLevel=" + logLevel ) : "");
+                
+            Connection connection = DriverManager.getConnection(
+                connectionURL, "#{username}",
+                "#{password}");
+            
+            if (connection != null) {
+              System.out.println("Connected");
+            } else {
+              System.out.println("Failed to connect");
+            }
+          }
+        }
+
       EOF
+      # https://www.postgresql.org/docs/7.2/jdbc.html
       describe command(<<-EOF
-        1>/dev/null 2>/dev/null pushd /tmp
+        1>/dev/null 2>/dev/null pushd '#{tmp_path}'
         echo '#{source}' > '#{sourcfile}'
         javac '#{sourcfile}'
-        su #{username} -c "java -cp #{jars_cp}#{path_separator}. '#{class_name}'"
+        export CLASSPATH=#{jars_cp}#{path_separator}.
+        # NOTE: user context switch is playing no effect
+        su #{username} -c "java '#{class_name}'"
         1>/dev/null 2>/dev/null popd
       EOF
       
