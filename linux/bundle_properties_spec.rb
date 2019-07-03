@@ -2,8 +2,23 @@ require 'spec_helper'
 require 'fileutils'
 
 context 'Bundle Properties' do
-  basedir = '/tmp'
-  input_file = "#{basedir}/MANIFEST.MF"
+
+  tmp_path = '/tmp'
+  jdbc_path = '/tmp'
+  input_file = "#{tmp_path}/MANIFEST.MF"
+  # not needed in CLASSPATH
+  jar_version = '42.2.6'
+  jdbc_jar = "postgresql-#{jar_version}.jar"
+  # TODO: extract manifest from the jar
+  # pushd #{tmp_path}
+  # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/maven/org.postgresql/postgresql/pom.properties
+  # inflated: META-INF/maven/org.postgresql/postgresql/pom.properties
+  # grep -q 'version=#{jar_version}' 'META-INF/maven/org.postgresql/postgresql/pom.properties'
+  # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/MANIFEST.MF
+  # grep -q 'Bundle-Version: #{jar_version}'
+
+  fixed_file = "#{tmp_path}/MANIFEST.MF.properties"
+
   sample_data = <<-EOF
 Manifest-Version: 1.0
 Bnd-LastModified: 1560974407585
@@ -105,29 +120,11 @@ Specification-Version: 4.2
 Tool: Bnd-2.4.0.201411031534
 
 EOF
-  path_separator = ':'
-  tmp_path = '/tmp'
-  jdbc_path = '/tmp'
-  # not needed in CLASSPATH
-  jar_version = '42.2.6'
-  jdbc_jar = "postgresql-#{jar_version}.jar"
-  # TODO: extract manifest from the jar
-  # pushd #{tmp_path}
-  # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/maven/org.postgresql/postgresql/pom.properties
-  # inflated: META-INF/maven/org.postgresql/postgresql/pom.properties
-  # grep -q 'version=#{jar_version}' 'META-INF/maven/org.postgresql/postgresql/pom.properties'
-  # jar xvf '#{jdbc_path}/#{jdbc_jar}' META-INF/MANIFEST.MF
-  # grep -q 'Bundle-Version: #{jar_version}'
-
-  fixed_file = "#{basedir}/MANIFEST.MF.properties"
   before(:each) do
     $stderr.puts "Writing #{input_file}"
     file = File.open(input_file, 'w')
     file.puts sample_data
     file.close
-
-     # ruby -e 'path = "MANIFEST.MF"; text = File.read(path); text.gsub!(/^\s+/, "" ).gsub!(/\r?\n/," ").gsub!(/\s+([^ :]+: )/, "\n\1"); puts text'
-
     $stderr.puts "Converting #{input_file}"
     path = input_file;
     text = File.read(path);
@@ -144,7 +141,7 @@ EOF
 
   end
 
-  context 'inspection' do
+  context 'Loading with Java' do
     class_name = 'TestProperties'
     sourcfile = "#{class_name}.java"
     source = <<-EOF
@@ -196,6 +193,46 @@ EOF
       its(:exit_status) { should eq 0 }
       its(:stderr) { should be_empty }
       its(:stdout) { should contain 'Result: org.postgresql;version="42.2.6"' }
+    end
+  end
+  context 'Run Ruby in RVM session' do
+    tmp_path = '/tmp'
+    input_file = "#{tmp_path}/MANIFEST.MF"
+    # see also 
+    # https://github.com/jnbt/java-properties
+    # https://stackoverflow.com/questions/8485424/what-is-enumerator-object-created-with-stringgsub
+    # When neither a block nor a second argument is supplied, gsub returns an enumerator.
+    # https://apidock.com/ruby/Kernel/sprintf
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd '#{tmp_path}'
+      ruby  -e \\
+      'fixed_lines = File.read("#{input_file}").gsub!(/\\r?\\n  */, "").split(/\\n/).each { |l| l.gsub!(/^  */, "" ) }
+      properties = {}
+      fixed_lines.each do |line|
+        key,val = line.split /:\\s+/
+        puts sprintf "%20s", key 
+        properties[key] =  val
+      end
+      '
+      1>/dev/null 2>/dev/null popd
+
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      # its(:stderr) { should be_empty }
+      %w|
+        Manifest-Version
+        Bnd-LastModified
+        Build-Jdk
+        Built-By
+        Bundle-Description
+        Export-Package
+        Specification-Title
+        Specification-Vendor
+        Specification-Version
+      |.each do|key|
+        its(:stdout) { should contain key[0..19] }
+      end  
     end
   end
 end
