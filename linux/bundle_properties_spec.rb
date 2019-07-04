@@ -200,9 +200,6 @@ EOF
     input_file = "#{tmp_path}/MANIFEST.MF"
     # see also 
     # https://github.com/jnbt/java-properties
-    # https://stackoverflow.com/questions/8485424/what-is-enumerator-object-created-with-stringgsub
-    # When neither a block nor a second argument is supplied, gsub returns an enumerator.
-    # https://apidock.com/ruby/Kernel/sprintf
     describe command(<<-EOF
       1>/dev/null 2>/dev/null pushd '#{tmp_path}'
       ruby  -e \\
