@@ -64,7 +64,7 @@ DATA
     its(:stderr) { should be_empty }
     its(:exit_status) {should eq 0 }
   end
-
+  # https://osric.com/chris/accidental-developer/2018/07/curl-basic-auth-base64-encoded-credentials/
   enc_auth = Base64.encode64("#{username}:#{password}")
   describe command(<<-EOF
     #{catalina_home}/bin/shutdown.sh

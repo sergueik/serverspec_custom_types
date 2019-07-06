@@ -1,3 +1,5 @@
+
+
 if File.exists?( 'spec/windows_spec_helper.rb')
   require_relative '../windows_spec_helper'
 else
@@ -74,6 +76,12 @@ context 'Tomcat Shutdown Test' do
       its(:exit_status) { should eq 0 }
       its(:stdout) { should be_empty }
       its(:stderr) { should_not contain 'Connection refused' }
+    end
+  end
+  context 'Tomcat shitdown port' do
+    describe port(8005) do # TODO:  extract
+      it { should be_listening.on('127.0.0.1').with('tcp') }
+      it { should not_be_listening.on('0.0.0.0') } # NOTE: not really
     end
   end
   context 'Using tomcat server.xml' do
