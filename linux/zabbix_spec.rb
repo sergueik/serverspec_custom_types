@@ -20,6 +20,22 @@ context 'Zabbix Server and Web' do
       end
     end
   end
+  context 'Database' do
+    database_name = 'zabbix'
+    describe command( <<-EOF
+      mysql -e "SELECT DISTINCT DB from mysql.db;"
+    EOF
+    ) do
+      its (:stdout) { shoud contain database_name }
+    end
+    describe command( <<-EOF
+      mysql -D #{database_name} -e "SELECT 1;"
+    EOF
+    ) do
+      its (:stdout) { shoud_not match /Unknown database/ }
+      its(:exit_status) { should eq 0 }
+    end
+  end
   context 'Processes' do
     context 'Server' do
       process_name = 'zabbix_server'
