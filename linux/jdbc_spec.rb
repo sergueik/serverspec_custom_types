@@ -146,7 +146,7 @@ context 'JDBC tests' do
 
       tmp_path = '/tmp'
       sample_query_file = "#{tmp_path}/query.txt"
-      # NOTE: no need in \g at the end of SQL statement when JDBC-delivered 
+      # NOTE: no need in \g at the end of SQL statement when JDBC-delivered
       sample_query_data = <<-EOF
         SELECT VERSION()
       EOF
@@ -256,6 +256,95 @@ context 'JDBC tests' do
         its(:stderr) { should contain Regexp.new(Regexp.escape('FINE: Connecting with URL: jdbc:postgresql://127.0.0.1:5432/template1?ApplicationName=Driver Tests&loggerLevel=DEBUG')) }
         its(:stderr) { should contain "FINE: PostgreSQL JDBC Driver #{jdbc_version}" }
         its(:stdout) { should contain "PostgreSQL #{postgres_version} on" }
+      end
+    end
+    context 'Alternative New gen PostgreSQL JDBC driver with extra and advanced features supported by postgreSQL' do
+      # http://impossibl.github.io/pgjdbc-ng/
+      # https://github.com/impossibl/pgjdbc-ng
+      jdbc_version = '0.8.2'
+      jdbc_driver_class_name = 'com.impossibl.postgres.jdbc.PGDataSource'
+      xda_data_source_class_name = 'com.impossibl.postgres.jdbc.xa.PGXADataSource'
+      jdbc_connection_pool_data_source_class_name = 'com.impossibl.postgres.jdbc.PGConnectionPoolDataSource'
+      username = 'postgres'
+      database = 'template1'
+      password = $POSTRGES_PASSWORD
+      tmp_path = '/tmp'
+      jar_path = '/tmp'
+      jdbc_jar = "pgjdbc-ng-#{jdbc_version}.jar"
+      jars = [jdbc_jar]
+      jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
+
+      # https://github.com/impossibl/pgjdbc-ng/blob/develop/driver/src/test/java/com/impossibl/postgres/jdbc/ConnectionTest.java
+      # https://github.com/impossibl/pgjdbc-ng/blob/develop/driver/src/test/java/com/impossibl/postgres/jdbc/TestUtil.java
+      class_name = 'TestPgNgJDBC'
+      source_file = "#{class_name}.java"
+      source = <<-EOF
+        import static com.impossibl.postgres.jdbc.JDBCSettings.CI_APPLICATION_NAME;
+        import static com.impossibl.postgres.jdbc.JDBCSettings.CI_CLIENT_USER;
+
+        import java.sql.Connection;
+        import java.sql.PreparedStatement;
+        import java.sql.ResultSet;
+        import java.sql.SQLException;
+        import java.sql.SQLTimeoutException;
+        import java.sql.SQLWarning;
+        import java.sql.Statement;
+
+        import java.util.HashMap;
+        import java.util.Map;
+        import java.util.Properties;
+        import java.util.Random;
+        import java.util.concurrent.Executor;
+
+
+        public class #{class_name} {
+          static private final String applicationName = "Driver Tests";
+          static private final String logLevel = "DEBUG";
+          static private final int protocolVersion =  0;
+          static private String connectionURL = null;
+          static private String host = "127.0.0.1";
+          static private String port = "5432";
+          static private String database = "#{database}";
+
+          public static void main(String[] argv) throws Exception {
+            Class.forName("#{jdbc_driver_class_name}");
+
+            connectionURL = "jdbc:pgsql://"
+                + host + ":" + port + "/" + database;
+                // NOTE: can append the query
+
+            Properties properties = new Propeties();
+            properties.setProperty("user", "#{username}");
+            properties.setProperty("password", "#{password}");
+
+            Connection connection = DriverManager.getConnection(
+                connectionURL, properties);
+
+            if (connection != null) {
+              System.out.println("Connected");
+              connection.close();
+            } else {
+              System.out.println("Failed to connect");
+            }
+
+          }
+        }
+
+      EOF
+      # https://www.postgresql.org/docs/7.2/jdbc.html
+      describe command(<<-EOF
+        1>/dev/null 2>/dev/null pushd '#{tmp_path}'
+        echo '#{source}' > '#{source_file}'
+        javac '#{source_file}'
+        export CLASSPATH=#{jars_cp}#{path_separator}.
+        # NOTE: user context switch is playing no effect
+        su #{username} -c "java '#{class_name}'"
+        1>/dev/null 2>/dev/null popd
+      EOF
+
+      ) do
+        its(:exit_status) { should eq 0 }
+        its(:stdout) { should contain 'Connected' }
       end
     end
   end
