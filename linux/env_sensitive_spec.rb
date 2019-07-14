@@ -1,5 +1,9 @@
 require 'spec_helper'
 
+# Illustration of decorating the rspec with environment checks in various ways
+
+$DEBUG = false
+
 # omitted a whole can of worms of hand mande to_boolean in Ruby
 # see https://stackoverflow.com/questions/36228873/ruby-how-to-convert-a-string-to-boolean
 
@@ -62,8 +66,8 @@ context 'Tests limited to a Specific Environment' do
     $stderr.puts "DEBUG: $specific_environment = '#{$specific_environment.to_boolean}'"
   end
   unless $specific_environment.nil?
-    context 'test1' do
-      $stderr.puts "Running #{self.to_s} under specific environment"
+    context 'sensitive context 1' do
+      $stderr.puts "Running #{self.to_s} under specific environment ($specific_environment = '#{$specific_environment}')"
       describe file('/var') do
         it { should_not be_file }
       end
@@ -76,7 +80,7 @@ context 'Tests limited to a Specific Environment' do
     $stderr.puts "DEBUG: $specific_environment = '#{$specific_environment}'"
   end
   if $specific_environment
-    context 'test2' do
+    context 'sensitive context 2' do
       $stderr.puts "Running #{self.to_s} under specific environment ($specific_environment = '#{$specific_environment}')"
       describe file('/var') do
         it { should be_directory }
@@ -93,4 +97,3 @@ context 'Tests limited to a Specific Environment' do
     end
   end
 end
-

@@ -7,13 +7,7 @@ require 'fileutils'
 
 # http://postgresguide.com/utilities/psql.html
 context 'Pgsql' do
-  # NOTE: setup ot fully described
-  # # IPv4 local connections:
-  # host    all             all             127.0.0.1/32            ident
-  # + host    all             all             127.0.0.1/32            trust
-  # IPv6 local connections:
-  # host    all             all             ::1/128                 ident
-  # + host    all             all             ::1/128                 trust
+  # NOTE: setup not fully described
   context 'Configuration' do
     describe file('/var/lib/pgsql/data/pg_hba.conf') do
       its(:content) { should match Regexp.new '^\s*host\s+all\s+all\s+127.0.0.1/32\s+trust' }
@@ -29,7 +23,7 @@ context 'Pgsql' do
   context 'Inline Query with pgsql' do
     describe command(<<-EOF
       systemctl status -l postgresql
-      # NOTE: user context switch is necessary to exercise postgresql ident authentication
+      # NOTE: user context switch is to exercise postgresql ident authentication
       su #{username} -c "psql -c '#{sample_query}'"
     EOF
     ) do
@@ -54,7 +48,7 @@ context 'Pgsql' do
     describe command(<<-EOF
       systemctl status -l postgresql
       1>/dev/null 2>/dev/null pushd '#{tmp_path}'
-      # NOTE: user context switch is necessary to exercise postgresql ident authentication
+      # NOTE: user context switch is to exercise postgresql ident authentication
       su #{username} -c "psql -f '#{sample_query_file}'"
       1>/dev/null 2>/dev/null popd
     EOF

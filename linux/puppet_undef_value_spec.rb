@@ -8,7 +8,7 @@ context 'Puppet type exercise' do
     let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
     its(:exit_status) { should eq 0 }
     its(:stdout) { should contain 'value "" is false' }
-    # Use of 'hiera.yaml' version 3 is deprecated. It should be converted to version 5\n
+    # Use of 'hiera.yaml' version 3 is deprecated. It should be converted to version 5
     # its(:stderr) { should be_empty }
   end
   describe command( <<-EOF

@@ -18,7 +18,7 @@ context 'Bundle Properties' do
   # grep -q 'Bundle-Version: #{jar_version}'
 
   fixed_file = "#{tmp_path}/MANIFEST.MF.properties"
-
+  # manifest text raw has tbl style formatting
   sample_data = <<-EOF
 Manifest-Version: 1.0
 Bnd-LastModified: 1560974407585

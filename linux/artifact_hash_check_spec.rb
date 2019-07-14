@@ -2,10 +2,11 @@ require 'spec_helper'
 require 'yaml'
 require 'pp'
 
-# $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
-$DEBUG = true
-# expects the Puppet hieradata configuration to match
-# the file hash of artifact of some war installed in tomcat container
+$DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
+
+# expects the md5sum hash of some artifact deployed into tomcat container
+# to match the Puppet configuration hieradata
+
 context 'Artifact hash check' do
   config_file = 'common.yaml'
   config_key = 'artifact_checksum'
@@ -43,13 +44,9 @@ context 'Artifact hash check' do
             echo "Comparing ${ACTUAL_HASH} to ${NEEDED_HASH}"
           fi
           if [ "$ACTUAL_HASH" = "$NEEDED_HASH" ] ; then
-            echo 'Valid'
+            echo "Valid ${ARTIFACT_FILENAME}"
           else
-            echo 'Invalid'
-            if $DEBUG ; then
-              echo "ACTUAL_HASH='$ACTUAL_HASH'"
-              echo "NEEDED_HASH='$NEEDED_HASH'"
-            fi
+            echo "Invalid ${ARTIFACT_FILENAME}"
           fi
         fi
       fi
@@ -61,7 +58,7 @@ context 'Artifact hash check' do
     end
   end
 
-  context 'Ruby Inline Code with some logic takend from shell script version' do
+  context 'Ruby inline code with hash processing logic copied from the shell script version' do
   
     command = "mount -t vboxsf | grep '#{hiera_path_check}' | head -1 | cut -f 3 -d ' ' | tr -d '\\n'"
     output = %x|#{command}|
@@ -78,7 +75,7 @@ context 'Artifact hash check' do
       artifact_filename = nil
       if File.exist?(basedir)
         begin	
-          @res = File.open( "#{basedir}/./common.yaml") { |f| YAML::load(f ) }
+          @res = File.open( "#{basedir}/./common.yaml") { |f| YAML::load(f) }
           if $DEBUG
             $stderr.puts 'configuration: '
             PP.pp(@res, $stderr)
@@ -110,7 +107,7 @@ context 'Artifact hash check' do
       it { result.should be_truthy }
     end
   end
-  context 'Ruby Inline Code (version 2, no complex pipe commands)' do
+  context 'Plain Ruby inline code without complex pipe commands' do
     output = %x|mount -t vboxsf|
     # TODO
     # no implicit conversion of true into String
@@ -122,9 +119,6 @@ context 'Artifact hash check' do
     basedir = nil
     output.split(/\n/).each do |line|
       if line.include? hiera_path_check
-        if $DEBUG
-          $stderr.puts ('Found : "' + line + '" to match "' + hiera_path_check + '"')
-        end
         basedir = line.split(/\s+/)[2]
       end
     end
@@ -136,7 +130,6 @@ context 'Artifact hash check' do
         begin	
           @res = File.open( "#{basedir}/./common.yaml") { |f| YAML::load(f ) }
           if $DEBUG
-            $stderr.puts 'configuration: '
             PP.pp(@res, $stderr)
           end
           artifact_checksum = @res['artifact_checksum']
@@ -157,9 +150,6 @@ context 'Artifact hash check' do
         end
         output.split(/\n/).each do |line|
           if line.include? artifact_filename
-            if $DEBUG
-              $stderr.puts ('Found : "' + line + '" to match "' + artifact_filename + '"')
-            end
             actual_checksum = line.split(/\s+/)[0]
           end
         end
