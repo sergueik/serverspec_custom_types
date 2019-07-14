@@ -38,9 +38,11 @@ context 'SAX HTML tests' do
     plays: guitar
   EOF
   # TODO: are all really needed?
-  jars = ['xercesImpl-2.12.0.jar', 'xalan-2.7.2.jar', 'xml-apis-1.4.01.jar', 'xml-apis-1.4.01.jar', 'xml-apis-1.4.01.jar']
+  jars = ['xercesImpl-2.12.0.jar', 'xalan-2.7.2.jar', 'xml-apis-1.4.01.jar', 'serializer-2.7.2.jar', 'snakeyaml-1.24.jar', 'snakeyaml-engine-1.0.jar']
   jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
   class_name = 'TestHTMLReport'
+  report = 'report.html'
+  xpath = '/html/body/table/tr/td'
   source_file = "#{tmp_path}/#{class_name}.java"
   source_data = <<-EOF
     // https://docs.oracle.com/javase/7/docs/api/javax/xml/parsers/SAXParserFactory.html
@@ -80,101 +82,101 @@ context 'SAX HTML tests' do
     public class #{class_name} {
 
       public static void main(String[] argv) throws Exception {
-        String fileName = buildPathtoResourceFile("#{yaml_file}");
+        String fileName = "#{yaml_file}";
 
-      String encoding = "UTF-8";
-      try {
-        FileOutputStream fos = new FileOutputStream("report.html");
-        OutputStreamWriter writer = new OutputStreamWriter(fos, encoding);
-        StreamResult streamResult = new StreamResult(writer);
+        String encoding = "UTF-8";
+        try {
+          FileOutputStream fos = new FileOutputStream("#{report}");
+          OutputStreamWriter writer = new OutputStreamWriter(fos, encoding);
+          StreamResult streamResult = new StreamResult(writer);
 
-        SAXTransformerFactory saxFactory = (SAXTransformerFactory) TransformerFactory
-            .newInstance();
-        TransformerHandler transformerHandler = saxFactory
-            .newTransformerHandler();
-        transformerHandler.setResult(streamResult);
+          SAXTransformerFactory saxFactory = (SAXTransformerFactory) TransformerFactory
+              .newInstance();
+          TransformerHandler transformerHandler = saxFactory
+              .newTransformerHandler();
+          transformerHandler.setResult(streamResult);
 
-        Transformer transformer = transformerHandler.getTransformer();
-        transformer.setOutputProperty(OutputKeys.METHOD, "html");
-        transformer.setOutputProperty(OutputKeys.ENCODING, encoding);
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+          Transformer transformer = transformerHandler.getTransformer();
+          transformer.setOutputProperty(OutputKeys.METHOD, "html");
+          // <META http-equiv="Content-Type" content="text/html; charset=UTF-8"> is confusing xmllint
+          // transformer.setOutputProperty(OutputKeys.ENCODING, encoding);
+          transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 
-        writer.write("<!DOCTYPE html>\\n");
-        writer.flush();
-        transformerHandler.startDocument();
+          // <!DOCTYPE html> or <!doctype html> is confusing xmllint
+          // writer.write("<!DOCTYPE html>\\n");
+          writer.flush();
+          transformerHandler.startDocument();
 
-        String newline = System.getProperty("line.separator");
-        if (newline == null) {
-          newline = "\\n"; // unix formatting
-        }
-        transformerHandler.startElement("", "", "html", new AttributesImpl());
-        transformerHandler.startElement("", "", "head", new AttributesImpl());
-        transformerHandler.startElement("", "", "title", new AttributesImpl());
-        transformerHandler.characters("Group".toCharArray(), 0, 5);
-        transformerHandler.endElement("", "", "title");
-        transformerHandler.endElement("", "", "head");
-        // @formatter:off
-        String css = "table, th , td  {\\n" +
-          "  font-size: 1em;\\n" +
-          "  font-family: Arial, sans-serif;\\n" +
-          "  border: 1px solid grey;\\n" +
-          "  border-collapse: collapse;\\n" +
-          "  padding: 5px;\\n" +
-          "} \\n" +
-          "table tr:nth-child(odd)	{\\n" +
-           "  background-color: #f1f1f1;\\n" +
-          "}\\n" +
-          "table tr:nth-child(even) {\\n" +
-          "  background-color: #ffffff;\\n" +
-          "}";
-        // @formatter:on
-        transformerHandler.startElement("", "", "style", new AttributesImpl());
-        transformerHandler.characters(css.toCharArray(), 0, css.length());
-        transformerHandler.endElement("", "", "style");
-        transformerHandler.startElement("", "", "body", new AttributesImpl());
-
-        // load with snakeyaml
-        InputStream in = Files.newInputStream(Paths.get(fileName));
-        @SuppressWarnings("unchecked")
-        ArrayList<LinkedHashMap<Object, Object>> members = (ArrayList<LinkedHashMap<Object, Object>>) new Yaml()
-            .load(in);
-        System.err.println(
-            String.format("Loaded %d members of the group", members.size()));
-        transformerHandler.startElement("", "", "table", new AttributesImpl());
-        for (LinkedHashMap<Object, Object> row : members) {
-          AttributesImpl attributes = new AttributesImpl();
-          attributes.addAttribute("", "", "id", "string",
-              row.get("id").toString());
-          transformerHandler.startElement("", "", "tr", attributes);
-          System.err.println(String.format("Loaded %d propeties of the artist",
-              row.keySet().size()));
-          System.err.println(ouputObjectMapper.writeValueAsString(row.values()));
-          // Artist artist = (Artist) row;
-          for (Object key : row.keySet()) {
-            if (row.get(key) != null) {
-              transformerHandler.startElement("", "", "td", new AttributesImpl());
-              String value = row.get(key).toString();
-              transformerHandler.characters(value.toCharArray(), 0,
-                  value.length());
-              transformerHandler.endElement("", "", "td");
-            }
+          String newline = System.getProperty("line.separator");
+          if (newline == null) {
+            newline = "\\n"; // unix formatting
           }
-          transformerHandler.endElement("", "", "tr");
+          transformerHandler.startElement("", "", "html", new AttributesImpl());
+          transformerHandler.startElement("", "", "head", new AttributesImpl());
+          transformerHandler.startElement("", "", "title", new AttributesImpl());
+          transformerHandler.characters("Group".toCharArray(), 0, 5);
+          transformerHandler.endElement("", "", "title");
+          transformerHandler.endElement("", "", "head");
+          // @formatter:off
+          String css = "table, th , td  {\\n" +
+            "  font-size: 1em;\\n" +
+            "  font-family: Arial, sans-serif;\\n" +
+            "  border: 1px solid grey;\\n" +
+            "  border-collapse: collapse;\\n" +
+            "  padding: 5px;\\n" +
+            "} \\n" +
+            "table tr:nth-child(odd)	{\\n" +
+             "  background-color: #f1f1f1;\\n" +
+            "}\\n" +
+            "table tr:nth-child(even) {\\n" +
+            "  background-color: #ffffff;\\n" +
+            "}";
+          // @formatter:on
+          transformerHandler.startElement("", "", "style", new AttributesImpl());
+          transformerHandler.characters(css.toCharArray(), 0, css.length());
+          transformerHandler.endElement("", "", "style");
+          transformerHandler.startElement("", "", "body", new AttributesImpl());
+
+          // load with snakeyaml
+          InputStream in = Files.newInputStream(Paths.get(fileName));
+          @SuppressWarnings("unchecked")
+          ArrayList<LinkedHashMap<Object, Object>> members = (ArrayList<LinkedHashMap<Object, Object>>) new Yaml()
+              .load(in);
+          System.out.println(
+              String.format("Loaded %d members of the group", members.size()));
+          transformerHandler.startElement("", "", "table", new AttributesImpl());
+          for (LinkedHashMap<Object, Object> row : members) {
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "", "id", "string",
+                row.get("id").toString());
+            transformerHandler.startElement("", "", "tr", attributes);
+            System.out.println(String.format("Loaded %d propeties of the artist",
+                row.keySet().size()));
+            for (Object key : row.keySet()) {
+              if (row.get(key) != null) {
+                transformerHandler.startElement("", "", "td", new AttributesImpl());
+                String value = row.get(key).toString();
+                transformerHandler.characters(value.toCharArray(), 0,
+                    value.length());
+                transformerHandler.endElement("", "", "td");
+              }
+            }
+            transformerHandler.endElement("", "", "tr");
+          }
+          transformerHandler.endElement("", "", "table");
+          transformerHandler.endElement("", "", "body");
+          transformerHandler.endElement("", "", "html");
+          transformerHandler.endDocument();
+          writer.close();
+        } catch (IOException e) {
+          System.err.println("Excption (ignored) " + e.toString());
+        } catch (TransformerConfigurationException e) {
+          System.err.println("Excption (ignored) " + e.toString());
+        } catch (SAXException e) {
+          System.err.println("Excption (ignored) " + e.toString());
         }
-        transformerHandler.endElement("", "", "table");
-        transformerHandler.endElement("", "", "body");
-        transformerHandler.endElement("", "", "html");
-        transformerHandler.endDocument();
-        writer.close();
-      } catch (IOException e) {
-        System.err.println("Excption (ignored) " + e.toString());
-      } catch (TransformerConfigurationException e) {
-        System.err.println("Excption (ignored) " + e.toString());
-      } catch (SAXException e) {
-        System.err.println("Excption (ignored) " + e.toString());
       }
     }
-  }
   EOF
   before(:each) do
     $stderr.puts "Writing #{yaml_file}"
@@ -188,14 +190,27 @@ context 'SAX HTML tests' do
   end
   describe command(<<-EOF
     1>/dev/null 2>/dev/null pushd '#{tmp_path}'
-    javac '#{source_file}'
+    rm -f "#{report}"
     export CLASSPATH=#{jars_cp}#{path_separator}.
-    java '#{class_name}'
+    javac -cp #{jars_cp} '#{source_file}'
+    java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+    sleep 3
     1>/dev/null 2>/dev/null popd
   EOF
 
   ) do
     its(:exit_status) { should eq 0 }
+    [
+      'Loaded 4 members of the group',
+      'Loaded 4 propeties of the artist',
+    ].each do |line|
+      its(:stdout) { should contain line }
+    end
+    describe file "#{tmp_path}/#{report}" do
+      it { should be_file }
+    end
+    describe command("xmllint --html --xpath '#{xpath}' '#{tmp_path}/#{report}'") do
+      its(:exit_status) { should eq 0 }
+    end
   end
 end
-  
