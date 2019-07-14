@@ -1,5 +1,7 @@
+# require 'spec_helper'
 require_relative '../windows_spec_helper'
-require 'socket'
+
+# require 'socket'
 
 context 'JDBC tests' do
   # http://www.sqlines.com/articles/java/sql_server_jdbc_connection
