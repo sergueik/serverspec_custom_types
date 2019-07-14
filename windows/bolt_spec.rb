@@ -3,39 +3,40 @@ require_relative '../windows_spec_helper'
 context 'Bolt' do
 
   # A 32-bit windows msi installer is not easily available for
-  # Puppet6's Bolt
+  # Puppet 6's Bolt url.
   # https://puppet.com/docs/bolt/latest/bolt_installing.html
   # and Puppet Agent 1.10 's embedded Ruby needs an gem upgrade
-  # However it appears easy to installl Bold just as gem 
-  # inside the uru Ruby 2.3.x environment:
-  # The only drawback it would lead gem to insall its 55 dependencies together with itself 
+  # The solution is install Bold gem
+  # inside the uru Ruby ienvireonmenr (will require 2.3.x or later)
+  # drawback is 50+ bolt's gem dependencies, listed below
+  # will be installed
 
   $user = ENV.fetch('USERNAME', 'vagrant')
-  # on a standalone Windows machine, userdomain will be same as hostname 
-  $hostname = ENV.fetch('USERDOMAIN', nil) 
+  # on a standalone Windows machine, userdomain will be same as hostname
+  $hostname = ENV.fetch('USERDOMAIN', nil)
   # $env:PASSWORD='Your AD password'
   $password = ENV.fetch('PASSWORD', 'vagrant')
   [
     'localhost',
     $hostname
-  ].each do |hostname|
+  ].each do |node_hostname|
     $stderr.puts "ruby c:/uru/ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt command run 'Get-Process' --nodes winrm://#{hostname} --no-ssl --user '#{$user}' --password '#{$password}'"
     # https://www.google.com/search?q=puppet%20bold%20powwershell%20task%20example
     describe command(<<-EOF
-      ruby ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt command run 'Get-Process' --nodes winrm://#{hostname} --no-ssl --user '#{$user}' --password '#{$password}'
+      ruby ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt command run 'Get-Process' --nodes winrm://#{node_hostname} --no-ssl --user '#{$user}' --password '#{$password}'
      EOF
     ) do
-     [ 
-      "Started on #{hostname}...",
-      "Finished on #{hostname}:",
+     [
+      "Started on #{node_hostname}...",
+      "Finished on #{node_hostname}:",
      ].each do |line|
         its(:stdout) { should contain line }
       end
       its(:stderr) { should be_empty }
-    end 
+    end
   end
   describe command(<<-EOF
-$script = @'  
+$scriptContents = @'
   # origin: http://poshcode.org/5679 for additional registry hack
 
 $schemas = @(
@@ -65,28 +66,28 @@ $schemas | ForEach-Object {
 }
 popd
 '@
-
-    echo $script | out-file -literalpath 'c:/temp/script.ps1'
-    ruby ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt script run c:/temp/script.ps1 --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
-   EOF
+    $scriptPath = 'c:/temp/script.ps1'
+    echo $scriptContents | out-file -literalpath $scriptPath
+    ruby ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt script run $scriptPath --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
+  EOF
   ) do
-   [ 
-    "Started on localhost...",
-    "Finished on localhost:",
-    'Chrome is the default',
-   ].each do |line|
+    [
+      'Started on localhost...',
+      'Finished on localhost:',
+      'Chrome is the default',
+    ].each do |line|
       its(:stdout) { should contain line }
     end
     its(:stderr) { should be_empty }
-  end 
+  end
 end
 
-
+# https://devhints.io/bolt
 
 # .\uru_rt.exe gem install --no-rdoc --no-ri bolt
-# 
+#
 # ruby 2.3.3p222 (2016-11-21 revision 56859) [i386-mingw32]
-# 
+#
 # public_suffix-3.1.0
 # addressable-2.6.0
 # CFPropertyList-2.3.6
@@ -143,6 +144,6 @@ end
 # rubyzip-1.2.3
 # winrm-fs-1.3.2
 # bolt-1.21.0
-# 
+#
 # 56 gems installed
-# 
+#
