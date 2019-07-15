@@ -15,14 +15,33 @@ context 'SAX HTML tests' do
   # in 'lib' or some flexible path under the app directory for a standalone springboot app
   app_name = '<application>'
   jar_path = "#{catalina_home}/webapps/#{app_name}/WEB-INF/lib/"
-  app_base_path = "/opt/#{app_name}"
+  app_base_path = "/opt/#{app_name}/snandalone/lib"
   jar_path = "#{app_base_path}/lib"
   jar_path = '/tmp'
-  # TODO: are all really needed?
+  jar_versions = {
+    'xercesImpl' => '2.10.0',
+    'xalan'      => '2.7.2',
+    'xml-apis'   => '1.4.01',
+    'serializer' => '2.7.2',
+    'snakeyaml'  => '1.13'
+  }
+
+  jar_versions = {
+    'xercesImpl' => '2.12.0',
+    'xalan'      => '2.7.2',
+    'xml-apis'   => '1.4.01',
+    'serializer' => '2.7.2',
+    'snakeyaml'  => '1.24'
+  }
+  jar_search_string = '(' + jar_versions.keys.join('|') + ')'
+  # find . -iname '*jar' | grep -iE #{jar_search_string}
+  # find . -iname '*jar' | grep -iE '(xercesimpl|xalan|xml-apis|serializer|snakeyaml)'
+  # will likely reveal a consistent set of the needed jars
+  jars = jar_versions.each do |artifactid,version|
+    artifactid + '-' + version + 'jar'
+  end
   jars = ['xercesImpl-2.12.0.jar', 'xalan-2.7.2.jar', 'xml-apis-1.4.01.jar', 'serializer-2.7.2.jar', 'snakeyaml-1.24.jar']
   jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
-  # find . -iname '*jar' | grep -E '(xercesimpl|xalan|xml-apis|serializer|snakeyaml)'
-  # will likely reveal a consistent set of the needed jars
   tmp_path = '/tmp'
   yaml_file = "#{tmp_path}/group.yaml"
 
