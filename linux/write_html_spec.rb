@@ -8,12 +8,21 @@ require 'fileutils'
 context 'SAX HTML tests' do
   catalina_home = '/opt/tomcat'
   path_separator = ':'
-  # xerces, xalan are de-facto olt-time standard jars for XML processing 
-  # very likely be found under lib  of tomcat for hosted or
-  # under some flexible path for standalone springboot app
-  application_name = 'Tomcat Application Name'
-  jar_path = "#{catalina_home}/webapps/#{application_name}/WEB-INF/lib/"
-  jar_path =  '/tmp'  
+  # xerces, xalan and their dependencies are de facto ord-time standard XML processors
+  # jackson is a JSON  and YAML de facto standard processor
+  # snakeyaml is its dependency (jackson itself is unnecessarily generic for the here task
+  # all these jars are likely be present in tomcat lib directory for apps deployed in tomcat container
+  # in 'lib' or some flexible path under the app directory for a standalone springboot app
+  app_name = '<application>'
+  jar_path = "#{catalina_home}/webapps/#{app_name}/WEB-INF/lib/"
+  app_base_path = "/opt/#{app_name}"
+  jar_path = "#{app_base_path}/lib"
+  jar_path = '/tmp'
+  # TODO: are all really needed?
+  jars = ['xercesImpl-2.12.0.jar', 'xalan-2.7.2.jar', 'xml-apis-1.4.01.jar', 'serializer-2.7.2.jar', 'snakeyaml-1.24.jar']
+  jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
+  # find . -iname '*jar' | grep -E '(xercesimpl|xalan|xml-apis|serializer|snakeyaml)'
+  # will likely reveal a consistent set of the needed jars
   tmp_path = '/tmp'
   yaml_file = "#{tmp_path}/group.yaml"
 
@@ -37,9 +46,6 @@ context 'SAX HTML tests' do
     name: george
     plays: guitar
   EOF
-  # TODO: are all really needed?
-  jars = ['xercesImpl-2.12.0.jar', 'xalan-2.7.2.jar', 'xml-apis-1.4.01.jar', 'serializer-2.7.2.jar', 'snakeyaml-1.24.jar', 'snakeyaml-engine-1.0.jar']
-  jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
   class_name = 'TestHTMLReport'
   report = 'report.html'
   xpath = '/html/body/table/tr/td'
@@ -57,7 +63,7 @@ context 'SAX HTML tests' do
     import java.io.InputStream;
     import java.io.OutputStreamWriter;
     import java.nio.file.Files;
-    
+
     import java.nio.file.Paths;
 
     import java.util.ArrayList;
