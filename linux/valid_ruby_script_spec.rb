@@ -17,6 +17,7 @@ context 'Ruby Script' do
     file = File.open(script, 'w')
     file.puts sample_script_data
     file.close
+    File.chmod(0755, script)
   end
 
   describe file script do
