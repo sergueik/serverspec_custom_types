@@ -12,6 +12,16 @@ context 'Escaping backticks and special varialbles' do
       '\`date +%Y%m%d_%H%M%S\`', # this is the deferred execution of the date argument
       # can be identified by presence of the '\x52' and '\x60'
       # \x5c\x60date\x20\x2b\x25Y\x25m\x25d_\x25H\x25M\x25S\x5c\x60
+      # The deferred date command
+      # the argument -Xloggc:/opt/tomcat/logs/log-\`date +%Y%m%d_%H%M%S\`.log
+      # is rejected by java loader with the error
+      # Invalid file name for use with -Xloggc: Filename can only contain the characters
+      # [A-Z][a-z][0-9]-_%[p|t]
+      # Note t%p or %t can only be used once
+      'log-%t.log', # will fail some tests
+      # https://blog.gceasy.io/2016/11/15/rotating-gc-log-files/
+      # explains -Xloggc:/opt/tomcat/logs/log-%t.log
+      # for YYYY-MM-DD_HH-MM-SS
     ].each do |option|
       it {should_not match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE )}
       describe command ("systemd-escape '#{option}'") do
@@ -73,5 +83,6 @@ context 'Escaping backticks and special varialbles' do
       its(:stdout) { should_not match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) }
       its(:stderr) { should be_empty }
     end
+    # TODO: systemctl restart tomcat and successful healthcheck
   end
 end
