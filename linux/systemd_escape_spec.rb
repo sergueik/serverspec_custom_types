@@ -2,16 +2,76 @@ require 'spec_helper'
 require 'fileutils'
 
 # https://www.freedesktop.org/software/systemd/man/systemd-escape.html
+# https://serverfault.com/questions/714592/how-does-this-variable-escaping-work-in-a-systemd-unit-file
+# https://www.freedesktop.org/software/systemd/man/systemd.service.html
 context 'Escaping backticks and special varialbles' do
-  [
-    '`date +%F`', # this one survives
-    '`date +%Y%m%d_%H%M%S`' # this one gets filled to unrecognizable way by systemd's own special var interpolation
-  ].each do |date_suffix|
-    describe command ("systemd-escape '#{date_suffix}'") do
+  context 'Conversion' do
+    [
+      '`date +%F`', # this one survives
+      '`date +%Y%m%d_%H%M%S`', # this one gets filled to unrecognizable way by systemd's own special var interpolation
+      '\`date +%Y%m%d_%H%M%S\`', # this is the deferred execution of the date argument
+      # can be identified by presence of the '\x52' and '\x60'
+      # \x5c\x60date\x20\x2b\x25Y\x25m\x25d_\x25H\x25M\x25S\x5c\x60
+    ].each do |option|
+      it {should_not match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE )}
+      describe command ("systemd-escape '#{option}'") do
+        its(:exit_status) { should be 0 }
+        its(:stdout) { should match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) }
+        its(:stderr) { should be_empty }
+      end
+      # TODO: exercise systemctl --no-page -o cat show to contain readable stuff
+    end
+  end
+  context 'Inspection' do
+    # use a replica of existing systemd script to embed the argument
+    script_path = '/etc/systemd/system/multi-user.target.wants'
+    service_unit = 'postgresql'
+    script_filename = "#{service_unit}.service"
+    script = "#{script_path}/#{script_filename}"
+    sample_script_data = <<-EOF
+      [Unit]
+      Description=PostgreSQL database server
+      After=network.target
+
+      [Service]
+      Type=forking
+
+      User=postgres
+      Group=postgres
+
+      # Port number for server to listen on
+      Environment=PGPORT=5432
+
+      # Location of database directory
+      Environment=PGDATA=/var/lib/pgsql/data
+
+      OOMScoreAdjust=-1000
+
+      ExecStartPre=/usr/bin/postgresql-check-db-dir ${PGDATA}
+      ExecStart=/usr/bin/pg_ctl start -D ${PGDATA} -s -o "-p ${PGPORT}" -l\\x5c\\x60date\\x20\\x2b\\x25Y\\x25m\\x25d_\\x25H\\x25M\\x25S\\x5c\\x60 -w -t 300
+      ExecStop=/usr/bin/pg_ctl stop -D ${PGDATA} -s -m fast
+      ExecReload=/usr/bin/pg_ctl reload -D ${PGDATA} -s
+
+      TimeoutSec=300
+
+      [Install]
+      WantedBy=multi-user.target
+    EOF
+
+    before(:each) do
+      $stderr.puts "Writing #{script}"
+      file = File.open(script, 'w')
+      file.puts sample_script_data
+      file.close
+      system('systemctl daemon-reload')
+    end
+    describe command (<<-EOF
+      systemctl --no-page -o cat show '#{service_unit}'
+    EOF
+    ) do
       its(:exit_status) { should be 0 }
-      its(:stdout) { should match /\\x[0-9a-d]+/i }
+      its(:stdout) { should_not match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) }
       its(:stderr) { should be_empty }
     end
-    # TODO: exercise systemctl --no-page -o cat show to contain readable stuff
   end
 end
