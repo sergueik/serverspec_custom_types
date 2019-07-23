@@ -29,9 +29,22 @@ context 'Escaping backticks and special varialbles' do
         its(:stdout) { should match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) }
         its(:stderr) { should be_empty }
       end
-      # TODO: exercise systemctl --no-page -o cat show to contain readable stuff
     end
   end
+  context 'Reverse' do
+    {
+      'aps-my\\x20application' => 'aps/my application', 
+      '\\x60date\\x20\\x2b\\x25F\\x60' => '`date +%F`',
+    }.each do |encoded_option, option|
+      # TODO: extract the encoded_option from configuration instead of passing directly
+      describe command ("systemd-escape -u '#{encoded_option}'") do
+        its(:exit_status) { should be 0 }
+        its(:stdout) { should match Regexp.new(Regexp.escape(option), Regexp::IGNORECASE ) }
+        its(:stderr) { should be_empty }
+      end
+    end
+  end
+  # TODO: exercise processes to find out the options passed
   context 'Inspection' do
     # use a replica of existing systemd script to embed the argument
     script_path = '/etc/systemd/system/multi-user.target.wants'
