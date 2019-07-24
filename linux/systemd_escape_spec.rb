@@ -29,6 +29,9 @@ context 'Escaping backticks and special varialbles' do
         its(:stdout) { should match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) }
         its(:stderr) { should be_empty }
       end
+      it 'and it should contain escaped string' do
+        expect(command ("systemd-escape '#{option}'").stdout).to match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) 
+      end
     end
   end
   context 'Reverse' do
@@ -38,8 +41,9 @@ context 'Escaping backticks and special varialbles' do
     }.each do |encoded_option, option|
       # TODO: extract the encoded_option from configuration instead of passing directly
       describe command ("systemd-escape -u '#{encoded_option}'") do
-        its(:exit_status) { should be 0 }
-        its(:stdout) { should match Regexp.new(Regexp.escape(option), Regexp::IGNORECASE ) }
+        # https://stackoverflow.com/questions/56254952/does-serverspec-support-expectations-or-do-i-have-to-use-should
+        its(:exit_status) { is_expected.to be 0 }
+        its(:stdout) { is_expected.to match Regexp.new(Regexp.escape(option), Regexp::IGNORECASE ) }
         its(:stderr) { should be_empty }
       end
     end
