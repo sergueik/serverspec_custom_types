@@ -30,7 +30,7 @@ context 'Escaping backticks and special varialbles' do
         its(:stderr) { should be_empty }
       end
       it 'and it should contain escaped string' do
-        expect(command ("systemd-escape '#{option}'").stdout).to match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE ) 
+        expect(command("systemd-escape '#{option}'").stdout).to match Regexp.new('\\\\x[0-9a-d]+', Regexp::IGNORECASE )
       end
     end
   end
