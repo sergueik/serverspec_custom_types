@@ -18,7 +18,10 @@ context 'Escaping backticks and special varialbles' do
       'energy-full-design' => '[0-9.]+ Wh',
       'energy-rate' => '[0-9.]+ W',
       'voltage' => '[0-9.]+ V',
-      'time to empty' => '[0-9.]+ hours',
+      # TODO: the upower information contains either 'time to empty' or 'time to full' but not both at the same time
+      # 'time to empty' => '[0-9.]+ hours',
+      # 'time to full' => '[0-9.]+ hours',
+      '(time to empty|time to full)' => '([0-9.]+ hours|[0-9.]+ minutes)',
       'percentage' => '[0-9]+%',
       'capacity' => '[0-9.]+%',
     }.each do |key,val|
