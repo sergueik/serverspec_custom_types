@@ -1,5 +1,35 @@
 require 'spec_helper'
 
+context 'Standard' do
+  describe package 'vino' do
+    it { should be_installed }
+  end
+  describe process 'vino-server' do
+    it { should be_running }
+  end
+  describe port 5900 do
+    it { should be_listening.with 'tcp' }
+    it { should be_listening.with 'tcp6' }
+  end
+  context 'application configuration' do
+    # vino-preference needs a display to list configuration details
+    {
+      'vnc-password' => '[a-z0-9]+=*$', #  $(echo -n "#{password}"|base64)
+      'network-interface' => '',
+      'enabled' => true,
+      'notify-on-connect' => true,
+      'prompt-enabled' => true, # can be configured to false
+    }.each do |key,value|
+      describe command "gsettings get org.gnome.Vino #{key}" do
+        if value.eql? ''
+          its(:stdout) { should contain '' }
+        else
+          its(:stdout) { should contain Regexp.new(value.to_s) }
+        end
+      end
+    end
+  end
+end
 context 'xFCE Session and Startup desktop launchers' do
   # will it be the correct user?
   user = ENV.fetch('USER')
@@ -7,6 +37,7 @@ context 'xFCE Session and Startup desktop launchers' do
   lightdm_dir = '/usr/share/lightdm/lightdm.conf.d'
   context 'Vino launcher' do
     # https://askubuntu.com/questions/83824/how-can-i-start-a-vnc-server-before-log-on
+    # https://askubuntu.com/questions/12206/how-do-i-start-the-vnc-server
     # https://askubuntu.com/questions/530072/how-to-auto-login-in-xubuntu
     describe file("#{lightdm_dir}/60-xubuntu.conf") do
       it { should be_file }
@@ -30,6 +61,7 @@ context 'xFCE Session and Startup desktop launchers' do
       ].each do |section|
         its(:content) { should contain section }
       end
+      # https://wiki.archlinux.org/index.php/Vino
       # probaly not every setting is required
       {
         'Encoding'      => 'UTF-8',
@@ -38,12 +70,13 @@ context 'xFCE Session and Startup desktop launchers' do
         'Name'          => 'vino-server',
         'Comment'       => 'VNC Server',
         'Exec'          => '/usr/lib/vino/vino-server',
+        'NoDisplay'     => true, # on headless host
         'OnlyShowIn'    => 'XFCE;',
         'StartupNotify' => 'false',
         'Terminal'      => 'false',
         'Hidden'        => 'false',
       }.each do |setting,value|
-        its(:content) { should contain "#{setting}=#{value}" }
+        its(:content) { should contain "#{setting}=#{value.to_s}" }
       end
     end
   end
