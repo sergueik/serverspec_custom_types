@@ -56,4 +56,18 @@ context 'MYSQL shell' do
       its(:stdout) { should match Regexp.new("\\"#{key}\\":\\s+\\"#{val}\\"", Regexp::IGNORECASE) }
     end
   end
+  describe command <<- EOF
+    mysqlsh  -u root -p'root' -h localhost -P 3306 --js   -e "var session = mysql.getSession({host: 'localhost', port: 3306, user: 'root', password: 'root'} ) ; session.runSql('use mysql');var results = session.runSql('select * from db;') ; var row = results.fetchOneObject(); print(row);" | jq '.["User","Host", "Db"]'
+  EOF
+  do
+    its(:exit_status) { should eq 0 }
+    its(:stderr) { should be_empty }
+    [
+      'mysql.session',
+      'localhost',
+      'performance_schema',
+    ].each do |val|
+      its(:stdout) { should match Regexp.new("\\"#{val}\\"", Regexp::IGNORECASE) }
+    end
+  end
 end
