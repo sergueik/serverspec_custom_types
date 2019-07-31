@@ -70,4 +70,9 @@ context 'MYSQL shell' do
       its(:stdout) { should match Regexp.new("\\"#{val}\\"", Regexp::IGNORECASE) }
     end
   end
+
+  # TODO: reconfigure to listen to MYSQLX port:
+  # var mysqlx = require('mysqlx'); var mySession = mysqlx.getSession( {host: 'localhost', port: 33060, user: 'root', password: 'root'} );
+  # Connection refused connecting to localhost:33060 (MySQL Error 2002)
+
 end
