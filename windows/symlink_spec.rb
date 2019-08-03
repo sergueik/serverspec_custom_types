@@ -220,7 +220,7 @@ context 'Symbolic Links' do
     # use pinvoke to read directory junction /  symlink target
     # http://chrisbensen.blogspot.com/2010/06/getfinalpathnamebyhandle.html
     describe command( <<-EOF
-      Add-Type -TypeDefinition @"
+      Add-Type -TypeDefinition @'
       using System;
       using System.Collections.Generic;
       using System.ComponentModel; // for Win32Exception
@@ -272,89 +272,60 @@ context 'Symbolic Links' do
           }
 
       }
-"@ -ReferencedAssemblies 'System.Windows.Forms.dll','System.Runtime.InteropServices.dll','System.Net.dll','System.Data.dll','mscorlib.dll'
+'@ -ReferencedAssemblies 'System.Windows.Forms.dll','System.Runtime.InteropServices.dll','System.Net.dll','System.Data.dll','mscorlib.dll'
 
       $junction_directory = 'c:\\temp\\directory_junction'
       $junction_directory_directoryinfo_object = New-Object System.IO.DirectoryInfo ($junction_directory)
       $junction_target = [utility]::GetSymbolicLinkTarget($junction_directory_directoryinfo_object)
       write-output ('junction target: {0}' -f $junction_target )
 
-      EOF
-      ) do
-          its(:exit_status) {should eq 0 }
-          its(:stdout) { should match /junction target: c:\\temp\\directory_target/i }
-        end
+    EOF
+    ) do
+      its(:exit_status) {should eq 0 }
+      its(:stdout) { should match /junction target: c:\\temp\\directory_target/i }
+    end
+    # https://stackoverflow.com/questions/16926127/powershell-to-resolve-junction-target-path
 
+  describe command( <<-EOF
+    Add-Type -MemberDefinition @'
+    private const int FILE_SHARE_READ = 1;
+    private const int FILE_SHARE_WRITE = 2;
 
-    describe command( <<-EOF
+    private const int CREATION_DISPOSITION_OPEN_EXISTING = 3;
+    private const int FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
 
-  # use pinvoke to read directory junction / symlink target
-  #  http://chrisbensen.blogspot.com/2010/06/getfinalpathnamebyhandle.html
-  Add-Type -TypeDefinition @"
-  // "
+    [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
+     public static extern int GetFinalPathNameByHandle(IntPtr handle, [In, Out] StringBuilder path, int bufLen, int flags);
 
-  using System;
-  using System.Collections.Generic;
-  using System.ComponentModel; // for Win32Exception
-  using System.Data;
-  using System.Text;
-  using System.IO;
-  using System.Runtime.InteropServices;
-  using Microsoft.Win32.SafeHandles;
+    [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+     public static extern SafeFileHandle CreateFile(string lpFileName, int dwDesiredAccess, int dwShareMode,
+     IntPtr SecurityAttributes, int dwCreationDisposition, int dwFlagsAndAttributes, IntPtr hTemplateFile);
 
-  public class Utility
-  {
+     public static string GetSymbolicLinkTarget(System.IO.DirectoryInfo symlink) {
+         SafeFileHandle directoryHandle = CreateFile(symlink.FullName, 0, 2, System.IntPtr.Zero, CREATION_DISPOSITION_OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, System.IntPtr.Zero);
+         if(directoryHandle.IsInvalid)
+         throw new Win32Exception(Marshal.GetLastWin32Error());
 
-      private const int FILE_SHARE_READ = 1;
-      private const int FILE_SHARE_WRITE = 2;
+         StringBuilder path = new StringBuilder(512);
+         int size = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), path, path.Capacity, 0);
+         if (size<0)
+         throw new Win32Exception(Marshal.GetLastWin32Error());
+         // The remarks section of GetFinalPathNameByHandle mentions the return being prefixed with "\\\\?\\"
+         // More information about "\\\\?\\" here -> http://msdn.microsoft.com/en-us/library/aa365247(v=VS.85).aspx
+         if (path[0] == '\\' && path[1] == '\\' && path[2] == '?' && path[3] == '\\')
+         return path.ToString().Substring(4);
+         else
+         return path.ToString();
+     }
+'@ -Name Win32 -nameSpace System -UsingNamespace System.Text,Microsoft.Win32.SafeHandles,System.ComponentModel
 
-      private const int CREATION_DISPOSITION_OPEN_EXISTING = 3;
-
-      private const int FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
-
-      // http://msdn.microsoft.com/en-us/library/aa364962%28VS.85%29.aspx
-      // http://pinvoke.net/default.aspx/kernel32/GetFileInformationByHandleEx.html
-
-      // http://www.pinvoke.net/default.aspx/shell32/GetFinalPathNameByHandle.html
-      [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
-      public static extern int GetFinalPathNameByHandle(IntPtr handle, [In, Out] StringBuilder path, int bufLen, int flags);
-
-      // https://msdn.microsoft.com/en-us/library/aa364953%28VS.85%29.aspx
-
-      // http://msdn.microsoft.com/en-us/library/aa363858(VS.85).aspx
-      // http://www.pinvoke.net/default.aspx/kernel32.createfile
-      [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-      public static extern SafeFileHandle CreateFile(string lpFileName, int dwDesiredAccess, int dwShareMode,
-      IntPtr SecurityAttributes, int dwCreationDisposition, int dwFlagsAndAttributes, IntPtr hTemplateFile);
-
-      public static string GetSymbolicLinkTarget(FileInfo symlink)
-      {
-          SafeFileHandle fileHandle = CreateFile(symlink.FullName, 0, 2, System.IntPtr.Zero, CREATION_DISPOSITION_OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, System.IntPtr.Zero);
-          if (fileHandle.IsInvalid)
-              throw new Win32Exception(Marshal.GetLastWin32Error());
-
-          StringBuilder path = new StringBuilder(512);
-          int size = GetFinalPathNameByHandle(fileHandle.DangerousGetHandle(), path, path.Capacity, 0);
-          if (size < 0)
-              throw new Win32Exception(Marshal.GetLastWin32Error());
-          // http://msdn.microsoft.com/en-us/library/aa365247(v=VS.85).aspx
-          if (path[0] == '\\\\' && path[1] == '\\\\' && path[2] == '?' && path[3] == '\\\\')
-              return path.ToString().Substring(4);
-          else
-              return path.ToString();
-      }
-  }
-"@ -ReferencedAssemblies 'System.Windows.Forms.dll','System.Runtime.InteropServices.dll','System.Net.dll','System.Data.dll','mscorlib.dll'
-
-  $symlink_file = 'c:\\temp\\file_link'
-
-  $symlink_file_fileinfo_object = New-Object System.IO.FileInfo ($symlink_file)
-  $symlink_target = [utility]::GetSymbolicLinkTarget($symlink_file_fileinfo_object)
-  write-output ('symlink target: {0}' -f $symlink_target )
+    $junction_directory = 'c:\\temp\\directory_junction'
+    $dir = Get-Item $junction_directory
+    [System.Win32]::GetSymbolicLinkTarget($dir)
   EOF
   ) do
       its(:exit_status) {should eq 0 }
-      its(:stdout) { should match /symlink target: C:\\temp\\file_target/i }
+      its(:stdout) { should match /C:\\temp\\file_target/i }
     end
   end
 
@@ -377,6 +348,7 @@ context 'Symbolic Links' do
       its(:exit_status) {should eq 0 }
     end
   end
+  
   context 'Parsing cmd output with cmd' do
 
     # http://www.cyberforum.ru/powershell/thread2312694.html
