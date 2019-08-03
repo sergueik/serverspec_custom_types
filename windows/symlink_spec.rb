@@ -312,7 +312,8 @@ context 'Symbolic Links' do
          throw new Win32Exception(Marshal.GetLastWin32Error());
          // The remarks section of GetFinalPathNameByHandle mentions the return being prefixed with "\\\\?\\"
          // More information about "\\\\?\\" here -> http://msdn.microsoft.com/en-us/library/aa365247(v=VS.85).aspx
-         if (path[0] == '\\' && path[1] == '\\' && path[2] == '?' && path[3] == '\\')
+         if (path[0] == '\\\\' && path[1] == '\\\\' && path[2] == '?' && path[3] == '\\\\')
+         // Too many characters in character literal - need to escape backslashes
          return path.ToString().Substring(4);
          else
          return path.ToString();
@@ -350,7 +351,6 @@ context 'Symbolic Links' do
   end
   
   context 'Parsing cmd output with cmd' do
-
     # http://www.cyberforum.ru/powershell/thread2312694.html
     symlink_path = 'c:\Temp\directory_link'
     symlink_parent_path = 'c:/temp'
@@ -370,5 +370,4 @@ context 'Symbolic Links' do
       # its(:stdout) { should match /junction target: c:\\temp\\directory_target/i   }
     end
   end
-
 end
