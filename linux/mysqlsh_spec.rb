@@ -1,5 +1,6 @@
 require 'spec_helper'
 
+# based on https://dev.mysql.com/doc/mysql-shell/8.0/en/
 context 'MYSQL shell' do
 
   user = 'root'
@@ -7,6 +8,7 @@ context 'MYSQL shell' do
   query = 'select * from db;'
 
   # setup for Debian based Linux is covered in
+  # https://dev.mysql.com/doc/mysql-shell/8.0/en/mysql-shell-install-linux-quick.html
   # https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/#apt-repo-setup
   # repository https://dev.mysql.com/downloads/file/?id=487007
   # https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
@@ -79,7 +81,29 @@ context 'MYSQL shell' do
       end
     end
   end
+  context 'Javascript query script' do
 
+    queryfile = '/tmp/query.json'
+
+    before(:each) do
+      # NOTE: quotes
+      Specinfra::Runner::run_command( <<-EOF
+        cat <<END>#{datafile}
+          var resultSet = mySession.runSql("select * from db where db = 'performance_schema'");
+          var row = resultSet.fetchOneObject();
+          print(row['Host']);
+       EOF
+      )
+    end
+    describe command <<- EOF
+      mysqlsh -u '#{user}' -p'#{password}' -h localhost -P 3306 -D mysql --js < '#{queryfile}'
+    EOF
+    do
+      its(:exit_status) { should eq 0 }
+      its(:stderr) { should be_empty }
+      its(:stdout) { should contain 'localhost' }
+    end
+  end
   # TODO: reconfigure to listen to MYSQLX port:
   # var mysqlx = require('mysqlx'); var mySession = mysqlx.getSession( {host: 'localhost', port: 33060, user: 'root', password: 'root'} );
   # Connection refused connecting to localhost:33060 (MySQL Error 2002)
