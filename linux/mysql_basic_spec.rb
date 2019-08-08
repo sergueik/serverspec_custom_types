@@ -150,7 +150,7 @@ context 'MySQL' do
   context 'Datadir' do
     custom_datadir = '/opt/mysql/var/lib/mysql/'
     # NOTE: not every flag is really necessary: silent, batch, vertical column, execute and quit
-    # the correct flags are -NBe 
+    # the correct flags are -NBe
     describe command(<<-EOF
       mysql -sBEe 'select @@datadir;'
       mysql -NBe 'select @@datadir;'
@@ -228,6 +228,33 @@ context 'MySQL' do
     ) do
       its(:exit_status) {should eq 0 }
       its(:stdout) { should match /\b#{socket_path}\// }
+    end
+  end
+  context 'Galera bootstrap' do
+
+    service_name = 'mysqld'
+    # galera bootstrap uses rare systemd feature of custom namin for service
+    # 'mysql@bootstrap.service'
+    # implemented through files like /usr/lib/systemd/system/mysql@.service
+    # so to locate the service without knowing the exact name use the spec below
+    # systemctl list-units --type=service --state=running | grep '#{name}' | awk '{print $1}'
+    [
+    'mysql',
+    'mysql@',
+    ].each do |name|
+      describe file "/usr/lib/systemd/system/#{name}.service" do
+        it { should be_file }
+      end
+    end
+    # --output=json option has no effect
+    # where a service changes to 'stopped' e.g. through Puppet
+    # is will not be listed in any state, rather completely disappear
+    describe command(<<-EOF
+      systemctl list-units --type=service --state=running
+    EOF
+    ) do
+      its(:exit_status) {should eq 0 }
+      its(:stdout) { should match /\b#{service_name}(?:@bootstrap)?\.service\b/ }
     end
   end
 end
