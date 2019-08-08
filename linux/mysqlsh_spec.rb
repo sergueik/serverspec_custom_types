@@ -32,6 +32,24 @@ context 'MYSQL shell' do
 
   # https://dev.mysql.com/doc/mysql-shell/8.0/en/mysqlsh-command.html
 
+  context 'packages' do
+    [
+      'mysql-community-release'
+    ].each do |package_name|
+      describe package package_name do
+        it { should_not be_installed }
+      end
+    end
+    [
+      'mysql80-community-release',
+      'mysql-shell'
+    ].each do |package_name|
+      describe package package_name do
+        it { should be_installed }
+      end
+    end
+
+  end
   context 'plain SQL' do
     describe command <<- EOF
       mysqlsh -u '#{user}' -p'#{password}' -h localhost -P 3306 -D mysql --sql -e '#{query}'
