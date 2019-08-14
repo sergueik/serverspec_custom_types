@@ -2,10 +2,13 @@ require 'spec_helper'
 
 context 'Exact Match test' do
   unit = 'httpd'
+  system_etc_dir = '/etc/systemd/system'
+  system_lib_dir = '/usr/lib/systemd/system'
+
   # in some occasions devops have a habit of making the systemd service unit
   # be short-circuited to a link to /dev/null.
   # Ensure this is not the case
-  describe file "/etc/systemd/system/#{unit}.service" do
+  describe file "#{system_etc_dir}/#{unit}.service" do
     it { should_not be_symlink }
     it { should_not be_linked_to('/dev/null') }
   end	
