@@ -17,5 +17,7 @@ Porting to [inspec](https://github.com/inspec/inspec) semantics is a work in pro
 
 Exampes of integrated Vagrantfile are in the parent repository [sergueik/puppetmaster_vagrant](https://github.com/sergueik/puppetmaster_vagrant).
 
+There is some overlap with [sampler](https://github.com/sqshq/sampler) [recipes](https://github.com/sqshq/sampler#real-world-recipes)
+
 ### Author
 [Serguei Kouzmine](kouzmine_serguei@yahoo.com)
