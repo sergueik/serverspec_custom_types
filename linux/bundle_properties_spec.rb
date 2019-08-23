@@ -3,6 +3,16 @@ require 'fileutils'
 
 context 'Bundle Properties' do
 
+  # technically OSGI is around for quite some time and
+  # one just need to add metadata to the manifest
+  # The headers are somewhat overly detailed
+  # http://www.liferaysavvy.com/2017/09/osgi-bundle-manifest-headers.html
+  # at a minimum, the Export-Package: package_name;version="version_number" and the mandatory fields
+  # https://www.ibm.com/support/knowledgecenter/en/SS7K4U_8.5.5/com.ibm.websphere.osgi.zseries.doc/ae/ra_bundle_mf.html
+  # https://spring.io/blog/2008/02/18/creating-osgi-bundles/
+
+  # this header can be automatically generated, usually via the Apache Felix Maven plugin (though generation of the MANIFEST.MF is not its direct purpose)
+  # https://felix.apache.org/documentation/subprojects/apache-felix-maven-bundle-plugin-bnd.html
   tmp_path = '/tmp'
   jdbc_path = '/tmp'
   input_file = "#{tmp_path}/MANIFEST.MF"
@@ -198,7 +208,7 @@ EOF
   context 'Run Ruby in RVM session' do
     tmp_path = '/tmp'
     input_file = "#{tmp_path}/MANIFEST.MF"
-    # see also 
+    # see also
     # https://github.com/jnbt/java-properties
     describe command(<<-EOF
       1>/dev/null 2>/dev/null pushd '#{tmp_path}'
@@ -207,7 +217,7 @@ EOF
       properties = {}
       fixed_lines.each do |line|
         key,val = line.split /:\\s+/
-        puts sprintf "%20s", key 
+        puts sprintf "%20s", key
         properties[key] =  val
       end
       '
@@ -229,7 +239,7 @@ EOF
         Specification-Version
       |.each do|key|
         its(:stdout) { should contain key[0..19] }
-      end  
+      end
     end
   end
 end
