@@ -54,3 +54,6 @@ describe command("/bin/crontab -u #{cronjob_user} -l") do
     end
   end
 end
+
+# TODO: examine closely the run logs
+# https://www.inmotionhosting.com/support/website/cron-jobs/did-cron-job-run
