@@ -7,7 +7,8 @@ context 'system limit' do
       it { should be_directory }
     end
     # some security requirements enforce removal of limits.conf
-    describe file('/etc/security/limits.conf') do
+    default_config = '/etc/security/limits.conf'
+    describe file default_config do
       it { should_not be_present }
     end
     [
@@ -25,8 +26,12 @@ context 'system limit' do
     describe file(default_config) do
       it { should be_file }
     end
+    # some security requirements enforce retaining of default limits.conf
     # the default limits.conf is full of comments but has no limit statements
     describe command("grep -vE '^ *#' '#{default_config}' | grep -Es '[a-z]'") do
+      its(:stdout) { should be_empty }
+    end
+    describe command("grep -e '^ *[^#]' '#{default_config}' | grep -e '[a-z]'") do
       its(:stdout) { should be_empty }
     end
   end
