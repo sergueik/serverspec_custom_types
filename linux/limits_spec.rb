@@ -72,4 +72,24 @@ context 'system limit' do
       end
     end
   end
+  # alternatively
+  context 'Systemd unit process limits configuration' do
+    unit = 'apport'
+    # NOTE: sed command is white space-sensitive
+    # NOTE: The process launched by systemd may no longer be running
+    describe command(<<-EOF
+      systemctl status '#{unit}' | grep -P '(Main PID|Process): ([0-9][0-9]*)' | sed '|^.* \\([0-9][0-9]*\\) .*$|\\1|'|xargs -IX cat /proc/X/limits
+    EOF
+    ) do
+      its(:stderr) { should be_empty }
+      [
+        'Limit                     Soft Limit           Hard Limit           Units',
+        'Max processes             3888                 3888                 processes',
+        'Max open files            4096                 4096                 files',
+        'Max locked memory         65536                65536                bytes',
+      ].each do |line|
+        its(:stdout) { should contain line }
+      end
+    end
+  end
 end
