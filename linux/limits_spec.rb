@@ -12,7 +12,7 @@ context 'system limit' do
       it { should_not be_present }
     end
     [
-    '20-limits',
+      '20-limits',
     ].each do |conf_file|
       describe file("#{limits_dir}/#{conf_file}.conf") do
         it { should be_file }
@@ -75,8 +75,8 @@ context 'system limit' do
   # alternatively
   context 'Systemd unit process limits configuration' do
     unit = 'apport'
-    # NOTE: sed command is white space-sensitive
-    # NOTE: The process launched by systemd may no longer be running
+    # NOTE: sed command is whitespace-sensitive
+    # NOTE: The process launched by systemd may no longer be running, e.g. try with 'apport'
     describe command(<<-EOF
       systemctl status '#{unit}' | grep -P '(Main PID|Process): ([0-9][0-9]*)' | sed '|^.* \\([0-9][0-9]*\\) .*$|\\1|'|xargs -IX cat /proc/X/limits
     EOF
@@ -93,3 +93,7 @@ context 'system limit' do
     end
   end
 end
+
+# the running process inventory can be converted into consul-delivered command in the usual fashion:
+# CLASS='org.apache.catalina.startup.Bootstrap';PATH=$PATH:/usr/local/bin;consul exec -http-addr=https://$(hostname -f):8543 \
+# "ps ax|grep ${CLASS}| grep -v grep| head -1| awk '{print \$1}'| xargs -I {} cat /proc/{}/limits| grep -P '(Max (process|open)'"
