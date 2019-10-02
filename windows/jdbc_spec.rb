@@ -174,8 +174,10 @@ context 'JDBC tests' do
       jdbc_prefix = 'mysql'
       jdbc_host = 'localhost'
       jdbc_driver_class_name = 'org.gjt.mm.mysql.Driver'
+      # need to download com.mysql.jdbc_5.1.5 e.g. from http://www.java2s.com/Code/Jar/c/Downloadcommysqljdbc515jar.htm
       # location can be arbitrary
       jdbc_path = 'C:/java/apache-tomcat-7.0.81/webapps/basic-app-1.0-SNAPSHOT/WEB-INF/lib'
+      jdbc_path = 'C:/java/apache-tomcat-8.5.45/lib'
       jars = ['com.mysql.jdbc_5.1.5.jar']
       path_separator = ';'
       jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
@@ -184,7 +186,7 @@ context 'JDBC tests' do
       username = 'root'
       password = 'password'
 
-      class_name = 'Test'
+      class_name = 'MySQLJDBCTest'
 
       source = <<-EOF
         import java.sql.Connection;
@@ -197,18 +199,18 @@ context 'JDBC tests' do
               Class driverObject = Class.forName(className);
               System.out.println("driverObject=" + driverObject);
 
-              String serverName = "#{database_host}";
-              String databaseName = "#{database_name}";
-              String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
-              String username = "#{username}";
-              String password = "#{password}";
-              try {
-                Connection connection = DriverManager.getConnection(url, username, password);
-              } catch (Exception e1) {
-                System.out.println("Exception: " + e1.getMessage());
-              }
-            } catch (Exception e2) {
-              System.out.println("Exception: " + e2.getMessage());
+              final String serverName = "#{database_host}";
+              final String databaseName = "#{database_name}";
+              final String options = "?useLegacyDatetimeCode=false&serverTimezone=UTC&";
+              // Exception: Communications link failure
+              // final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + options + databaseName;
+              final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
+              final String username = "#{username}";
+              final String password = "#{password}";
+              Connection connection = DriverManager.getConnection(url, username, password);
+            } catch (Exception e) {
+              System.out.println("Exception: " + e.getMessage());
+              e.printStackTrace();
             }
           }
         }
@@ -216,7 +218,7 @@ context 'JDBC tests' do
       describe command(<<-EOF
         pushd $env:USERPROFILE
         write-output '#{source}' | out-file #{class_name}.java -encoding ASCII
-        $env:PATH = "${env:PATH};c:\\java\\jdk1.7.0_65\\bin"
+        $env:PATH = "${env:PATH};c:\\java\\jdk1.8.0_101\\bin"        
         javac '#{class_name}.java'
         cmd %%- /c "java -cp #{jars_cp}#{path_separator}. #{class_name}"
       EOF
