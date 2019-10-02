@@ -224,7 +224,9 @@ context 'JDBC tests' do
       EOF
       ) do
         its(:exit_status) { should eq 0 }
-        its(:stdout) { should match /driverObject=class #{jdbc_driver_class_name}/}
+        its(:stdout) { should match /driverObject=class #{jdbc_driver_class_name}/ }
+        its(:stderr) { should_not contain 'Exception: Communications link failure' } # mysql server is not running
+        its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
       end
     end
   end
