@@ -201,9 +201,9 @@ context 'JDBC tests' do
 
               final String serverName = "#{database_host}";
               final String databaseName = "#{database_name}";
-              final String options = "?useLegacyDatetimeCode=false&serverTimezone=UTC&";
+              final String options = "useLegacyDatetimeCode=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&useUnicode=yes&characterEncoding=UTF-8";
               // Exception: Communications link failure
-              // final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + options + databaseName;
+              // final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName + "?" + options;
               final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
               final String username = "#{username}";
               final String password = "#{password}";
@@ -218,7 +218,7 @@ context 'JDBC tests' do
       describe command(<<-EOF
         pushd $env:USERPROFILE
         write-output '#{source}' | out-file #{class_name}.java -encoding ASCII
-        $env:PATH = "${env:PATH};c:\\java\\jdk1.8.0_101\\bin"        
+        $env:PATH = "${env:PATH};c:\\java\\jdk1.8.0_101\\bin"
         javac '#{class_name}.java'
         cmd %%- /c "java -cp #{jars_cp}#{path_separator}. #{class_name}"
       EOF
