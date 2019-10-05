@@ -182,7 +182,21 @@ context 'JDBC tests' do
       path_separator = ';'
       jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
       database_host = 'localhost'
+
       database_name = 'information_schema'
+      database_name = 'mysql'
+      options_array = []
+
+      {
+        'useLegacyDatetimeCode' => false,
+        'useJDBCCompliantTimezoneShift' => true,
+        'serverTimezone' => 'UTC',
+        'zeroDateTimeBehavior' => 'convertToNull',
+        'useUnicode' => 'yes',
+        'characterEncoding' => 'UTF-8',
+      }.each { |k,v| options.push k + '&' + v.to_s }
+
+      options = options_array.join('&')
       username = 'root'
       password = 'password'
 
@@ -201,10 +215,8 @@ context 'JDBC tests' do
 
               final String serverName = "#{database_host}";
               final String databaseName = "#{database_name}";
-              final String options = "useLegacyDatetimeCode=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&useUnicode=yes&characterEncoding=UTF-8";
-              // Exception: Communications link failure
-              // final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName + "?" + options;
-              final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
+              final String options = "#{options}";
+              final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName + "?" + options;
               final String username = "#{username}";
               final String password = "#{password}";
               Connection connection = DriverManager.getConnection(url, username, password);
