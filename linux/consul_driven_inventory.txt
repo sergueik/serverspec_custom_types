@@ -1,6 +1,7 @@
 # consul managed cluster scan examples
-# the cousul is producing distint domain hostnames
-# naming convention <node role>.node[.datacenter].<domain>
+# The consul DNS https://www.consul.io/discovery.html is producing distint hostnames 
+# which typically are describing the service or service category hosted on the node
+# naming convention is <node role>.node[.datacenter].<domain>
 # where default 'domain' is simply 'consul' and the 'node role' is
 # business-specific e.g. 'database-server'
 # https://www.consul.io/docs/agent/dns.html
@@ -10,12 +11,14 @@
 # and running a RHEL family OS
 
 
-export PACKAGE='oracle-java8-jdk'; \
-export VERSION_MAJOR='1.8.0'; \
-export VERSION_BUILD='192'; \
-expoer CONSUL_HTTP_SSL=true; \
-export LEADER=$(hostname -f); \
-consul exec -http-adds https://$LEADER:8543 \
+export LEADER=$(hostname -f)
+PATH=$PATH:/usr/local/bin
+export CONSUL_HTTP_SSL=true
+
+export PACKAGE='oracle-java8-jdk'
+export VERSION_MAJOR='1.8.0'
+export VERSION_BUILD='192'
+consul exec -http-addr https://$LEADER:8543 \
 rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
 # this command can run from any node that has consul service running, but best run from service discovery role and produces output in the format:
@@ -24,37 +27,38 @@ rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 # alternative formatting:
 # rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_MAJOR | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
-export PACKAGE='oracle-java8-jdk'; \
-export VERSION_MAJOR='1.8.0'; \
-export VERSION_BUILD='192'; \
-expoer CONSUL_HTTP_SSL=true; \
-export LEADER=$(hostname -f); \
-consul exec -http-adds https://$LEADER:8543 \
+export PACKAGE='oracle-java8-jdk'
+export VERSION_MAJOR='1.8.0'
+export VERSION_BUILD='192'
+consul exec -http-addr https://$LEADER:8543 \
 rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
 # formatting of the command to find outliers, not running the $VERSION_BUILD
 
-export PACKAGE='oracle-java8-jdk'; \
-export VERSION_MAJOR='1.8.0'; \
-export VERSION_BUILD='192'; \
-expoer CONSUL_HTTP_SSL=true; \
-export LEADER=$(hostname -f); \
-consul exec -http-adds https://$LEADER:8543 \
+export PACKAGE='oracle-java8-jdk'
+export VERSION_MAJOR='1.8.0'
+export VERSION_BUILD='192'
+consul exec -http-addr https://$LEADER:8543 \
 rpm -q $PACKAGE \&\& hostname -f | grep $VERSION_MAJOR |grep -v $VERSION_BUILD 
 
-# produces the same listing but queries the version in as Puppet knows it
+# Produces the same listing but queries the version in as Puppet knows it
 
-export PACKAGE='oracle-java8-jdk'; \
-export VERSION_MAJOR='1.8.0'; \
-export VERSION_BUILD='192'; \
-expoer CONSUL_HTTP_SSL=true; \
-export LEADER=$(hostname -f); \
-consul exec -http-adds https://$LEADER:8543 \
+consul exec -http-addr https://$LEADER:8543 \
 \( puppet resource package $PACKAGE \| grep -Po "'[0-9].+'" \) \&\& hostname -f | grep -A 1 $VERSION_MAJOR
+
+
+# Alternatively one can pack the command into a string (only the dollar sign and double quote would need escaping):
+
+consul exec -http-addr https://$LEADER:8543 "( puppet resource package $PACKAGE | grep -Po \"'[0-9].+'\" ) && hostname -f" | grep -A 1 $VERSION_MAJOR
 
 # the following command checks puppet mcollective log $LOG to list the nodes
 # reporting some specific error message $MESSAGE
 
-LOG='/var/log/puppetlabs/mcollective.log'; \
-MESSAGE="Received frame of type 'ERROR' expected 'MESSAGE'"; \
+LOG='/var/log/puppetlabs/mcollective.log'
+MESSAGE="Received frame of type 'ERROR' expected 'MESSAGE'"
 grep - "${MESSAGE}" $LOG \&\& hostname -f
+
+
+# Alternative short command to make consul list the members of the cluster
+consul members -http-addr https://$LEADER:8543
+
