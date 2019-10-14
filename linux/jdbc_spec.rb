@@ -177,16 +177,8 @@ context 'JDBC tests' do
             Class.forName("#{jdbc_driver_class_name}");
 
             // based on: https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/test/java/org/postgresql/test/jdbc2/ConnectionTest.java
-            connectionURL = "jdbc:postgresql://"
-                + host + ":" + port + "/" + database
-                + "?ApplicationName=" + applicationName
-                + ((logLevel != null && !logLevel.equals("")) ?
-                ("&loggerLevel=" + logLevel ) : "");
-
-            Connection connection = DriverManager.getConnection(
-                connectionURL, "#{username}",
-                "#{password}");
-
+            connectionURL = "jdbc:postgresql://" + host + ":" + port + "/" + database + "?ApplicationName=" + applicationName + ((logLevel != null && !logLevel.equals("")) ? ("&loggerLevel=" + logLevel ) : "");
+            Connection connection = DriverManager.getConnection( connectionURL, "#{username}", "#{password}");
             if (connection != null) {
               System.out.println("Connected");
             } else {

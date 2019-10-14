@@ -28,6 +28,7 @@ context 'Standard' do
         end
       end
     end
+    # see also: http://www.softpanorama.org/Xwindows/VNC/Vino/activating_vino_from_command_line.shtml
   end
 end
 context 'xFCE Session and Startup desktop launchers' do

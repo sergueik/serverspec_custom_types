@@ -4,7 +4,7 @@ require 'fileutils'
 context 'Puppet Exotic resource usage exercise' do
   base_dir = '/tmp'
   parent_dir = '/tmp/application'
-  extra_file = 'dummy' 
+  extra_file = 'dummy'
   keep_version = '7'
   shell_script_file = '/tmp/example.sh'
 
@@ -35,7 +35,7 @@ context 'Puppet Exotic resource usage exercise' do
     done
     ln -fs ${KEEP_VERSION} 'keep_version'
     cd #{base_dir}
-    # uncomment fro interactive run
+    # uncomment for interactive run
     # read -p 'Press [Enter] key to start cleanup...'
     echo puppet apply -e "${PUPPPET_SCRIPT}"
     puppet apply -e "${PUPPPET_SCRIPT}"
@@ -113,7 +113,7 @@ context 'Puppet Exotic resource usage exercise' do
       ].each do |filename|
         its(:stdout) { should include "#{parent_dir}/#{filename}" }
       end
-      
+
     end
   end
 end
