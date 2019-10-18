@@ -4,10 +4,7 @@ require_relative '../windows_spec_helper'
 
 require 'fileutils'
 
-$DEBUG = ENV.fetch('DEBUG', 'false')
-$stderr.puts "Literal $DEBUG='#{$DEBUG}'"
-$DEBUG = (ENV.fetch('DEBUG', 'false') =~ /^(true|t|yes|y|1)$/i)
-$stderr.puts "Evaluated $DEBUG='#{$DEBUG ? 'true': 'false'}'"
+$DEBUG = ENV.fetch('DEBUG', false)
 
 context 'Jackson YAML', :if => os[:family] == 'windows' do
 

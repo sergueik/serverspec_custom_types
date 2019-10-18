@@ -7,11 +7,16 @@ $DEBUG = false
 # omitted a whole can of worms of hand mande to_boolean in Ruby
 # see https://stackoverflow.com/questions/36228873/ruby-how-to-convert-a-string-to-boolean
 
+$CORRECTLY_DEFINED_DEBUG = ENV.fetch('CORRECTLY_DEFINED_DEBUG', false)
+$stderr.puts "Literal $CORRECTLY_DEFINED_DEBUG='#{$CORRECTLY_DEFINED_DEBUG}'"
+$stderr.puts "Evaluated $CORRECTLY_DEFINED_DEBUG='#{$CORRECTLY_DEFINED_DEBUG ? 'true': 'false'}'"
+
+# easily overlooked error in quoting the default value of $DEBUG
 $DEBUG = ENV.fetch('DEBUG', 'false')
 $stderr.puts "Literal $DEBUG='#{$DEBUG}'"
 $DEBUG = (ENV.fetch('DEBUG', 'false') =~ /^(true|t|yes|y|1)$/i)
-$stderr.puts "Evaluated $DEBUG='#{$DEBUG ? 'true': 'false'}'"
-;
+$stderr.puts "Evaluated $DEBUG='#{$DEBUG ? 'true': 'false'}'";
+
 class String
   def to_boolean
     self =~ /^(true|t|yes|y|1)$/i
