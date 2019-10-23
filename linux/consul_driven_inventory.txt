@@ -62,3 +62,7 @@ grep - "${MESSAGE}" $LOG \&\& hostname -f
 # Alternative short command to make consul list the members of the cluster
 consul members -http-addr https://$LEADER:8543
 
+# when there is a change in the "configuration schema" that needs to be unoformly applied to the cluster members
+# the jq prints a null to STDOUT when no matching expression is found
+consul exec -http-addr https://$LEADER:8543 \
+\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \&\& echo 'MARKER' | grep 'MARKER'
