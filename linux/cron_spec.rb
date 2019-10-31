@@ -18,7 +18,13 @@ end
 
 # http:/serverspec.org/resource_types.html#cron says
 # You can get all cron table entries and use regexp like this.
-# Unfortunately does not work with another user, removed the expectation
+
+describe cron do
+  it { should have_entry("*/5 * * * * /usr/bin/rsync -avz --delete --port #{port} --password-file=#{password_file} #{cronjob_user}@hostname.domain::deployment_repo/ deployment_repo",).with_user( cronjob_user ) }
+end
+# Unfortunately out of the box DSL does not seem to work reliably with another user, removed the expectation
+# https://github.com/mizzy/serverspec/blob/master/lib/serverspec/type/cron.rb
+# https://github.com/mizzy/specinfra/blob/master/lib/specinfra/command/base/cron.rb
 describe command("/bin/crontab -u #{cronjob_user} -l") do
   [
     '# Puppet Name: wso2_deployment_sync',

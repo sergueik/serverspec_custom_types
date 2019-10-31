@@ -2,9 +2,15 @@ require 'spec_helper'
 require 'fileutils'
 
 # based on: http://www.cyberforum.ru/shell/thread2464104.html
-context 'Escaping backticks and special varialbles' do
+# see also: https://mnorin.com/inotify-v-bash.html
+# see also: https://habr.com/ru/post/66569/
+# for Windows port, see
+# https://docs.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher?redirectedfrom=MSDN&view=netframework-4.5.1
+# https://github.com/thekid/inotify-win
+context 'Inotify output processing' do
   script_path = '/tmp'
   tmp_path = '/tmp'
+  trash_filder_path = ""
   script_filename = 'launch_inotify.sh'
   script = "#{script_path}/#{script_filename}"
   pipe = "#{tmp_path}/pipe"
@@ -28,18 +34,23 @@ context 'Escaping backticks and special varialbles' do
   describe command( <<-EOF
     mkdir -p $HOME/.local/share/Trash/files
     #{script}
-    cp /tmp/a.rb $HOME/.local/share/Trash/files
+    SAMLE_FILE="/tmp/a.$$"
+    TRASH_FOLDER=$HOME/.local/share/Trash/files
+    touch $SAMLE_FILE
+    cp $SAMLE_FILE $TRASH_FOLDER
     # inotifywait --format '%f' -qme moved_from $HOME/bash/cyber/VictimovCSharp/test | while read DATA; do [ -d "$HOME/.local/share/Trash/files/$DATA" ] && echo 'DETECTED' ; done
     while read DATA; do
-      [ -d "$HOME/.local/share/Trash/files/$DATA" ] && echo "$DATA moved to trash"
-      break
+      if [ -f "${TRASH_FOLDER}/${DATA}" ] ; then
+        echo "$DATA just moved to trash folder"
+        break
+      fi
     done <#{pipe}
     pkill inotifywait
     rm -f #{pipe}
   EOF
   ) do
    its(:exit_status) { should eq 0 }
-   its(:stdout) { should contain 'moved to trash' }
+   its(:stdout) { should contain 'just moved to trash folder' }
    its(:stderr) { should be_empty }
   end
 end

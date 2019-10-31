@@ -27,7 +27,7 @@ context 'verify set of patch directories' do
   describe file(path_to_dir) do
     debug = false
     # list the patch directories
-    it 'should contain known set of patches in staging directory' do
+    it 'count patches in staging directory' do
       patch_glob = 'patch*' # to prevent non-patch directories from being globbed
       folder_list = Dir.glob("#{path_to_dir}/#{patch_glob}").map {|entry| entry.gsub(Regexp.new('^.*/'),'') }
       if debug

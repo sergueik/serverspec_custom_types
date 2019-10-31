@@ -5,7 +5,8 @@ context 'App listening remote port' do
   app_jar = 'machineagent.jar'
   describe command(<<-EOF
     netstat -anp | grep $(pgrep -a java | grep #{app_jar}|cut -f1 -d ' ')
-  EOF  ) do
+  EOF
+  ) do
     let(:path) {'/bin'}
     its(:stderr) { should be_empty }
     its(:stdout) { should contain remote_port }

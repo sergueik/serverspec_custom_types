@@ -48,6 +48,32 @@ context 'xmllint' do
   end
 
   context 'Tomcat server.xml configuration' do
+
+    context 'Multi Entry condition' do
+      # example  of multi entry command which may be useful as an unless conditon
+      # for a Puppet exec resurce performing multiple 'insert' and 'set' into redundnt DOM path like
+      # /web-app/filter/init-param/param-name
+      # /web-app/filter/init-param/param-value
+      # to configure the parameters for constructor injection of class e.g.
+      # 'com.apache.catalina.filters.HtpHeaderSecurityFilter'
+      entries = %w|
+        antiClickJackingOption
+        antiClickJackingEnabled
+        hstMAxAgeSeconds
+      |
+      entries_regexp = '(' + ( entries.join '|' ) + ')' # antiClickJackingOption|antiClickJackingEnabled|hstMAxAgeSeconds
+      entries_size = entries.size.to_s # 3
+      # see also http://xmlsoft.org/tree.html
+      describe command(<<-EOF
+       test $(xmllint --debug '#{web_xml}' | grep -E 'content=#{entries_regexp}' | wc -l) -eq #{entries_size}
+      EOF
+      ) do
+        its(:exit_status) { should eq 0 }
+        its(:stdout) { should be_empty }
+        its(:stderr) { should be_empty }
+      end
+    end
+
     # simple node attribute value validation
     port = '8443'
     ciphers = [

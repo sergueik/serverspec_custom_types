@@ -182,7 +182,21 @@ context 'JDBC tests' do
       path_separator = ';'
       jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
       database_host = 'localhost'
+
       database_name = 'information_schema'
+      database_name = 'mysql'
+      options_array = []
+
+      {
+        'useLegacyDatetimeCode' => false,
+        'useJDBCCompliantTimezoneShift' => true,
+        'serverTimezone' => 'UTC',
+        'zeroDateTimeBehavior' => 'convertToNull',
+        'useUnicode' => 'yes',
+        'characterEncoding' => 'UTF-8',
+      }.each { |k,v| options.push k + '&' + v.to_s }
+
+      options = options_array.join('&')
       username = 'root'
       password = 'password'
 
@@ -201,10 +215,8 @@ context 'JDBC tests' do
 
               final String serverName = "#{database_host}";
               final String databaseName = "#{database_name}";
-              final String options = "?useLegacyDatetimeCode=false&serverTimezone=UTC&";
-              // Exception: Communications link failure
-              // final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + options + databaseName;
-              final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
+              final String options = "#{options}";
+              final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName + "?" + options;
               final String username = "#{username}";
               final String password = "#{password}";
               Connection connection = DriverManager.getConnection(url, username, password);
@@ -218,13 +230,15 @@ context 'JDBC tests' do
       describe command(<<-EOF
         pushd $env:USERPROFILE
         write-output '#{source}' | out-file #{class_name}.java -encoding ASCII
-        $env:PATH = "${env:PATH};c:\\java\\jdk1.8.0_101\\bin"        
+        $env:PATH = "${env:PATH};c:\\java\\jdk1.8.0_101\\bin"
         javac '#{class_name}.java'
         cmd %%- /c "java -cp #{jars_cp}#{path_separator}. #{class_name}"
       EOF
       ) do
         its(:exit_status) { should eq 0 }
-        its(:stdout) { should match /driverObject=class #{jdbc_driver_class_name}/}
+        its(:stdout) { should match /driverObject=class #{jdbc_driver_class_name}/ }
+        its(:stderr) { should_not contain 'Exception: Communications link failure' } # mysql server is not running
+        its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
       end
     end
   end

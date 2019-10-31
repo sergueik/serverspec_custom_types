@@ -67,13 +67,13 @@ context 'Tomcat server xml Test' do
       hosts = doc.elements['Server'].elements['Service'].elements['Engine']
       hosts.each do |host_node|
         begin
-        if host_node.class != REXML::Text &&  host_node.attributes['name'] == 'localhost'
-          valve_node = host_node.elements['Valve']
-          if valve_node.attributes['className'] == class_name
-            $stderr.puts valve_node
-            result =  true
+          if host_node.class != REXML::Text &&  host_node.attributes['name'] == 'localhost'
+            valve_node = host_node.elements['Valve']
+            if valve_node.attributes['className'] == class_name
+              $stderr.puts valve_node
+              result =  true
+            end
           end
-        end
         rescue NoMethodError => e
           $stderr.puts e.to_s
         end

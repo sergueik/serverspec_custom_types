@@ -24,49 +24,49 @@ User apache
 Group apache
 ServerAdmin root@localhost
 <Directory />
-    AllowOverride none
-    Require all denied
+  AllowOverride none
+  Require all denied
 </Directory>
 DocumentRoot "#{webroot}"
 <Directory "#{webroot}">
-    Options Indexes FollowSymLinks
-    AllowOverride All
-    Require all granted
+  Options Indexes FollowSymLinks
+  AllowOverride All
+  Require all granted
 </Directory>
 
 <IfModule dir_module>
-    DirectoryIndex index.html
+  DirectoryIndex index.html
 </IfModule>
 
 <Files ".ht*">
-    Require all denied
+  Require all denied
 </Files>
 
 ErrorLog "logs/error_log"
 LogLevel warn
 
 <IfModule alias_module>
-    ScriptAlias /cgi-bin/ "#{webroot}/cgi-bin/"
+  ScriptAlias /cgi-bin/ "#{webroot}/cgi-bin/"
 </IfModule>
 
 <Directory "#{webroot}/cgi-bin">
-    AllowOverride None
-    Options None
-    Require all granted
+  AllowOverride None
+  Options None
+  Require all granted
 </Directory>
 
 <IfModule mime_module>
-    TypesConfig /etc/mime.types
-    AddType application/x-compress .Z
-    AddType application/x-gzip .gz .tgz
-    AddType text/html .shtml
-    AddOutputFilter INCLUDES .shtml
+  TypesConfig /etc/mime.types
+  AddType application/x-compress .Z
+  AddType application/x-gzip .gz .tgz
+  AddType text/html .shtml
+  AddOutputFilter INCLUDES .shtml
 </IfModule>
 
 AddDefaultCharset UTF-8
 
 <IfModule mime_magic_module>
-    MIMEMagicFile conf/magic
+  MIMEMagicFile conf/magic
 </IfModule>
 
 EnableSendfile on

@@ -2,6 +2,7 @@ require 'spec_helper'
 
 # https://www.freedesktop.org/software/systemd/man/systemd.timer.html
 # https://www.putorius.net/using-systemd-timers.html
+# https://www.certdepot.net/rhel7-use-systemd-timers/
 context 'systemd timer' do
   system_etc_dir = '/etc/systemd/system'
   system_lib_dir = '/usr/lib/systemd/system'

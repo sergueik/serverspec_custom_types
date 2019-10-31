@@ -2,25 +2,25 @@
 
 context 'Pipes' do
   process = '/var/itlm/tlmagent.bin'
-  named_pipe = '/var/itlm//clisock'
+  named_pipe = '/var/itlm/clisock'
   process_mask = '[t]lmagent.bin'
 
   describe command("/bin/netstat -ano | grep '#{named_pipe}'") do
-    its (:stdout) do
-      should contain 'STREAM'
-      should contain 'LISTENING'
-      should contain named_pipe
+    [ 'STREAM', 'LISTENING', named_pipe].each do |word|
+      its (:stdout) do
+        should contain word
+      end
     end
-    %w|'STREAM' 'LISTENING' named_pipe|.each do |token|
-      its (:stdout) { shoult contain token }
+    %w|STREAM LISTENING named_pipe|.each do |word|
+      its (:stdout) { shoult contain word }
     end	
   end
 
   describe command("/bin/netstat -anp | grep $(ps ax | grep '#{process_mask}' | awk '{print $1}')") do
-    its (:stdout) do
-      should contain 'STREAM'
-      should contain 'LISTENING'
-      should contain named_pipe
+    [ 'STREAM', 'LISTENING', named_pipe].each do |word|
+      its (:stdout) do
+        should contain word
+      end
     end
   end
   describe file(named_pipe)  do

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 context 'set user id attributes' do
 
-  filename = '/file'
+  filename = 'example'
   dir = '/tmp'
   filepath = "#{dir}/#{filename}"
   

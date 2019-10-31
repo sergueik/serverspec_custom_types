@@ -1,13 +1,13 @@
 require 'spec_helper'
-#
+
 # NOTE: window manager-specific
 # origin: http://www.cyberforum.ru/shell/thread2492044.html
 # see also :https://unix.stackexchange.com/questions/177386/how-can-i-add-applications-to-the-lxpanel-application-launch-bar-via-cli
 context 'Lubuntu LXDE Launchers' do
 
   [
-  'vivaldi-stable.desktop',
-  'lxterminal.desktop',
+    'vivaldi-stable.desktop',
+    'lxterminal.desktop',
   ].each do |desktop_file|
     descibe file "/usr/share/applications/#{desktop_file}" do
       it { should be_file }
