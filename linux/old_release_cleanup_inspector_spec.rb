@@ -1,6 +1,7 @@
 require 'spec_helper'
 
-context 'Application with past release polluted "side by side" directories' do
+context 'Application polluted with past releasedirectories' do
+  # a.k.a. "side by side"
   app_base = '/tmp/appname'
   # count directories named
   # '/opt/appname/#{past_release}'
@@ -25,6 +26,14 @@ context 'Application with past release polluted "side by side" directories' do
   # NOTE: filtering the directories twice
   describe command(<<-EOF
     ls -dl #{app_base}/1* | grep -E '[0-9].[0-9].[0-9]+$' | wc -l
+  EOF
+  ) do
+    its(:exit_status) { should eq 0 }
+    its(:stdout) { should match /#{past_releases.size}\b/ }
+  end
+  # NOTE: Assuming nothing but release dires in #{app_base}
+  describe command(<<-EOF
+    ls -l #{app_base}/ | grep -E '^[0-9].[0-9].[0-9]+$' | wc -l
   EOF
   ) do
     its(:exit_status) { should eq 0 }
