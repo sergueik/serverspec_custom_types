@@ -78,3 +78,8 @@ consul exec -http-addr https://$LEADER:8543 \
 # this generates the filtered application node listing like:
 # application-server-10: MARKER: host1.domain
 # cache-server-10: MARKER: host2.domain
+
+# NOTE: printf's % need escape to work via consul
+consul exec -http-addr https://$LEADER:8543 \
+\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+
