@@ -56,11 +56,40 @@ context 'Tumbler Configuration' do
     # NOTE: the following will break apart by section but loses section name
     # awk 'BEGIN{RS="\''a-zA-z0-9]+\]"} {print $1 " " $2}' /etc/xdg/tumbler/tumbler.rc
     # NOTE: for blank line the correct RS is the \n\n+ not the \n+
+    # tac file | sed -n '1,/^$/{/./p}' | tac
+    # see also: https://toster.ru/q/682041
+    #
     describe command( <<-EOF
-      grep -v '^ *#' '#{rc_file}' | awk 'BEGIN{RS="\\n\\n+"} /#{section}/ {print $1 "\\n" $2 "\\n" $3 "\\n" $4 "\\n" $5 "\\n" $6 "\\n" $7 "\\n" $8 "\\n" $9}'
+      grep -v '^ *#' '#{rc_file}' | awk 'BEGIN{RS="\\n\\n+"; OFS="\\n"} /#{section}/ {print $0}'
     EOF
     ) do
       its(:stdout) { should contain /Disabled=true/ }
+    end
+  end
+  # TODO: define
+  # check_exists(key_name)
+  # check_has_property(key_name, key_property)
+  # check_has_value(key_name, key_property, key_value)
+
+  {
+    'JPEGThumbnailer' => {
+     #  empty
+    } ,
+    'CoverThumbnailer' => {
+	  'Locations' => '~/movies',
+	  'Priority' => 3,
+    },
+  }.each do |section,entries|
+    describe command( <<-EOF
+      grep -v '^ *#' '#{rc_file}' | awk 'BEGIN{RS="\\n\\n+"; OFS="\\n"} /#{section}/ {print $0}'
+    EOF
+    ) do
+      entries.each do |key,value|
+        # verbatim
+	    its(:stdout) { should contain "#{key}=#{value}" }
+        # expression
+	    its(:stdout) { should match Regexp.new(Regexp.escape( "#{key}=#{value}" )) }
+      end
     end
   end
 end
