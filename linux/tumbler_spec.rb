@@ -18,8 +18,29 @@ context 'Tumbler Configuration' do
   #
   # sed -nr "/^\'JPEGThumbnailer\]/ { :l /^Disabled' ]*=/ { s/.*=' ]*//; p; q;}; n; b l;}" /etc/xdg/tumbler/tumbler.rc
   # true
-  # TODO: before(:all)
-  # grep -E '\[[a-zA-Z0-9]+\]' /etc/xdg/tumbler/tumbler.rc
+
+  describe command( <<-EOF
+    grep -E '\\[[a-zA-Z0-9]+\\]' '#{rc_file}'
+  EOF
+  ) do
+    [
+      'JPEGThumbnailer',
+      'PixbufThumbnailer',
+      'RawThumbnailer',
+      'CoverThumbnailer',
+      'FfmpegThumbnailer',
+      'GstThumbnailer',
+      'FontThumbnailer',
+      'PopplerThumbnailer',
+      'OdfThumbnailer',
+    ].each do |section|
+      its(:stdout) { should contain "[#{section}]" }
+    end
+  end
+
+
+  # TODO: add section discovery in before(:all)
+
   [
     # 'TypeNameOfPlugin',
     'JPEGThumbnailer',
