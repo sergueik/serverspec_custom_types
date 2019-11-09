@@ -33,10 +33,10 @@ context 'Bolt' do
       ruby ruby/lib/ruby/gems/#{ruby_version}/gems/bolt-#{bolt_version}/exe/bolt command run 'Get-Process' --nodes winrm://#{hostname} --no-ssl --user '#{$user}' --password '#{$password}'
      EOF
     ) do
-     [
-      "Started on #{hostname}...",
-      "Finished on #{hostname}:",
-     ].each do |line|
+      [
+        "Started on #{hostname}...",
+        "Finished on #{hostname}:",
+      ].each do |line|
         its(:stdout) { should contain line }
       end
       its(:stderr) { should be_empty }
@@ -76,7 +76,8 @@ popd
 # there should be no leading whitespace in the line above
     $scriptPath = 'c:/temp/script.ps1'
     echo $scriptContents | out-file -literalpath $scriptPath
-    ruby ruby/lib/ruby/gems/#{ruby_version}/gems/bolt-#{bolt_version}/exe/bolt script run $scriptPath --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
+    $bolt = 'ruby/lib/ruby/gems/#{ruby_version}/gems/bolt-#{bolt_version}/exe/bolt'
+    ruby $bolt script run $scriptPath --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
   EOF
   ) do
     [
@@ -88,9 +89,74 @@ popd
     end
     its(:stderr) { should be_empty }
   end
+  # https://puppet.com/blog/introducing-masterless-puppet-bolt
+
+  $uru_home = ENV.fetch('URU_HOME', 'c:\uru')
+  describe command(<<-EOF
+$plan_contents = @'
+plan profiles::nginx_install(
+  TargetSpec $nodes,
+  String $site_content = 'hello!',
+) {
+  # Install puppet on the target and gather facts
+  # NOTE: in standalone environment would fail with
+  # puppet_agent::version could not be found
+  $nodes.apply_prep
+
+  # Compile the manifest block into a catalog
+  apply($nodes) {
+    file { '/Windows/Temp/index.html':
+      content => $site_content,
+      ensure  => file,
+    }
+  }
+}
+'@
+# there should be no leading whitespace in the line above
+
+    cd $env:USERPROFILE | out-null
+    if ($env:URU_HOME -eq $null -or $env:URU_HOME -eq '') {
+      $env:URU_HOME = '#{$uru_home}'
+    }
+    if ($env:URU_HOME -eq $null -or $env:URU_HOME -eq '') {
+      $env:URU_HOME = 'c:\\uru'
+    }
+    write-debug ("`$env:URU_HOME = {0}" -f $env:URU_HOME)
+
+    new-item '.puppetlabs/bolt/modules/profiles/plans' -force -itemtype directory
+    $plan_path = '.puppetlabs/bolt/modules/profiles/plans/nginx_install.pp'
+    $plan_name = $plan_path -replace '^.*/modules/(.+)/plans/(.+).pp$', '$1::$2'
+    write-debug ('plan name: {0}' -f $plan_name)
+
+    # NOTE: lack of -encoding option leads to error
+    # illegal UTF-16 Byte Order mark at beginning of input: [FF FE] - remove these from the puppet source
+    # NOTE: specifying utf8 encoding leads to error
+    # illegal UTF-8 Byte Order mark at beginning of input: [EF BB BF] - remove these from the puppet source
+    out-file -literalpath $plan_path -inputobject $plan_contents -encoding 'ascii'
+
+    # NOTE: not escaping the backslash leads to error
+    # the regular expression pattern \ is not valid.
+    $bolt = "${env:URU_HOME}/ruby/lib/ruby/gems/#{ruby_version}/gems/bolt-#{bolt_version}/exe/bolt" -replace '\\\\', '/'
+    write-output "ruby $bolt plan run $plan_name --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'"
+    $env:PATH="${env:PATH};${env:URU_HOME}\\ruby\\bin"
+    ruby $bolt plan run $plan_name --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
+  EOF
+  ) do
+    [
+      'Starting: plan profiles::nginx_install',
+      'Starting: install puppet and gather facts on winrm://localhost',
+      'Finished: plan profiles::nginx_install',
+    ].each do |line|
+      its(:stdout) { should contain line }
+    end
+    # add a guaranteed to fail to actually see the output
+    its(:stdout) { should_not contain 'plan' }
+    its(:stderr) { should be_empty }
+  end
 end
 
 # https://devhints.io/bolt
+
 
 # .\uru_rt.exe gem install --no-rdoc --no-ri bolt
 #
