@@ -2,33 +2,40 @@ require_relative '../windows_spec_helper'
 
 context 'Bolt' do
 
+  bolt_version = '1.21.0'
+  ruby_version = '2.3.0'
+
   # A 32-bit windows msi installer is not easily available for
   # Puppet 6's Bolt url.
   # https://puppet.com/docs/bolt/latest/bolt_installing.html
   # and Puppet Agent 1.10 's embedded Ruby needs an gem upgrade
   # The solution is install Bold gem
-  # inside the uru Ruby ienvireonmenr (will require 2.3.x or later)
+  # inside the uru Ruby environment - require uru with Ruby 2.3.x+
   # drawback is 50+ bolt's gem dependencies, listed below
   # will be installed
+  # NOTE: as announced by https://puppet.com/docs/bolt/latest/bolt_installing.html#install-bolt-as-a-gem
+  # Starting with Bolt 0.20.0, gem installations no longer include core task modules.
+  # they want one to use one of their Bolt installation packages instead of a gem.
 
   $user = ENV.fetch('USERNAME', 'vagrant')
   # on a standalone Windows machine, userdomain will be same as hostname
   $hostname = ENV.fetch('USERDOMAIN', nil)
-  # $env:PASSWORD='Your AD password'
+  # NOTE: before running this example need to set $env:PASSWORD='Your AD password'
   $password = ENV.fetch('PASSWORD', 'vagrant')
+
   [
     'localhost',
     $hostname
-  ].each do |node_hostname|
+  ].each do |hostname|
     $stderr.puts "ruby c:/uru/ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt command run 'Get-Process' --nodes winrm://#{hostname} --no-ssl --user '#{$user}' --password '#{$password}'"
     # https://www.google.com/search?q=puppet%20bold%20powwershell%20task%20example
     describe command(<<-EOF
-      ruby ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt command run 'Get-Process' --nodes winrm://#{node_hostname} --no-ssl --user '#{$user}' --password '#{$password}'
+      ruby ruby/lib/ruby/gems/#{ruby_version}/gems/bolt-#{bolt_version}/exe/bolt command run 'Get-Process' --nodes winrm://#{hostname} --no-ssl --user '#{$user}' --password '#{$password}'
      EOF
     ) do
      [
-      "Started on #{node_hostname}...",
-      "Finished on #{node_hostname}:",
+      "Started on #{hostname}...",
+      "Finished on #{hostname}:",
      ].each do |line|
         its(:stdout) { should contain line }
       end
@@ -66,9 +73,10 @@ $schemas | ForEach-Object {
 }
 popd
 '@
+# there should be no leading whitespace in the line above
     $scriptPath = 'c:/temp/script.ps1'
     echo $scriptContents | out-file -literalpath $scriptPath
-    ruby ruby/lib/ruby/gems/2.3.0/gems/bolt-1.21.0/exe/bolt script run $scriptPath --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
+    ruby ruby/lib/ruby/gems/#{ruby_version}/gems/bolt-#{bolt_version}/exe/bolt script run $scriptPath --nodes winrm://localhost --no-ssl --user '#{$user}' --password '#{$password}'
   EOF
   ) do
     [
