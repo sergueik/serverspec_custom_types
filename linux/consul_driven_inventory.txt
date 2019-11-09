@@ -1,5 +1,5 @@
 # consul managed cluster scan examples
-# The consul DNS https://www.consul.io/discovery.html is producing distint hostnames 
+# The consul DNS https://www.consul.io/discovery.html is producing distint hostnames
 # which typically are describing the service or service category hosted on the node
 # naming convention is <node role>.node[.datacenter].<domain>
 # where default 'domain' is simply 'consul' and the 'node role' is
@@ -39,7 +39,7 @@ export PACKAGE='oracle-java8-jdk'
 export VERSION_MAJOR='1.8.0'
 export VERSION_BUILD='192'
 consul exec -http-addr https://$LEADER:8543 \
-rpm -q $PACKAGE \&\& hostname -f | grep $VERSION_MAJOR |grep -v $VERSION_BUILD 
+rpm -q $PACKAGE \&\& hostname -f | grep $VERSION_MAJOR |grep -v $VERSION_BUILD
 
 # Produces the same listing but queries the version in as Puppet knows it
 
@@ -66,3 +66,20 @@ consul members -http-addr https://$LEADER:8543
 # the jq prints a null to STDOUT when no matching expression is found
 consul exec -http-addr https://$LEADER:8543 \
 \(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \&\& echo 'MARKER' | grep 'MARKER'
+
+# Filter nodes by the presence of the data extracted throgh some JSON filter
+# Collect node-specific DATA e.g. fqdn of the qualified node
+# report aditional inventory to service discovery node
+# For this to work everything needs to be printed on one line as MARKER ).
+# Collecting extra data into a shell variable $DATA first:
+consul exec -http-addr https://$LEADER:8543 \
+\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \); echo 'MARKER: '\$DATA \) | grep 'MARKER'
+
+# this generates the filtered application node listing like:
+# application-server-10: MARKER: host1.domain
+# cache-server-10: MARKER: host2.domain
+
+# NOTE: printf's % need escape to work via consul
+consul exec -http-addr https://$LEADER:8543 \
+\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+
