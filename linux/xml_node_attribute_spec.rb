@@ -6,19 +6,19 @@ $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
 context 'XML attribute names spec' do
   license_datafile = '/tmp/license.xml'
   license_content = <<-EOF
-<?xml version="1.0" encoding="UTF-8"?>
-  <key-list>
-  <key options="options" usage-limit="data" expiration-date="data"
-  licence-model="server" customer="customer name">
-  ZHVtbXkgZGF0YQo=
-  </key>
-  <!-- dummy data -->
-  </key-list>
+    <?xml version="1.0" encoding="UTF-8"?>
+    <key-list>
+      <key options="options" usage-limit="data" expiration-date="data" licence-model="server" customer="customer name">
+      ZHVtbXkgZGF0YQo=
+      </key>
+      <!-- dummy data -->
+    </key-list>
   EOF
   before(:each) do
     $stderr.puts "Writing #{license_datafile}"
     file = File.open(license_datafile, 'w')
-    file.puts license_content
+    # remove leading whitespace: XML declaration allowed only at the start of the document
+    file.puts license_content.strip
     file.close
   end
   context 'xmllint command' do
@@ -47,14 +47,15 @@ context 'XML attribute names spec' do
   context 'xsltproc command' do
     attribute_extract_datafile = '/tmp/attr_printer.xml'
     attribute_extract_content = <<-EOF
-<?xml version="1.0"?>
+      <?xml version="1.0"?>
       <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
         <xsl:template match="/">
-          <xsl:apply-templates select="//@*" />
+          <xsl:apply-templates select="//@*"/>
         </xsl:template>
         <xsl:template match="//@*">
-           <xsl:value-of select="name()"/>
-           <xsl:text>&#xa;</xsl:text>
+          <xsl:value-of select="name()"/>
+          <xsl:text>
+      </xsl:text>
         </xsl:template>
       </xsl:stylesheet>
     EOF
@@ -62,7 +63,7 @@ context 'XML attribute names spec' do
     before(:each) do
       $stderr.puts "Writing #{attribute_extract_datafile}"
       file = File.open(attribute_extract_datafile, 'w')
-      file.puts attribute_extract_content
+      file.puts attribute_extract_content.strip
       file.close
     end
     describe command(<<-EOF
