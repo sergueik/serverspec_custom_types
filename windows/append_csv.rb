@@ -1,10 +1,12 @@
 # require_relative '../windows_spec_helper'
+# ./uru_rt ruby append_csv.rb --count 100 --output '/tmp/new_data.json'
 
 require 'csv'
 require 'json'
 require 'yaml'
 require 'pp'
 require 'optparse'
+
 
 
 # context 'append the csv row data to json object' do
@@ -53,6 +55,7 @@ opt = OptionParser.new
   :logs    => false,
   :process => false,
   :input   => '/tmp/data.csv',
+  :output  => nil,
   :cache   => '/tmp/data.json',
   # cannot use qw here - need do explicit array
   # syntax error, unexpected tIDENTIFIER, expecting keyword_do or '{' or '('
@@ -79,6 +82,10 @@ opt.on('--input [PATH]', 'Path to the CSV file to read') do |val|
   @options[:input] = val
 end
 
+opt.on('--output [PATH]', 'Path to the JSON file to written') do |val|
+  @options[:output] = val
+end
+
 opt.on('--columns [PATH]', 'Columns of the CSV file to read') do |val|
   @options[:columns] = val.split ','
 end
@@ -100,3 +107,8 @@ merged_data = { }
 
 merged_data  = merge_data(json_data, csv_data)
 pp merged_data
+output_path = @options[:output]
+puts JSON.dump(merged_data)
+if ! output_path.nil?
+  File.open(output_path, 'w') { |f| f.write(JSON.dump(merged_data)) }
+end
