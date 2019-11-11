@@ -1,13 +1,9 @@
 # require_relative '../windows_spec_helper'
-# ./uru_rt ruby append_csv.rb --count 100 --output '/tmp/new_data.json'
-
 require 'csv'
 require 'json'
 require 'yaml'
 require 'pp'
 require 'optparse'
-
-
 
 # context 'append the csv row data to json object' do
 #   before(:all) do
@@ -54,7 +50,8 @@ opt = OptionParser.new
 @options = {
   :logs    => false,
   :process => false,
-  :input   => '/tmp/data.csv',
+  :dir     => '/tmp',
+  :file    => 'data.*.csv', # passing glob
   :output  => nil,
   :cache   => '/tmp/data.json',
   # cannot use qw here - need do explicit array
@@ -78,8 +75,12 @@ opt.on('--cache [PATH]', 'Filepath of JSON (TODO: or XML) cache to load and to m
   @options[:cache] = val
 end
 
-opt.on('--input [PATH]', 'Path to the CSV file to read') do |val|
-  @options[:input] = val
+opt.on('--dir [PATH]', 'Path to the directory containing CSV files to read') do |val|
+  @options[:dir] = val
+end
+
+opt.on('--file [MASK]', 'File mask of the CSV file to read') do |val|
+  @options[:file] = val
 end
 
 opt.on('--output [PATH]', 'Path to the JSON file to written') do |val|
@@ -98,17 +99,58 @@ pp @options
 csv_file_path = @options[:input]
 @columns = @options[:columns]
 json_file_path = @options[:cache]
-$stderr.puts 'Reading ' + csv_file_path
-csv_data = load_report(csv_file_path)
-pp csv_data
 json_data = load_cache(json_file_path)
 pp json_data
 merged_data = { }
+datadir = @options[:dir]
+datafile = @options[:file]
+file_mask = datadir + '/' + datafile
+Dir.glob(file_mask).each do |file_path|
+  $stderr.puts 'Reading ' + file_path
+  csv_data = load_report(file_path)
+  pp csv_data
+  merged_data  = merge_data(json_data, csv_data)
+  pp merged_data
+  puts JSON.dump(merged_data)
+  json_data = merged_data
+end
 
-merged_data  = merge_data(json_data, csv_data)
-pp merged_data
 output_path = @options[:output]
-puts JSON.dump(merged_data)
 if ! output_path.nil?
   File.open(output_path, 'w') { |f| f.write(JSON.dump(merged_data)) }
 end
+
+# /tmp/data.1.csv
+# 110,a1,b1
+# 120,a1,d1
+# /tmp/data.1.csv
+# 210,a2,b2
+# ./uru_rt ruby append_csv.rb --count 100 --output '/tmp/new_data.json'
+# jq '.' '/tmp/new_data.json'
+#  {
+#    "dummy": "dummy",
+#    "data": [
+#      {
+#        "idx": -1,
+#        "key": null,
+#        "value": "",
+#        "comment": "dummy"
+#      },
+#      {
+#        "idx": "110",
+#        "key": "a1",
+#        "value": "b1"
+#      },
+#      {
+#        "idx": "210",
+#        "key": "a2",
+#        "value": "b2"
+#      },
+#      {
+#        "idx": "220",
+#        "key": "a2",
+#        "value": "b2"
+#      }
+#    ]
+#  }
+#
