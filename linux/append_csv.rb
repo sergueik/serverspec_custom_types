@@ -151,40 +151,85 @@ if ! output_path.nil?
   File.open(output_path, 'w') { |f| f.write(JSON.dump(json_data)) }
 end
 
-# /tmp/data.1.csv
-# 110,a1,b1
-# 120,a1,d1
-# /tmp/data.1.csv
-# 210,a2,b2
-# ./uru_rt ruby append_csv.rb --output '/tmp/new_data.json' --params 'startdate,enddate'  --values '01/01/2019,11/11/2019' --process
-# jq '.' '/tmp/new_data.json'
-#  {
-#    "dummy": "dummy",
-#    "data": [
-#      {
-#        "idx": -1,
-#        "key": null,
-#        "value": "",
-#        "comment": "dummy"
-#      },
-#      {
-#        "idx": "110",
-#        "key": "a1",
-#        "value": "b1"
-#      },
-#      {
-#        "idx": "210",
-#        "key": "a2",
-#        "value": "b2"
-#      },
-#      {
-#        "idx": "220",
-#        "key": "a2",
-#        "value": "b2"
-#      }
-#    ],
-#  "startdate": "01/01/2019",
-#  "enddate": "11/11/2019"
-#
-#  }
-#
+
+documentation  = <<-DOC
+#!/bin/bash
+
+START_DATE='07/01/2019'
+END_DATE='10/01/2019'
+DAY_INCREMENT=20
+REPORT_DIR='/tmp'
+TOOL_DIR='/uru'
+CNT=0
+
+# mock up csv data
+cat <<EOF>"$REPORT_DIR/data.1.csv"
+110,a1,b1
+120,a1,d1
+EOF
+cat <<EOF>"$REPORT_DIR/data.1.csv"
+210,a2,b2
+EOF
+NEXT_DATE="${START_DATE}"
+
+
+1>/dev/null 2>/dev/null push $REPORT_DIR
+
+# mock up generation of csv files iby running reports over sub-interval
+# origin: https://stackoverflow.com/questions/25701265/how-to-generate-a-list-of-all-dates-in-a-range-using-the-tools-available-in-bash
+
+until [[ "${NEXT_DATE}" > "${END_DATE}" ]]; do
+  INTERVAL_START=$NEXT_DATE
+  NEXT_DATE=$(date -d "${NEXT_DATE} + ${DAY_INCREMENT} day" +%m/%d/%Y)
+  if  [[ "${NEXT_DATE}" < "${END_DATE}" ]]; then
+    INTERVAL_END=$NEXT_DATE
+  else
+    INTERVAL_END=$END_DATE
+  fi
+  echo "${INTERVAL_START} ${INTERVAL_END}"
+  CNT=$(expr $CNT + 1 )
+  echo "Report \"data.${CNT}.csv\""
+done
+1>/dev/null 2>/dev/null popd
+
+# aggregate the data
+1>/dev/null 2>/dev/null pushd $TOOL_DIR
+
+./uru_rt ruby "${TOOL_DIR}/append_csv.rb" --output "${REPORT_DIR}/new_data.json" --params 'startdate,enddate'  --values "${START_DATE},${END_DATE}" --process
+
+# display the result
+jq '.' "${REPORT_DIR}/new_data.json"
+1>/dev/null 2>/dev/null popd
+
+# result:
+  {
+    "dummy": "dummy",
+    "data": [
+      {
+        "idx": -1,
+        "key": null,
+        "value": "",
+        "comment": "dummy"
+      },
+      {
+        "idx": "110",
+        "key": "a1",
+        "value": "b1"
+      },
+      {
+        "idx": "210",
+        "key": "a2",
+        "value": "b2"
+      },
+      {
+        "idx": "220",
+        "key": "a2",
+        "value": "b2"
+      }
+    ],
+  "startdate": "01/01/2019",
+  "enddate": "11/11/2019"
+
+  }
+
+DOC
