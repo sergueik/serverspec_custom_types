@@ -153,15 +153,20 @@ end
 
 
 documentation  = <<-DOC
-#!/bin/bash
+#!/bin/sh
 
 START_DATE='07/01/2019'
 END_DATE='10/01/2019'
-DAY_INCREMENT=20
-REPORT_DIR='/tmp'
-TOOL_DIR='/uru'
+DAY_INCREMENT='20'
+# NOTE: no leading '+' in $DATETIME_FORMAT
+DATETIME_FORMAT='%m/%d/%Y'
+DATETIME_FORMAT='%Y-%m-%d'
+NEXT_DATE="${START_DATE}"
 CNT=0
 
+REPORT_DIR='/tmp'
+TOOL_DIR='/uru'
+#
 # mock up csv data
 cat <<EOF>"$REPORT_DIR/data.1.csv"
 110,a1,b1
@@ -170,7 +175,6 @@ EOF
 cat <<EOF>"$REPORT_DIR/data.1.csv"
 210,a2,b2
 EOF
-NEXT_DATE="${START_DATE}"
 
 
 1>/dev/null 2>/dev/null push $REPORT_DIR
@@ -180,15 +184,17 @@ NEXT_DATE="${START_DATE}"
 
 until [[ "${NEXT_DATE}" > "${END_DATE}" ]]; do
   INTERVAL_START=$NEXT_DATE
-  NEXT_DATE=$(date -d "${NEXT_DATE} + ${DAY_INCREMENT} day" +%m/%d/%Y)
+  NEXT_DATE=$(date -d "${NEXT_DATE} + ${DAY_INCREMENT} day" +$DATETIME_FORMAT)
   if  [[ "${NEXT_DATE}" < "${END_DATE}" ]]; then
     INTERVAL_END=$NEXT_DATE
   else
     INTERVAL_END=$END_DATE
   fi
-  echo "${INTERVAL_START} ${INTERVAL_END}"
+  echo "INTERVAL_START=${INTERVAL_START}"
+  echo "INTERVAL_END=${INTERVAL_END}"
+  echo "CNT=${CNT}"
+  echo "commands to generate partial report \"data.${CNT}.csv\""
   CNT=$(expr $CNT + 1 )
-  echo "Report \"data.${CNT}.csv\""
 done
 1>/dev/null 2>/dev/null popd
 
