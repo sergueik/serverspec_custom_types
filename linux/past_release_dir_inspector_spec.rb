@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-context 'Application polluted with past releasedirectories' do
+context 'Application directory polluted with past release directories' do
   # a.k.a. "side by side"
   app_base = '/tmp/appname'
   # count directories named

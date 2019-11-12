@@ -20,21 +20,21 @@ context 'Tomcat static page test' do
   server_xml_file = "#{catalina_home}/conf/server.xml"
   static_page_datafile = "#{static_page_path}/#{static_page}"
   static_page_content = <<-EOF
-<!DOCTYPE html>
-<html>
-<head>
-</head>
-<body>
-</body>
-</html>
+    <!DOCTYPE html>
+    <html>
+      <head>
+      </head>
+      <body>
+      </body>
+    </html>
   EOF
   before(:each) do
     $stderr.puts "Writing #{static_page_datafile}"
     Specinfra::Runner::run_command( <<-EOF
       mkdir -p $(dirname #{static_page_datafile})
       # no space at beginning of the document is critical for xml
-      cat<<DATA1|tee #{static_page_datafile}
-#{static_page_content}
+      cat<<DATA|sed 's|^\\s\\s*||' | tee #{static_page_datafile}
+        #{static_page_content.strip}
 DATA1
     EOF
     )

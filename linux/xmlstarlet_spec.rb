@@ -10,8 +10,8 @@ context 'xmlstartlet' do
     datafile = '/tmp/attributes.xml'
     before(:each) do
       Specinfra::Runner::run_command( <<-EOF
-        # no space at beginning of the document is critical for xml
-        cat<<END>#{datafile}
+        # XML declaration is allowed only at the start of the document
+        cat<<END>'#{datafile}'
 <?xml version="1.0"?>
 <catalog>
   <driver url="jdbc:sqlite::memory:"/>

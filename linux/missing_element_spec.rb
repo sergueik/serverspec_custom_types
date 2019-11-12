@@ -8,22 +8,25 @@ context 'Missing Element' do
   context 'XML' do
     config_home = '/tmp'
     config_xml = "#{config_home}/config.xml"
+    # with more recent Ruby can also use '<<~'
     content = <<-EOF
-<?xml version="1.0" encoding="UTF-8"?>
-  <web>
-    <servlet>
-      <init-param>
-        <param-name>listings</param-name>
-        <param-value>false</param-value>
-      </init-param>
-      <load-on-startup>1</load-on-startup>
-    </servlet>
-  </web>    
+      <?xml version="1.0" encoding="UTF-8"?>
+      <web>
+        <servlet>
+          <init-param>
+            <param-name>listings</param-name>
+            <param-value>false</param-value>
+          </init-param>
+          <load-on-startup>1</load-on-startup>
+        </servlet>
+      </web>
     EOF
     before(:each) do
       $stderr.puts "Writing #{config_xml}"
+      # remove leading whitespace: XML declaration allowed only at the start of the document
+      # NOTE: sub('^\s+', '') will not do.
       file = File.open(config_xml, 'w')
-      file.puts content
+      file.puts content.strip
       file.close
     end
     describe command(<<-EOF
@@ -34,7 +37,7 @@ context 'Missing Element' do
       its(:stdout) { should contain 'XPath set is empty' }
     end
     describe command(<<-EOF
-      xmllint -xpath '/web/servlet/missing-node' '#{config_xml}' 2>& 1| grep -q 'XPath set is empty'  && echo 'MARKER'
+      xmllint -xpath '/web/servlet/missing-node' '#{config_xml}' 2>& 1| grep -q 'XPath set is empty' && echo 'MARKER'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
@@ -72,3 +75,4 @@ context 'Missing Element' do
     end
   end
 end
+
