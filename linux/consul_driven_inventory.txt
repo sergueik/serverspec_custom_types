@@ -73,7 +73,8 @@ consul exec -http-addr https://$LEADER:8543 \
 # For this to work everything needs to be printed on one line as MARKER ).
 # Collecting extra data into a shell variable $DATA first:
 consul exec -http-addr https://$LEADER:8543 \
-\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \); echo 'MARKER: '\$DATA \) | grep 'MARKER'
+\(jq '.ui' \< '/etc/consul.d/consul.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \); echo 'MARKER: ' \$DATA \) | grep 'MARKER'
+# https://www.consul.io/docs/agent/options.html#disable_remote_exec
 
 # this generates the filtered application node listing like:
 # application-server-10: MARKER: host1.domain
@@ -81,5 +82,13 @@ consul exec -http-addr https://$LEADER:8543 \
 
 # NOTE: printf's % need escape to work via consul
 consul exec -http-addr https://$LEADER:8543 \
-\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+\(jq '.missing_setting' \< '/etc/consul.d/consul.json' \| grep -q 'null' \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+# will produce a report loke
+# agent-one: MARKER: node1.consul.domain
+# agent-two: MARKER: node2.consul.domain
 
+# on a vanilla system consul exec listens to 8500 HTTP
+MESSAGE='start on runlevel'
+CONFIG_FILE='/etc/init/consul.conf'
+consul exec -verbose \
+\( grep -q \"$MESSAGE\" \"$CONFIG_FILE\" \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
