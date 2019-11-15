@@ -92,3 +92,15 @@ MESSAGE='start on runlevel'
 CONFIG_FILE='/etc/init/consul.conf'
 consul exec -verbose \
 \( grep -q \"$MESSAGE\" \"$CONFIG_FILE\" \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+
+# guaranteed to find in a successful appication 'catalina.out':
+LOG_MESSAGE1='Server Startup'
+LOG_MESSAGE2='Server Startup'
+# Fatal exception message fragment indicating severe infrastructure problem on a particular node:
+LOG_MESSAGE1='skew too great'
+LOG_MESSAGE2='skew too great'
+LOG_FILE='/opt/tomcat/logs/catalina.out'
+# NOTE: test positive is always better in readability
+consul exec -http-addr https://$LEADER:8543 \
+\(grep \"\$LOG_MESSAGE1" $LOG_FILE \| grep -q \"\$LOG_MESSAGE2\" \) \&\& \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+
