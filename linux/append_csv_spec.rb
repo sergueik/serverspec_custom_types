@@ -69,4 +69,9 @@ context 'Incremental report results size check' do
       its(:stdout) { should contain line }
     end
   end
+  # require 'csv'
+  # datafile = ARGV[0]
+  # @data = CSV.read(File.new(datafile))
+  # @data.push @data[-1]
+  # CSV.open(datafile, 'w') { |csv| csv << @data }
 end
