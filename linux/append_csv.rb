@@ -41,10 +41,27 @@ def merge_data(cache_data, input_data)
   cache_data
 end
 
+# ??
 def report_resources(report)
   report.resource_statuses
 end
 
+def collapse_columns(report)
+ report_hash = {}
+ report.each do |row|
+   idx = row['idx']
+   collapsed_row['idx'] = row['idx']
+   if row['device'].eql? 'accounts'
+     collapsed_row['accounts'] = row['status']
+   else
+     collapsed_row['payments'] = row['idx']
+   end
+     report_hash[idx] = collapsed_row
+  end
+  # idx will become redundant
+  PP.pp report_hash, $stderr
+
+end
 opt = OptionParser.new
 
 @options = {
@@ -57,7 +74,7 @@ opt = OptionParser.new
   # cannot use qw here - need do explicit array
   # syntax error, unexpected tIDENTIFIER, expecting keyword_do or '{' or '('
   # :columns => qw|row key value|,
-  :columns => ['idx','key','value'],
+  :columns => ['idx','date','device','status'],
   :params  => (['startdate','enddate'].join ','),
   :values  => (['11/10/2019','11/11/2019'].join ','),
   :count   => 20,
@@ -166,15 +183,35 @@ CNT=0
 
 REPORT_DIR='/tmp'
 TOOL_DIR='/uru'
-#
+CNT=0
+
+mock up minimal data.json
+cat <<EOF>"$REPORT_DIR/data.json"
+{
+  "data": []
+}
+EOF
+
 # mock up csv data
+# id, date, device, status
+#
 cat <<EOF>"$REPORT_DIR/data.1.csv"
-110,a1,b1
-120,a1,d1
+10,2011/11/10,accounts,success
+20,2011/11/12,accounts,failure
+30,2011/11/12,payments,success
+
 EOF
-cat <<EOF>"$REPORT_DIR/data.1.csv"
-210,a2,b2
+
+# mock up csv data
+# id, date, device, status
+#
+cat <<EOF>"$REPORT_DIR/data.2.csv"
+10,2011/11/05,accounts,success
+20,2011/11/05,payments,success
+30,2011/11/06,accounts,failure
+40,2011/11/06,payments,failure
 EOF
+NEXT_DATE="${START_DATE}"
 
 
 1>/dev/null 2>/dev/null push $REPORT_DIR
