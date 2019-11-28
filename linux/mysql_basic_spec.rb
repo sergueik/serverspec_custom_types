@@ -257,4 +257,21 @@ context 'MySQL' do
       its(:stdout) { should match /\b#{service_name}(?:@bootstrap)?\.service\b/ }
     end
   end
+  # https://www.w3resource.com/mysql/date-and-time-functions/mysql-datediff-function.php
+  context 'DATEDIFF' do
+    sample_date = '2019-11-19 12:34:56'
+    sql = <<-EOF
+      SET @sample_date = '#{sample_date}';
+      SET @midnight = SUBDATE(CONCAT(YEAR(@sample_date),'/', MONTH(@sample_date), '/', DAY(@sample_date), ' 23:59:59'), 0);
+      SELECT DATEDIFF(CAST(DATE_ADD(@midnight, INTERVAL 1 MINUTE) AS DATE), CAST(@sample_date AS DATE)) as D;
+      SELECT LEAST(@midnight,@sample_date) AS L;
+    EOF
+    describe command(<<-EOF
+      mysql --silent -e "#{sql}"
+    EOF
+    ) do
+      its(:stdout) { should contain '1' }
+      its(:stdout) { should contain sample_date }
+    end
+  end
 end
