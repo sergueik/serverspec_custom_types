@@ -104,3 +104,12 @@ LOG_FILE='/opt/tomcat/logs/catalina.out'
 consul exec -http-addr https://$LEADER:8543 \
 \(grep \"\$LOG_MESSAGE1" $LOG_FILE \| grep -q \"\$LOG_MESSAGE2\" \) \&\& \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
 
+# NOTE: for some reason using the puppet --version command fails here
+export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
+consul exec -http-addr https://$LEADER:8543 \
+\(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; /bin/printf \"NODE: \%s VERSION: \%s\" \$NODE_HOSTNAME \$PUPPET_VERSION \; fi \) | grep 'NODE'
+
+
+export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
+consul exec -http-addr https://$LEADER:8543 \
+\(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; RPM_INFO=\$\( rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\}-\%\{VERSION\}\%\{RELEASE\}.\%\{ARCH\}' -q puppet-agent \)\;/bin/printf \"NODE: \%s RPM INFO: \%s\" \$NODE_HOSTNAME \$RPM_INFO \; fi \) | grep 'NODE'
