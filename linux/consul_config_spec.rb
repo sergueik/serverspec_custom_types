@@ -44,7 +44,7 @@ context 'Consul Response Headers' do
       CONSUL_NODE_NAME = '#{node}'
       curl -I -X GET http://localhost:8500/v1/health/state/any | jq '.[]| select(.Node == "#{node}")'
     EOF
-    ), Specinfra::Runner::run_command("ps ax | grep consu[l]").exit_status.eql?(0) do
+    ), Specinfra::Runner::run_command('ps ax | grep consu[l]').exit_status.eql?(0) do
    end
   end
   describe 'Service checks' do
@@ -58,7 +58,7 @@ context 'Consul Response Headers' do
       describe command(<<-EOF
         curl -k -I -X GET https://127.0.0.1:8543/v1/agent/services
       EOF
-      ), Specinfra::Runner::run_command("ps ax | grep consu[l]").exit_status.eql?(0) do
+      ), Specinfra::Runner::run_command('ps ax | grep consu[l]').exit_status.eql?(0) do
         its(:stdout) { should contain Regexp.new("#{name}: #{value}", Regexp::IGNORECASE  )  }
       end
     end

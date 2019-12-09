@@ -23,10 +23,12 @@ context 'Missing Element' do
     EOF
     before(:each) do
       $stderr.puts "Writing #{config_xml}"
-      # remove leading whitespace: XML declaration allowed only at the start of the document
-      # NOTE: sub('^\s+', '') will not do.
       file = File.open(config_xml, 'w')
+      # remove leading whitespace: XML declaration allowed only at the start of the document
       file.puts content.strip
+      # NOTE: will also work
+      # content.sub(/^\s+/, '') 
+      # content.gsub(/\A[[:space:]]+/, '')
       file.close
     end
     describe command(<<-EOF

@@ -73,7 +73,8 @@ consul exec -http-addr https://$LEADER:8543 \
 # For this to work everything needs to be printed on one line as MARKER ).
 # Collecting extra data into a shell variable $DATA first:
 consul exec -http-addr https://$LEADER:8543 \
-\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \); echo 'MARKER: '\$DATA \) | grep 'MARKER'
+\(jq '.ui' \< '/etc/consul.d/consul.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \); echo 'MARKER: ' \$DATA \) | grep 'MARKER'
+# https://www.consul.io/docs/agent/options.html#disable_remote_exec
 
 # this generates the filtered application node listing like:
 # application-server-10: MARKER: host1.domain
@@ -81,5 +82,34 @@ consul exec -http-addr https://$LEADER:8543 \
 
 # NOTE: printf's % need escape to work via consul
 consul exec -http-addr https://$LEADER:8543 \
-\(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+\(jq '.missing_setting' \< '/etc/consul.d/consul.json' \| grep -q 'null' \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+# will produce a report loke
+# agent-one: MARKER: node1.consul.domain
+# agent-two: MARKER: node2.consul.domain
 
+# on a vanilla system consul exec listens to 8500 HTTP
+MESSAGE='start on runlevel'
+CONFIG_FILE='/etc/init/consul.conf'
+consul exec -verbose \
+\( grep -q \"$MESSAGE\" \"$CONFIG_FILE\" \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+
+# guaranteed to find in a successful appication 'catalina.out':
+LOG_MESSAGE1='Server Startup'
+LOG_MESSAGE2='Server Startup'
+# Fatal exception message fragment indicating severe infrastructure problem on a particular node:
+LOG_MESSAGE1='skew too great'
+LOG_MESSAGE2='skew too great'
+LOG_FILE='/opt/tomcat/logs/catalina.out'
+# NOTE: test positive is always better in readability
+consul exec -http-addr https://$LEADER:8543 \
+\(grep \"\$LOG_MESSAGE1" $LOG_FILE \| grep -q \"\$LOG_MESSAGE2\" \) \&\& \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
+
+# NOTE: for some reason using the puppet --version command fails here
+export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
+consul exec -http-addr https://$LEADER:8543 \
+\(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; /bin/printf \"NODE: \%s VERSION: \%s\" \$NODE_HOSTNAME \$PUPPET_VERSION \; fi \) | grep 'NODE'
+
+
+export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
+consul exec -http-addr https://$LEADER:8543 \
+\(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; RPM_INFO=\$\( rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\}-\%\{VERSION\}\%\{RELEASE\}.\%\{ARCH\}' -q puppet-agent \)\;/bin/printf \"NODE: \%s RPM INFO: \%s\" \$NODE_HOSTNAME \$RPM_INFO \; fi \) | grep 'NODE'
