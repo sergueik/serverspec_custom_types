@@ -78,7 +78,31 @@ context 'File version Powershell 2.0' do # Powershell 2.0 lacks convertto-json c
    'c:\Program Files\Puppet Labs\Puppet\sys\ruby\bin\ruby.exe' => '2.1.9p490',
   }.each do |file_path, file_version|
     describe command(<<-EOF
-    $file_path = '#{file_path}'
+      # origin: https://stackoverflow.com/questions/40495248/create-hashtable-from-json
+      function parse_json_helper{
+        param (
+          [string]$json,
+          [string]$file = $null
+        )
+        $data = @{}
+        if ($file -ne $null -and $file -ne '' -and (test-item -path $file)) {
+          write-debug ('Reading file "{0}"' -f $file)
+          $data = [IO.File]::ReadAllText($file)
+        } else {
+          $data = $json
+        }
+        $parser = new-object -typeName 'Web.Script.Serialization.JavaScriptSerializer'
+        $parser.MaxJsonLength = $data.length
+        $data = $parser.DeserializeObject($data)
+        if ($DebugPreference -eq 'Continue'){
+          write-output -NoEnumerate $data
+        }
+        # $data type is a simple hash
+        $data
+      }
+
+ 
+      $file_path = '#{file_path}'
       try {
         $info = get-item -path $file_path
         write-output ($info.VersionInfo | format-list)
