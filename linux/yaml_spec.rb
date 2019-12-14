@@ -35,17 +35,22 @@ node-ad8c3125:
     - 'a'
     - 'b'
     - 'c'
-  param2:
-    key1: 'value1'
-    key2: 'value2'
-  param3: 'data'
+  # Ansible-style collapsing module arguments
+  param2: key1=value1 key2=value2
+  param3:
+    key3: 'value 3'
+    key4: value4
+  param4: |
+     data
+
+
 END
       EOF
       )
     end
     describe command(<<-EOF
       cat '#{datafile}' | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))' | \\
-      jq '.[]| select( .datacenter | contains("miami")) | .param1 | @csv '
+      jq '.[]| select( .datacenter | contains("miami")) | .param1 | @csv'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
@@ -53,6 +58,19 @@ END
       its(:stderr) { should_not match 'jq: error: syntax error' }
     end
 
+ #     TODO: collect multiple keys
+ #     describe command(<<-EOF
+ #       cat '#{datafile}' | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))' | \\
+ #       jq '.[]| select( .datacenter | contains("miami")) | tee /tmp/$$.json
+ #       jq '[] | .param1, .param2' /tmp/$$.json
+ #
+ #     EOF
+ #     ) do
+ #       its(:exit_status) { should eq 0 }
+ #       its(:stdout) { should match Regexp.new('"\\\\"a\\\\",\\\\"b\\\\",\\\\"c\\\\"', Regexp::IGNORECASE) }
+ #       its(:stdout) { should match Regexp.new('key1\\\\=value1', Regexp::IGNORECASE) }
+ #       its(:stderr) { should_not match 'jq: error: syntax error' }
+ #     end
   end
   # NOTE: YAML 'anchors' feature explained in https://learnxinyminutes.com/docs/yaml/
   context 'YAML with anchors' do
@@ -86,9 +104,15 @@ END
     EOF
     ) do
       its(:exit_status) { should eq 0 }
+      # NOTE: there is two tools named yamllint:
+      # Ruby gem package https://github.com/shortdudey123/yamllint
+      # installed via gem install yamllint to /usr/local/bin
+      # Python script installed through apt-get install yamllint to /usr/bin
+      # Only the former prints the conclusion message to the screen
       its(:stdout) { should contain 'YamlLint found no errors' }
       # its(:stderr) { should be_empty }
       # [DEPRECATION] This gem has been renamed to optimist and will no longer be supported. Please switch to optimist as soon as possible.
     end
   end
 end
+
