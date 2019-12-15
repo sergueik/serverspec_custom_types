@@ -57,7 +57,9 @@ EOF
       defvar value $node/param-name[#text = /files/name]/../param-value/#text
       print $value
       get $value
+      # noisy
       # print '/augeas//error'
+      print '/augeas/files#{xml_file}/error'
       quit
     EOF
     describe command(<<-EOF
@@ -73,41 +75,111 @@ EOF
     end
   end
   context 'ERB Template' do
-    program_template =<<-EOF
-      set /augeas/load/xml/lens "Xml.lns"
-      set /augeas/load/xml/incl "#{xml_file}"
-      load
-      defvar node /files#{xml_file}/#{aug_common_path}
-      # dump-xml $node
-      <% for param_name in param_names %>
-      set param_name '<%= param_name %>'
-      defvar param_value $node/param-name[#text = /files/param_name]/../param-value/#text
-      get param_name
-      get $param_value
-      <% end %>
-      # print '/augeas//error'
-      quit
-    EOF
-    param_names = [
-      'buffered',
-      'debug',
-      'expires',
-      'isVirtualWebappRelative',
-      # 'missing',
-    ]
-    renderer = ERB.new(program_template)
-    program = renderer.result(binding)
-    describe command(<<-EOF
-      echo '#{program}' > #{aug_script}
-      augtool -f #{aug_script}
-    EOF
-    ) do
-      let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
-      param_names.each do |param_name|
-        its(:stdout) { should contain "param_name = #{param_name}" }
+    context 'Success' do
+      program_template =<<-EOF
+        set /augeas/load/xml/lens "Xml.lns"
+        set /augeas/load/xml/incl "#{xml_file}"
+        load
+        defvar node /files#{xml_file}/#{aug_common_path}
+        # dump-xml $node
+        <% for param_name in param_names %>
+          set param_name '<%= param_name %>'
+          defvar param_value $node/param-name[#text = /files/param_name]/../param-value/#text
+          get param_name
+          get $param_value
+        <% end %>
+        print '/augeas/files#{xml_file}/error'
+        quit
+      EOF
+      param_names = [
+        'buffered',
+        'debug',
+        'expires',
+        'isVirtualWebappRelative',
+      ]
+      renderer = ERB.new(program_template)
+      program = renderer.result(binding)
+      describe command(<<-EOF
+        echo '#{program}' > #{aug_script}
+        augtool -f #{aug_script}
+      EOF
+      ) do
+        let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
+        param_names.each do |param_name|
+          its(:stdout) { should contain "param_name = #{param_name}" }
+        end
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
       end
-      its(:stderr) { should be_empty }
-      its(:exit_status) {should eq 0 }
+    end
+    context 'Not Found' do
+      program_template =<<-EOF
+        set /augeas/load/xml/lens "Xml.lns"
+        set /augeas/load/xml/incl "#{xml_file}"
+        load
+        defvar node /files#{xml_file}/#{aug_common_path}
+        # dump-xml $node
+        <% for param_name in param_names %>
+          set param_name '<%= param_name %>'
+          defvar param_value $node/param-name[#text = /files/param_name]/../param-value/#text
+          get param_name
+          get $param_value
+        <% end %>
+        print '/augeas/files#{xml_file}/error'
+        quit
+      EOF
+      param_names = [
+        'missing',
+      ]
+      renderer = ERB.new(program_template)
+      program = renderer.result(binding)
+      describe command(<<-EOF
+        echo '#{program}' > #{aug_script}
+        augtool -f #{aug_script}
+      EOF
+      ) do
+        let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
+        param_names.each do |param_name|
+          its(:stdout) { should contain '\$param_value \(o\)'  }
+        end
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
+      end
+    end
+    context 'Hashes' do
+      program_template =<<-EOF
+        set /augeas/load/xml/lens "Xml.lns"
+        set /augeas/load/xml/incl "#{xml_file}"
+        load
+        defvar node /files#{xml_file}/#{aug_common_path}
+        # dump-xml $node
+        <% for param_name in params.keys %>
+          set param_name '<%= param_name %>'
+          defvar param_value $node/param-name[#text = /files/param_name]/../param-value/#text
+          get param_name
+          get $param_value
+        <% end %>
+        print '/augeas/files#{xml_file}/error'
+        quit
+      EOF
+      params = {
+        'buffered' => 1,
+      }
+      renderer = ERB.new(program_template)
+      program = renderer.result(binding)
+      describe command(<<-EOF
+        echo '#{program}' > #{aug_script}
+        augtool -f #{aug_script}
+      EOF
+      ) do
+        let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
+        params.each do |name,value|
+          its(:stdout) { should match /param_name = #{name}/ }
+          its(:stdout) { should match /\$param_value = #{value}/  }
+        end
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
+      end
     end
   end
 end
