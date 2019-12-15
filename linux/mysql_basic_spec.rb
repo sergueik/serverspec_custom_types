@@ -256,6 +256,27 @@ context 'MySQL' do
       its(:exit_status) {should eq 0 }
       its(:stdout) { should match /\b#{service_name}(?:@bootstrap)?\.service\b/ }
     end
+    # alias
+    describe command(<<-EOF
+      systemctl list-unit-files | grep #{service_name}
+    EOF
+    ) do
+      its(:exit_status) {should eq 0 }
+      its(:stdout) { should match /\b#{service_name}(?:@bootstrap)?\.service\b/ }
+    end
+    # TODO
+    service_name_part = service_name.gsub('[a-z]$','')
+    describe command(<<-EOF
+      # one needs an exact unit name with journalctl
+      # journalctl -u #{service_name}
+      # get fullname from part of the name with systemctl
+      journalctl -u $(systemctl list-unit-files | grep #{service_name_part}   | awk '{print $1}')
+
+    EOF
+    ) do
+      its(:exit_status) {should eq 0 }
+
+    end
   end
   # https://www.w3resource.com/mysql/date-and-time-functions/mysql-datediff-function.php
   context 'DATEDIFF' do
