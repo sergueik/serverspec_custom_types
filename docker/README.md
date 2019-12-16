@@ -1,11 +1,24 @@
+### Info
+
+This directory contains a `Dockerfile` and helpers derived from [](https://github.com/operep/docker-serverspec) project and [](https://github.com/iBossOrg/docker-dockerspec).
+
 ### Build
 
 ```sh
 docker build -f Dockerfile -t serverspec-example .
 ```
+
 ### Use
 ```sh
-docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec serverspec-example
+docker run -eCONTAINER_NAME=test_container --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec serverspec-example
+```
+```sh
+export DOCKER_IMAGE=serverspec-example
+export CONTAINER_NAME=serverspe-example
+
+
+docker run -e DOCKER_IMAGE='serverspec-example' -e CONTAINER-NAME='test' --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec serverspec-example
+
 ```
 ### Recycle
 ```sh

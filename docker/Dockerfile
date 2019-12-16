@@ -8,7 +8,8 @@ ENV PACKAGES build-base \
     libffi-dev \
     libmcrypt-dev \
     openssl
-
+# NOTE - better to pass via -e argument to docker run:
+# -e CONTAINER_NAME=test_container
 ENV GEMS docker-api \
    ffi \
    inifile \
@@ -33,8 +34,11 @@ RUN mkdir -p "${basedir}/spec/localhost"
 # RUN gem install --no-rdoc --no-ri $GEMS $OPTIONAL_GEMS
 RUN gem install --no-rdoc --no-ri $GEMS
 
+ENV DOCKER_IMAGE serverspec-example
 ADD "Rakefile" "${basedir}/Rakefile"
+ADD "Dockerfile" "${basedir}/Dockerfile"
 ADD "spec/spec_helper.rb" "${basedir}/spec/spec_helper.rb"
+ADD "spec/docker_helper.rb" "${basedir}/spec/docker_helper.rb"
 
 CMD ["rake", "spec"]
 WORKDIR $basedir
