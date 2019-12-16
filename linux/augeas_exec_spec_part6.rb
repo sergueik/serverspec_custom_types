@@ -44,7 +44,33 @@ EOF
   aug_script = '/tmp/example.aug'
   aug_common_path = '/web-app/servlet/init-param'
 
-
+  context 'Augeas with probing' do
+    # there's no logic operators in the Augeas language
+    xmllint_common_xpath_parts = []
+    (aug_common_path.split(/\//).each do |node|
+      if node != ''
+        expr = "*[local-name() = '#{node}']"
+        xmllint_common_xpath_parts.push expr
+      else
+        xmllint_common_xpath_parts.push ''
+      end
+    end)
+    xmllint_common_xpath = xmllint_common_xpath_parts.join('/')
+    aug_selector_expr = 'param-name[#text = /files/name]'
+    node_text = 'buffered'
+    xmllint_selector_expr = "*[local-name() = 'param-name'][contains(text(), '#{node_text}')]/text()"
+    xmllint_probe_xpath = "#{xmllint_common_xpath}/#{xmllint_selector_expr}"
+    # NOTE: double quote needed to help Ruby interpolation
+    describe command(<<-EOF
+      xmllint --xpath "#{xmllint_probe_xpath}" '#{xml_file}'
+    EOF
+    ) do
+      let(:path) { '/bin:/usr/bin:/sbin:/opt/puppetlabs/puppet/bin'}
+      its(:stderr) { should be_empty }
+      its(:stdout) { should contain node_text}
+      its(:exit_status) {should eq 0 }
+    end
+  end
   context 'Augeas defvar' do
     program = <<-EOF
       set /augeas/load/xml/lens 'Xml.lns'
@@ -55,7 +81,6 @@ EOF
       set name 'buffered'
       get name
       defvar value $node/param-name[#text = /files/name]/../param-value/#text
-      print $value
       get $value
       # noisy
       # print '/augeas//error'
