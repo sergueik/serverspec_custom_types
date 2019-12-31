@@ -91,3 +91,25 @@ context 'Instance scope' do
     end
   end
 end
+
+describe 'Docker container' do
+  before(:each) do
+    :backend, :docker
+  end
+  container_name = (ENV.fetch('CONTAINER_NAME')
+  describe docker_container(container_name), if container_name =~ /\w/ do
+    before(:each) { set :backend, :exec }
+    it { is_expected.to be_running }
+  end
+  # based on:https://github.com/iBossOrg/docker-dockerspec/blob/master/spec/docker/20_docker_container_spec.rb
+  [
+    ['tini', 'root', 'root', 1 ]
+  ].each do  |process, user, group, pid|
+    context process(process) do
+      it { is_expected.to be_running }
+      its(:pid) { is_expected.to eq pid } unless pid.nil?
+      its(:user) { is_expected.to eq user } unless user.nil?
+      its(:group) { is_expected.to eq group } unless group.nil?
+    end
+  end	
+end
