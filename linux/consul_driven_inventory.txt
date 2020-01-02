@@ -113,3 +113,16 @@ consul exec -http-addr https://$LEADER:8543 \
 export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
 consul exec -http-addr https://$LEADER:8543 \
 \(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; RPM_INFO=\$\( rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\}-\%\{VERSION\}\%\{RELEASE\}.\%\{ARCH\}' -q puppet-agent \)\;/bin/printf \"NODE: \%s RPM INFO: \%s\" \$NODE_HOSTNAME \$RPM_INFO \; fi \) | grep 'NODE'
+
+# NOTE: find specific logs in var/log/messages
+# by name of the service and logged event.
+# handy when one can no longer ssh to the destination for some reason
+# and messages may help diagnose
+# NOTE:  forsome reason grep -v with intent do exclude consul itself
+# leads to misinpreted command, switched to filter by event instead of resolving
+
+export TARGET_NODE='app-node-0'
+export LOG_SERVICE='boks_sshd'
+export FILTER_EVENT='keyboard-interactive'
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+\( grep \'$LOG_SERVICE\\[\' /var/log/messages \| grep "$FILTER_EVENT" \)
