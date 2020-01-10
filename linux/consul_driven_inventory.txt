@@ -10,7 +10,6 @@
 # The below examples are for case when the nodes are managed by Puppet
 # and running a RHEL family OS
 
-
 export LEADER=$(hostname -f)
 PATH=$PATH:/usr/local/bin
 export CONSUL_HTTP_SSL=true
@@ -126,3 +125,21 @@ export LOG_SERVICE='boks_sshd'
 export FILTER_EVENT='keyboard-interactive'
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 \( grep \'$LOG_SERVICE\\[\' /var/log/messages \| grep "$FILTER_EVENT" \)
+
+
+# Collect package install date from rpm for the sake of evaluating outliers
+PACKAGE_NAME='httpd'
+RPM_DATA=$(rpm --qf '%{INSTALLTIME:date} %{NAME} %{VERSION}-%{RELEASE}-%{ARCH}' -q $PACKAGE_NAME)
+echo $RPM_DATA
+# Thu 17 Oct 2019 03:52:12 PM EDT httpd 2.4.6-90.el7.centos-x86_64
+
+TARGET_NODE='app-node-0'
+FILTER_VERSION='4.10'
+PACKAGE_NAME='puppet-agent'
+APP='puppet'
+LEADER=$(hostname -f)
+PATH=$PATH:/usr/local/bin
+export CONSUL_HTTP_SSL=true
+
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+\( APP_VERSION=\$\( $APP -version \)\; if echo \$APP_VERSION | grep "${FILTER_VERSION}" \; then NODE_HOSTNAME=\$\(hostname -f\) \; RPM_DATA=\$\(rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\} \%\{VERSION\}-\%\{RELEASE\}-\%\{ARCH\}' -q $PACKAGE_NAME\)\; /bin/printf \"\%s\\t\%s\" \$NODE_HOSTNAME \$RPM_DATA \; fi \) |grep "${PACKAGE_NAME}" | sort | tee /tmp/log.$$.txt
