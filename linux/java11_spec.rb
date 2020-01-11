@@ -63,7 +63,7 @@ context 'Java 11' do
       [
         'module-info.java',
         'ModulePackages',
-        'ModulePackages'
+        'ModuleMainClass'
       ].each do |line|
         its(:stdout) { should contain line }
       end
