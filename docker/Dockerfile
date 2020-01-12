@@ -1,7 +1,8 @@
 FROM ruby:2.3.3-alpine
 # LABEL maintainer=""
 ARG basedir="/serverspec"
-ARG packages="build-base libcurl libxml2-dev libxslt-dev libffi-dev libmcrypt-dev openssl"
+ARG packages="build-base libcurl libxml2-dev libxslt-dev libffi-dev libmcrypt-dev openssl jq libxml2-utils"
+# for jq and xmllint
 
 ENV DOCKER_IMAGE serverspec-example
 # NOTE - also possibe to pass via -e argument to docker run:

@@ -48,25 +48,26 @@ context 'Instance scope' do
       it { is_expected.not_to eq 'alpine'  }
     end
   end
-  %w|
-    build-base
-    libcurl
-    libxml2-dev
-    libxslt-dev
-    libffi-dev
-    libmcrypt-dev
-    openssl
-  |.each do |package_name|
+  %w|build-base libcurl libxml2-dev libxslt-dev libffi-dev libmcrypt-dev openssl|.each do |package_name|
     describe package package_name do
       it { should be_installed }
     end
   end
+  %w|jq xmllint|.each do |tool|
+    describe command ("which #{tool}") do
+      its(:stdout) { should_not be_empty }
+    end
+  end
 
+  describe file ('/usr/local/bin/ruby') do
+    it { should be_file }
+    it { should be_executable }
+  end
   [
     'Gemfile',
     'Gemfile.lock',
-  ].each do | file |
-    describe file('/#{ file }') do
+  ].each do |filename|
+    describe file "/#{filename}" do
       it { should_not exist }
     end
   end
@@ -75,8 +76,8 @@ context 'Instance scope' do
     'Rakefile',
     'spec/spec_helper.rb',
     'spec/docker_helper.rb',
-  ].each do | file |
-    describe file "/serverspec/#{file}" do
+  ].each do |filename|
+    describe file "/serverspec/#{filename}" do
       it { should exist }
     end
   end
@@ -94,16 +95,17 @@ end
 
 describe 'Docker container' do
   before(:each) do
-    :backend, :docker
+    set :backend, :docker
   end
-  container_name = (ENV.fetch('CONTAINER_NAME')
-  describe docker_container(container_name), if container_name =~ /\w/ do
+  container_name = ENV.fetch('CONTAINER_NAME','test_container')
+  describe docker_container(container_name) do
     before(:each) { set :backend, :exec }
     it { is_expected.to be_running }
   end
   # based on:https://github.com/iBossOrg/docker-dockerspec/blob/master/spec/docker/20_docker_container_spec.rb
   [
-    ['tini', 'root', 'root', 1 ]
+    ['ash', 'root', 'root', 1 ],
+    'ash'
   ].each do  |process, user, group, pid|
     context process(process) do
       it { is_expected.to be_running }
