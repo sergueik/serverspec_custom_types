@@ -58,10 +58,10 @@ context 'Instance scope' do
       its(:stdout) { should_not be_empty }
     end
   end
-  describe command "jq '.foo' /tmp/example.json" do
+  describe command "jq '.foo' '/serverspec/tmp/data.json'" do
     its(:stdout) { should contain 'bar' }
   end
-  describe command "xmllint --xpath '/Server/@port' /tmp/example.xml" do
+  describe command "xmllint --xpath '/Server/@port' '/serverspec/tmp/data.xml'" do
     its(:stdout) { should contain 'port="8005"' }
   end
 

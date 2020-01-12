@@ -20,10 +20,14 @@ ARG optional_gems=""
 RUN apk add --update --no-cache $packages; rm -rf /var/cache/apk/*; apk add
 RUN gem install --no-rdoc --no-ri $gems $optional_gems
 
-RUN mkdir -p $sampledir
-RUN echo '{"foo":"bar"}' > "${sampledir}/example.json"
-RUN echo '<?xml version="1.0"?><Server port="8005" shutdown="SHUTDOWN"></Server>' >"${sampledir}/example.xml"
+RUN mkdir -p "${sampledir}/"
+# RUN echo '{"foo":"bar"}' > "${sampledir}/example.json"
+# RUN echo '<?xml version="1.0"?><Server port="8005" shutdown="SHUTDOWN"></Server>' >"${sampledir}/example.xml"
 
+# NOTE: commenting the following lines leads to the error
+ADD "data.json" "${basedir}/data.json"
+ADD "data.xml" "${basedir}/data.xml"
+# NOTE: ib these lines
 ADD "data.json" "${sampledir}/data.json"
 ADD "data.xml" "${sampledir}/data.xml"
 
