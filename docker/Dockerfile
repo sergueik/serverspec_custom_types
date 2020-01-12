@@ -25,5 +25,10 @@ ADD "Dockerfile" "${basedir}/Dockerfile"
 ADD "spec/spec_helper.rb" "${basedir}/spec/spec_helper.rb"
 ADD "spec/docker_helper.rb" "${basedir}/spec/docker_helper.rb"
 
+RUN mkdir -p "/tmp"
+
+ADD "example.json" "/tmp/example.json"
+ADD "example.xml" "/tmp/example.xml"
+
 WORKDIR $basedir
 CMD ["rake", "spec"]

@@ -31,6 +31,14 @@ Unclear, how to make *this* test pass (found that even committing the container 
 ```
 docker commit 881bce4c82e4 serverspec-example
 ```
+### Errors
+
+If the error 
+```sh
+Docker::Error::NotFoundError:
+No such container: test_container
+```
+is seen, need to  recycle the containers
 
 ### Recycle
 ```sh

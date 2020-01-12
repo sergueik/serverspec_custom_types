@@ -58,6 +58,12 @@ context 'Instance scope' do
       its(:stdout) { should_not be_empty }
     end
   end
+  describe command "jq '.foo' /tmp/example.json" do
+    its(:stdout) { should contain 'bar' }
+  end
+  describe command "xmllint --xpath '/Server/@port' /tmp/example.xml" do
+    its(:stdout) { should contain 'port="8005"' }
+  end
 
   describe file ('/usr/local/bin/ruby') do
     it { should be_file }
