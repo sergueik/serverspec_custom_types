@@ -22,15 +22,18 @@ context 'SAX HTML tests' do
   }
   jar_versions = {
     'gson'      => '2.8.5',
-    'snakeyaml' => '1.24'
+    'snakeyaml' => '1.25'
   }
 
   jar_search_string = '(' + jar_versions.keys.join('|') + ')'
-
-  jars = jar_versions.each do |artifactid,version|
-    artifactid + '-' + version + 'jar'
+  jars = []
+  jar_versions.each do |artifactid,version|
+    jars.push artifactid + '-' + version + '.' + 'jar'
   end
-  jars = ['gson-2.8.5.jar', 'snakeyaml-1.24.jar']
+
+  # TODO: below is incorrect
+  # jars = jar_versions.each { |artifactid,version|  artifactid + '-' + version + '.'  + 'jar' }
+
   jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
   tmp_path = '/tmp'
   yaml_file = "#{tmp_path}/group.yaml"
@@ -55,9 +58,8 @@ context 'SAX HTML tests' do
     name: george
     plays: guitar
   EOF
-  class_name = 'TestJSONReport'
+  class_name = 'StronglyTypedYAMLJSONReport'
   report = 'report.json'
-  xpath = '/html/body/table/tr/td'
   source_file = "#{tmp_path}/#{class_name}.java"
   source_data = <<-EOF
 
@@ -246,3 +248,4 @@ public class #{class_name} {
     end
   end
 end
+
