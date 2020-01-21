@@ -9,6 +9,10 @@ context 'Blueman disabled from autostart' do
     end
   end
   # based on:https://askubuntu.com/questions/67758/how-can-i-deactivate-bluetooth-on-system-startup
+  # 1: ideapad_bluetooth: Bluetooth
+  # 2: hci0: Bluetooth
+  # NOTE: alternatively can disable and stop the service via systemctl
+  # this will also reset the rfkill status
   context 'State' do
     describe command( <<-EOF
       for ID in $(rfkill list | grep -i 'bluetooth' | grep -E '^[0-9]+:'| cut -d: -f1) ; do
