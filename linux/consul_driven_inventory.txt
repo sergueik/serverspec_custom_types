@@ -143,3 +143,17 @@ export CONSUL_HTTP_SSL=true
 
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 \( APP_VERSION=\$\( $APP -version \)\; if echo \$APP_VERSION | grep "${FILTER_VERSION}" \; then NODE_HOSTNAME=\$\(hostname -f\) \; RPM_DATA=\$\(rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\} \%\{VERSION\}-\%\{RELEASE\}-\%\{ARCH\}' -q $PACKAGE_NAME\)\; /bin/printf \"\%s\\t\%s\" \$NODE_HOSTNAME \$RPM_DATA \; fi \) |grep "${PACKAGE_NAME}" | sort | tee /tmp/log.$$.txt
+
+
+# standard tomcat application
+BOOTSTRAP_CLASS='org.apache.catalina.startup.Bootstra[p]'
+# popular wso2 jag container
+BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstra[p]'
+# TODO: modify on the fly
+BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstrap'
+INDEXES='1 2 3'
+NODE_BASENAME='tomcat_app'
+for INDEX in $INDEXES ; do TARGET_NODE_NAME="${NODE_BASENAME}_${INDEX}";  \
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE_NAME \
+"ps ax | grep '$BOOTSTRAP_CLASS' | grep -v grep  && echo 'Found'" \
+; done | grep 'Found'
