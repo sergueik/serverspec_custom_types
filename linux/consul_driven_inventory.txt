@@ -10,13 +10,14 @@
 # The below examples are for case when the nodes are managed by Puppet
 # and running a RHEL family OS
 
-export LEADER=$(hostname -f)
-PATH=$PATH:/usr/local/bin
+LEADER=$(hostname -f)
+export PATH=$PATH:/usr/local/bin
 export CONSUL_HTTP_SSL=true
 
-export PACKAGE='oracle-java8-jdk'
-export VERSION_MAJOR='1.8.0'
-export VERSION_BUILD='192'
+PACKAGE='oracle-java8-jdk'
+VERSION_MAJOR='1.8.0'
+VERSION_BUILD='192'
+
 consul exec -http-addr https://$LEADER:8543 \
 rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
@@ -26,17 +27,17 @@ rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 # alternative formatting:
 # rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_MAJOR | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
-export PACKAGE='oracle-java8-jdk'
-export VERSION_MAJOR='1.8.0'
-export VERSION_BUILD='192'
+PACKAGE='oracle-java8-jdk'
+VERSION_MAJOR='1.8.0'
+VERSION_BUILD='192'
 consul exec -http-addr https://$LEADER:8543 \
 rpm -q $PACKAGE \&\& hostname -f | grep -A 1 $VERSION_BUILD | grep -v $PACKAGE
 
 # formatting of the command to find outliers, not running the $VERSION_BUILD
 
-export PACKAGE='oracle-java8-jdk'
-export VERSION_MAJOR='1.8.0'
-export VERSION_BUILD='192'
+PACKAGE='oracle-java8-jdk'
+VERSION_MAJOR='1.8.0'
+VERSION_BUILD='192'
 consul exec -http-addr https://$LEADER:8543 \
 rpm -q $PACKAGE \&\& hostname -f | grep $VERSION_MAJOR |grep -v $VERSION_BUILD
 
@@ -44,7 +45,6 @@ rpm -q $PACKAGE \&\& hostname -f | grep $VERSION_MAJOR |grep -v $VERSION_BUILD
 
 consul exec -http-addr https://$LEADER:8543 \
 \( puppet resource package $PACKAGE \| grep -Po "'[0-9].+'" \) \&\& hostname -f | grep -A 1 $VERSION_MAJOR
-
 
 # Alternatively one can pack the command into a string (only the dollar sign and double quote would need escaping):
 
@@ -57,12 +57,12 @@ LOG='/var/log/puppetlabs/mcollective.log'
 MESSAGE="Received frame of type 'ERROR' expected 'MESSAGE'"
 grep - "${MESSAGE}" $LOG \&\& hostname -f
 
-
 # Alternative short command to make consul list the members of the cluster
 consul members -http-addr https://$LEADER:8543
 
 # when there is a change in the "configuration schema" that needs to be unoformly applied to the cluster members
 # the jq prints a null to STDOUT when no matching expression is found
+
 consul exec -http-addr https://$LEADER:8543 \
 \(jq '.acl_ttl \< '/etc/consul.d/config.json' \| grep -q 'null' \) \&\& echo 'MARKER' | grep 'MARKER'
 
@@ -71,6 +71,7 @@ consul exec -http-addr https://$LEADER:8543 \
 # report aditional inventory to service discovery node
 # For this to work everything needs to be printed on one line as MARKER ).
 # Collecting extra data into a shell variable $DATA first:
+
 consul exec -http-addr https://$LEADER:8543 \
 \(jq '.ui' \< '/etc/consul.d/consul.json' \| grep -q 'null' \) \|\| \( DATA=\$\( hostname -f \); echo 'MARKER: ' \$DATA \) | grep 'MARKER'
 # https://www.consul.io/docs/agent/options.html#disable_remote_exec
@@ -78,8 +79,8 @@ consul exec -http-addr https://$LEADER:8543 \
 # this generates the filtered application node listing like:
 # application-server-10: MARKER: host1.domain
 # cache-server-10: MARKER: host2.domain
-
 # NOTE: printf's % need escape to work via consul
+
 consul exec -http-addr https://$LEADER:8543 \
 \(jq '.missing_setting' \< '/etc/consul.d/consul.json' \| grep -q 'null' \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
 # will produce a report loke
@@ -89,29 +90,32 @@ consul exec -http-addr https://$LEADER:8543 \
 # on a vanilla system consul exec listens to 8500 HTTP
 MESSAGE='start on runlevel'
 CONFIG_FILE='/etc/init/consul.conf'
+
 consul exec -verbose \
 \( grep -q \"$MESSAGE\" \"$CONFIG_FILE\" \) \&\& \( DATA=\$\( hostname -f \)\; /usr/bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
 
 # guaranteed to find in a successful appication 'catalina.out':
 LOG_MESSAGE1='Server Startup'
+# for real life case, LOG_MESSAGE1 and LOG_MESSAGE2 would be different
 LOG_MESSAGE2='Server Startup'
 # Fatal exception message fragment indicating severe infrastructure problem on a particular node:
 LOG_MESSAGE1='skew too great'
 LOG_MESSAGE2='skew too great'
 LOG_FILE='/opt/tomcat/logs/catalina.out'
 # NOTE: test positive is always better in readability
+
 consul exec -http-addr https://$LEADER:8543 \
 \(grep \"\$LOG_MESSAGE1" $LOG_FILE \| grep -q \"\$LOG_MESSAGE2\" \) \&\& \( DATA=\$\( hostname -f \)\; /bin/printf \"MARKER: \%s\" \$DATA \) | grep 'MARKER'
 
 # NOTE: for some reason using the puppet --version command fails here
-export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
-consul exec -http-addr https://$LEADER:8543 \
-\(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; /bin/printf \"NODE: \%s VERSION: \%s\" \$NODE_HOSTNAME \$PUPPET_VERSION \; fi \) | grep 'NODE'
+FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
 
-
-export FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
 consul exec -http-addr https://$LEADER:8543 \
-\(export PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; RPM_INFO=\$\( rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\}-\%\{VERSION\}\%\{RELEASE\}.\%\{ARCH\}' -q puppet-agent \)\;/bin/printf \"NODE: \%s RPM INFO: \%s\" \$NODE_HOSTNAME \$RPM_INFO \; fi \) | grep 'NODE'
+\(PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; /bin/printf \"NODE: \%s VERSION: \%s\" \$NODE_HOSTNAME \$PUPPET_VERSION \; fi \) | grep 'NODE'
+
+FILTER_VERSION='5.5'; # accept that the "Build" field may vary - only care about major and minor release
+consul exec -http-addr https://$LEADER:8543 \
+\(PUPPET_VERSION=\$\(puppet \-V\)\; if echo \$PUPPET_VERSION \| grep "$FILTER_VERSION" \; then NODE_HOSTNAME=\$\( hostname -f \)\; RPM_INFO=\$\( rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\}-\%\{VERSION\}\%\{RELEASE\}.\%\{ARCH\}' -q puppet-agent \)\;/bin/printf \"NODE: \%s RPM INFO: \%s\" \$NODE_HOSTNAME \$RPM_INFO \; fi \) | grep 'NODE'
 
 # NOTE: find specific logs in var/log/messages
 # by name of the service and logged event.
@@ -120,9 +124,10 @@ consul exec -http-addr https://$LEADER:8543 \
 # NOTE:  forsome reason grep -v with intent do exclude consul itself
 # leads to misinpreted command, switched to filter by event instead of resolving
 
-export TARGET_NODE='app-node-0'
-export LOG_SERVICE='boks_sshd'
-export FILTER_EVENT='keyboard-interactive'
+TARGET_NODE='app-node-0'
+LOG_SERVICE='boks_sshd'
+FILTER_EVENT='keyboard-interactive'
+
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 \( grep \'$LOG_SERVICE\\[\' /var/log/messages \| grep "$FILTER_EVENT" \)
 
@@ -137,23 +142,25 @@ TARGET_NODE='app-node-0'
 FILTER_VERSION='4.10'
 PACKAGE_NAME='puppet-agent'
 APP='puppet'
+
 LEADER=$(hostname -f)
-PATH=$PATH:/usr/local/bin
+export PATH=$PATH:/usr/local/bin
 export CONSUL_HTTP_SSL=true
 
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 \( APP_VERSION=\$\( $APP -version \)\; if echo \$APP_VERSION | grep "${FILTER_VERSION}" \; then NODE_HOSTNAME=\$\(hostname -f\) \; RPM_DATA=\$\(rpm --qf '\%\{INSTALLTIME:date\} \%\{NAME\} \%\{VERSION\}-\%\{RELEASE\}-\%\{ARCH\}' -q $PACKAGE_NAME\)\; /bin/printf \"\%s\\t\%s\" \$NODE_HOSTNAME \$RPM_DATA \; fi \) |grep "${PACKAGE_NAME}" | sort | tee /tmp/log.$$.txt
 
+# standard Tomcat application
+BOOTSTRAP_CLASS='org.apache.catalina.startup.Bootstrap'
 
-# standard tomcat application
-BOOTSTRAP_CLASS='org.apache.catalina.startup.Bootstra[p]'
-# popular wso2 jag container
-BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstra[p]'
-# TODO: modify on the fly
+# WSO2 jag container
 BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstrap'
+# TODO: modify on the fly e.g.
+# BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstra[p]'
 INDEXES='1 2 3'
 NODE_BASENAME='tomcat_app'
-for INDEX in $INDEXES ; do TARGET_NODE_NAME="${NODE_BASENAME}_${INDEX}";  \
+
+for INDEX in $INDEXES ; do TARGET_NODE_NAME="${NODE_BASENAME}-${INDEX}"; \
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE_NAME \
 "ps ax | grep '$BOOTSTRAP_CLASS' | grep -v grep  && echo 'Found'" \
 ; done | grep 'Found'
