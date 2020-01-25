@@ -155,12 +155,15 @@ BOOTSTRAP_CLASS='org.apache.catalina.startup.Bootstrap'
 
 # WSO2 jag container
 BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstrap'
+CLASS_MASK=$BOOTSTRAP_CLASS
 # TODO: modify on the fly e.g.
-# BOOTSTRAP_CLASS='org.wso2.carbon.bootstrap.Bootstra[p]'
+# https://github.com/sergueik/puppetmaster_vagrant/blob/master/generic_service_check.sh
+CLASS_MASK=$(echo $BOOTSTRAP_CLASS | sed 's|\([a-z0-9]\)$|[\1]|')
+# CLASS_MASK='org.wso2.carbon.bootstrap.Bootstra[p]'
 INDEXES='1 2 3'
 NODE_BASENAME='tomcat_app'
 
 for INDEX in $INDEXES ; do TARGET_NODE_NAME="${NODE_BASENAME}-${INDEX}"; \
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE_NAME \
-"ps ax | grep '$BOOTSTRAP_CLASS' | grep -v grep  && echo 'Found'" \
+"ps ax | grep '$CLASS_MASK' | grep -v grep  && echo 'Found'" \
 ; done | grep 'Found'
