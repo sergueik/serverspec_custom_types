@@ -167,3 +167,16 @@ for INDEX in $INDEXES ; do TARGET_NODE_NAME="${NODE_BASENAME}-${INDEX}"; \
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE_NAME \
 "ps ax | grep '$CLASS_MASK' | grep -v grep  && echo 'Found'" \
 ; done | grep 'Found'
+
+# a poor man check of '/var/log/messages' message, with many simplifications
+# needed to confirm the success or failure of a puppet run which trigger is unknown but
+# only one run is allowed (controlled through lock file)
+
+LEADER=$(hostname -f)
+export PATH=$PATH:/usr/local/bin
+export CONSUL_HTTP_SSL=true
+M='Applied catalog in '
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"grep -i '$M' /var/log/messages | grep -v 'grep' |tail -1 | grep '$M'" | grep "$M"
+
+# gives the last completed run status or nothing allowing for a quick check for outliers
