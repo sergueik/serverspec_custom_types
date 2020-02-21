@@ -9,6 +9,79 @@ context 'jq' do
       its(:stderr) { should be_empty }
     end
   end
+  context 'JSON validation' do
+    tmp_path = '/tmp'
+    outputfile = "#{tmp_path}/output.json"
+    context 'Good JSON' do
+      datafile = "#{tmp_path}/good.json"
+      data = <<-EOF
+       {
+        "data": [
+         {"row": 1}
+        ],
+        "config": {
+          "row": {
+            "hide": false
+          }
+        }
+      }	
+      EOF
+      before(:each) do
+        $stderr.puts "Writing #{datafile}"
+        file = File.open(datafile, 'w')
+        file.puts data
+        file.close
+      end
+      describe command(<<-EOF
+        jq -c '.' '#{datafile}' | tee #{outputfile}
+      EOF
+      ) do
+        its(:exit_status) { should eq 0 }
+        its(:stderr) { should be_empty }
+        describe file outputfile do
+          its(:size) { should > 0 }
+        end
+      end
+    end
+    context 'Bad JSON' do
+      # create a failing test, jq is in charge
+      datafile = "#{tmp_path}/bad.json"
+      data = <<-EOF
+        {
+        "data": [
+           {"row": 1}
+          ],
+          "config": {"row": {"hide": false}
+          }
+      EOF
+      before(:each) do
+        $stderr.puts "Writing #{datafile}"
+        file = File.open(datafile, 'w')
+        file.puts data
+        file.close
+      end
+      describe command(<<-EOF
+        jq -c '.' '#{datafile}' | tee '#{outputfile}'
+      EOF
+      ) do
+        its(:exit_status) { should eq 0 }
+        its(:stderr) { should be_empty }
+        describe file outputfile do
+          its(:size) { should = 0 }
+        end
+      end
+      describe command(<<-EOF
+        pushd '#{tmp_path}' 1>/dev/null 2>/dev/null
+        echo $?
+        popd 1>/dev/null 2>/dev/null
+        echo $?
+        # 127
+      EOF
+      ) do
+          its(:exit_status) { should eq 0 }
+      end
+    end
+  end
   context 'querying JSON' do
 
     datafile = '/tmp/sample.json'
@@ -38,7 +111,7 @@ END
     # https://toster.ru/q/608027
     # https://jqplay.org/
     # https://programminghistorian.org/en/lessons/json-and-jq
-    # https://stackoverflow.com/questions/22434290/jq-bash-make-json-array-from-variable
+    # https://stackoverflow.com/questions/22434290/jq-bash-cake-json-array-from-variable
     # https://stedolan.github.io/jq/manual/
     datafile = '/tmp/sample.json'
     value = 'some data'
@@ -92,7 +165,7 @@ END
         its(:stderr) { should be_empty }
       end
     end
-    
+
     describe command(<<-EOF
       VALUE='{"val":"#{value}"}'; jq -n --argjson val "$VALUE" '{"key": $val }' | jq '.key.val'
     EOF
@@ -108,6 +181,6 @@ END
       its(:stdout) { should contain value }
       its(:stderr) { should be_empty }
     end
-    
+
   end
 end
