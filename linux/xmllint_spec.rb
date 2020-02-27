@@ -31,6 +31,22 @@ context 'xmllint' do
       end
       its(:stderr) { should be_empty }
     end
+    # somewhat better formatting
+    # based on: https://stackoverflow.com/questions/16959908/native-shell-command-set-to-extract-node-value-from-xml
+    describe command(<<-EOF
+      echo "cat "//*[local-name()='filter']/*[local-name()='filter-name']/text()"| xmllint #{web_xml}
+    EOF
+    ) do
+      # To make this test pass one has to uncomment a few of stock cataline configuration <filter> DOM elements
+      its(:exit_status) { should eq 0 }
+      [
+        'httpHeaderSecurity',
+        'setCharcterEncodingFilter'
+      ].each do |filter_name|
+        its(:stdout) { should match Regexp.new(filter_name, Regexp::IGNORECASE) }
+      end
+      its(:stderr) { should be_empty }
+    end
     # sibling node locator, reading the XML from STDIN, like from another process output
     servlet_class_name = 'org.apache.catalina.servlets.DefaultServlet'
     describe command(<<-EOF
