@@ -33,11 +33,45 @@ context 'xmllint' do
     end
     # somewhat better formatting
     # based on: https://stackoverflow.com/questions/16959908/native-shell-command-set-to-extract-node-value-from-xml
+    # note the specifics of using the quotes
+    # around the command but not around the XPath
+
+    web_xml_data = <<-EOF
+      <?xml version="1.0" encoding="UTF-8"?>
+      <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" version="3.1">
+        <filter>
+        <filter-name>httpHeaderSecurity</filter-name>
+        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+        <async-supported>true</async-supported>
+        </filter>
+        <filter>
+        <filter-name>setCharacterEncodingFilter</filter-name>
+        <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+        <init-param>
+          <param-name>encoding</param-name>
+          <param-value>UTF-8</param-value>
+        </init-param>
+        <async-supported>true</async-supported>
+        </filter>
+        <!-- one of commented fragments -->
+        <!--
+        <filter>
+          <filter-name>failedRequestFilter</filter-name>
+          <filter-class>
+            org.apache.catalina.filters.FailedRequestFilter
+          </filter-class>
+          <async-supported>true</async-supported>
+        </filter>
+      -->
+      </web-app>
+    EOF
+    # To make this test pass one has to uncomment a few of 
+    # stock cataline configuration <filter> DOM elements
+    # or used the inline example above
     describe command(<<-EOF
-      echo "cat "//*[local-name()='filter']/*[local-name()='filter-name']/text()"| xmllint #{web_xml}
+      echo "cat //*[local-name()='filter']/*[local-name()='filter-name']/text()" | xmllint --shell #{web_xml}
     EOF
     ) do
-      # To make this test pass one has to uncomment a few of stock cataline configuration <filter> DOM elements
       its(:exit_status) { should eq 0 }
       [
         'httpHeaderSecurity',
@@ -45,7 +79,25 @@ context 'xmllint' do
       ].each do |filter_name|
         its(:stdout) { should match Regexp.new(filter_name, Regexp::IGNORECASE) }
       end
+      [
+        'failedRequestFilter'
+      ].each do |filter_name|
+        its(:stdout) { should_not match Regexp.new(filter_name, Regexp::IGNORECASE) }
+      end
       its(:stderr) { should be_empty }
+    end
+    describe command(<<-EOF
+      echo "cat \\"//*[local-name()='filter']/*[local-name()='filter-name']/text()\\"" | xmllint --shell #{web_xml}
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      [
+        'XPath error : Invalid predicate',
+        'evaluation failed',
+        'no such node',
+      ].each do |error_message|
+        its(:stderr) { should contain error_message }
+      end
     end
     # sibling node locator, reading the XML from STDIN, like from another process output
     servlet_class_name = 'org.apache.catalina.servlets.DefaultServlet'
