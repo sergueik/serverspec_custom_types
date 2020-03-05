@@ -170,7 +170,7 @@ public class #{class_name} {
 
 		@SuppressWarnings("unused")
 		public void setName(String data) {
-			this.name = data;
+			name = data;
 		}
 
 		@SuppressWarnings("unused")
@@ -180,7 +180,7 @@ public class #{class_name} {
 
 		@SuppressWarnings("unused")
 		public void setPlays(String data) {
-			this.plays = data;
+			plays = data;
 		}
 
 		@SuppressWarnings("unused")
@@ -190,7 +190,7 @@ public class #{class_name} {
 
 		@SuppressWarnings("unused")
 		public void setId(int data) {
-			this.id = data;
+			id = data;
 		}
 
 		@SuppressWarnings("unused")

@@ -11,38 +11,38 @@ context 'XSLT tests' do
 
   # NOTE: indent sensitive
   xslt_data = <<-EOF
-<?xml version="1.0" encoding="utf-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xxx="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">
-  <xsl:output method="xml" indent="yes"/>
-  <xsl:template match="@*|node()">
-    <xsl:copy>
-      <xsl:apply-templates select="@*|node()"/>
-    </xsl:copy>
-  </xsl:template>
-  <xsl:template match="xxx:filter[xxx:filter-name[text()='httpHeaderSecurity']]">
-    <xsl:text disable-output-escaping="yes">&lt;!--</xsl:text>
-    <xsl:copy-of select="."/>
-    <xsl:text disable-output-escaping="yes">--&gt;</xsl:text>
-  </xsl:template>
-</xsl:stylesheet>
+    <?xml version="1.0" encoding="utf-8"?>
+    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xxx="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">
+      <xsl:output method="xml" indent="yes"/>
+      <xsl:template match="@*|node()">
+        <xsl:copy>
+          <xsl:apply-templates select="@*|node()"/>
+        </xsl:copy>
+      </xsl:template>
+      <xsl:template match="xxx:filter[xxx:filter-name[text()='httpHeaderSecurity']]">
+        <xsl:text disable-output-escaping="yes">&lt;!--</xsl:text>
+        <xsl:copy-of select="."/>
+        <xsl:text disable-output-escaping="yes">--&gt;</xsl:text>
+      </xsl:template>
+    </xsl:stylesheet>
   EOF
   tmp_path = '/tmp'
   xml_file = "#{tmp_path}/web.xml"
   # replica of real tomcat web.xml with httpHeaderSecurity filter enabled
   xml_data = <<-EOF
-  <?xml version="1.0" encoding="UTF-8"?>
-  <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" version="3.1">
-    <filter>
-      <filter-name>httpHeaderSecurity</filter-name>
-      <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
-      <async-supported>true</async-supported>
-    </filter>
-    <welcome-file-list>
-      <welcome-file>index.html</welcome-file>
-      <welcome-file>index.htm</welcome-file>
-      <welcome-file>index.jsp</welcome-file>
-    </welcome-file-list>
-  </web-app>
+    <?xml version="1.0" encoding="UTF-8"?>
+    <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" version="3.1">
+      <filter>
+        <filter-name>httpHeaderSecurity</filter-name>
+        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+        <async-supported>true</async-supported>
+      </filter>
+      <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+      </welcome-file-list>
+    </web-app>
   EOF
   class_name = 'App'
   source_file = "#{tmp_path}/#{class_name}.java"

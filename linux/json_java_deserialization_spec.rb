@@ -14,15 +14,9 @@ context 'Strongly typed Object deserialziation' do
   jar_path = "#{app_base_path}/lib"
   jar_path = '/tmp'
 
-  jar_versions = (ENV.fetch('ENV', 'dev').upcase =~ (/^(UAT|PROD)$/i)) ?
-    # environment-specific versions: typically PROD may have older revisions
-    {
-      'gson' => '2.7',
-    }
-    :
-    {
-      'gson' => '2.8.5',
-    }
+  # environment-specific jar version: 
+  # slower environments (like e.g. PROD) typically have older revisions
+  jar_versions = (ENV.fetch('ENV', 'dev').upcase =~ (/^(UAT|PROD)$/i)) ?  { 'gson' => '2.7', } : { 'gson' => '2.8.5', }
 
   jar_search_string = '(' + jar_versions.keys.join('|') + ')'
   jars = []
