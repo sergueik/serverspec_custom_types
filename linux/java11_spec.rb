@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'fileutils'
+
 context 'Java 11' do
   context 'source tests' do
     tmp_path = '/tmp/example'
@@ -11,7 +12,7 @@ context 'Java 11' do
     source = <<-EOF
   #!/bin/java --source 11
       /*
-        NOTE: can not use shell comments beyond the  first line
+        NOTE: should switch from shell to java comments beyond the first line
       */
 
       import static java.lang.System.out;
@@ -44,11 +45,13 @@ context 'Java 11' do
 
     end
   end
-  context 'Jar module-info' do
+  context 'Jar module-info.java class component' do
     jarfile = 'example.app@1.0.jar'
     describe command(<<-EOF
       1>/dev/null 2>/dev/null pushd #{tmp_path}
-      jar xvf '#{jarfile}' module-info.class; strings module-info.class
+      jar xvf '#{jarfile}' module-info.class;
+      # can also use strings
+      javap -v module-info.class;
       1>/dev/null 2>/dev/null popd
     EOF
     ) do
@@ -69,7 +72,9 @@ context 'Java 11' do
       end
       its(:stderr) { should be_empty }
     end
-
+    # TODO: java --describe-module
+    # TODO: java --dry-run
+    # TODO: jdeps
   end
 end
 

@@ -68,13 +68,15 @@ context 'xmllint' do
     # To make this test pass one has to uncomment a few of 
     # stock cataline configuration <filter> DOM elements
     # or used the inline example above
+    filter_name = 'httpHeaderSecurity'
     describe command(<<-EOF
       echo "cat //*[local-name()='filter']/*[local-name()='filter-name']/text()" | xmllint --shell #{web_xml}
+      echo "cat //*[local-name()='filter']/*[local-name()='filter-name']/text()" | xmllint --shell #{web_xml}| grep -qi '#{filter_name}'
     EOF
     ) do
       its(:exit_status) { should eq 0 }
       [
-        'httpHeaderSecurity',
+        filter_name,
         'setCharcterEncodingFilter'
       ].each do |filter_name|
         its(:stdout) { should match Regexp.new(filter_name, Regexp::IGNORECASE) }
@@ -85,6 +87,7 @@ context 'xmllint' do
         its(:stdout) { should_not match Regexp.new(filter_name, Regexp::IGNORECASE) }
       end
       its(:stderr) { should be_empty }
+      its(:exit_status) { should eq 0 }
     end
     describe command(<<-EOF
       echo "cat \\"//*[local-name()='filter']/*[local-name()='filter-name']/text()\\"" | xmllint --shell #{web_xml}
@@ -206,8 +209,7 @@ context 'xmllint' do
       'RMIRegistry' => 11111,
       'RMIServer' => 9999,
     }.each do |service, port|
-      describe command("
-      '") do
+      describe command("xmllint --xpath '//*[local-name()=\"#{service}\"]' '#{jmx_config}'") do
         # the ports will be disabled in the sut configuration. Node made invisible.
         # the alterantive way (not shown here) is to set RMIStartService text to false
         its(:stderr) { should match /XPath set is empty/ }

@@ -41,6 +41,7 @@ context 'Augeas Removal of DOM Nodes' do
 
     </web-app>
   EOF
+  # https://github.com/hercules-team/augeas/wiki/Path-expressions
   remove_filter_name = 'httpHeaderSecurity'
   remaining_filter_name = 'failedRequestFilter'
   script_data = <<-EOF
@@ -67,7 +68,7 @@ context 'Augeas Removal of DOM Nodes' do
     file.close
   end
   describe command(<<-EOF
-    1>/dev/null 2>/dev/null augtool -A -f #{script_file}
+    1>/dev/null 2>/dev/null augtool -A -f '#{script_file}'
     xmllint --xpath '//*[ local-name()="filter-name" and contains(text(),"#{remove_filter_name}") ]' '#{xml_file}'
     xmllint --xpath '//*[ local-name()="filter-name" and contains(text(),"#{remaining_filter_name}") ]/text()' '#{xml_file}'
   EOF

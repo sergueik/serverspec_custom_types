@@ -27,8 +27,8 @@ context 'MySQL' do
     ) do
       # in Ruby attempt to substract also appears erroneous
       $stderr.puts (DateTime.parse(end_date) - DateTime.parse(start_date))
-      duration = (DateTime.parse(end_date).strftime('%s').to_i - DateTime.        parse(start_date).strftime('%s').to_i)
-      its(:stdout) { should contain -4097 } # no idea how MySQL does this
+      duration = (DateTime.parse(end_date).strftime('%s').to_i - DateTime.parse(start_date).strftime('%s').to_i)
+      its(:sstdout) { should contain -4097 } # no idea how MySQL does this
       its(:stdout) { should contain 57 }
       its(:stdout) { should contain duration }
 
