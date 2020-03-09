@@ -205,12 +205,87 @@ context 'xmllint' do
     # some Java application are re-condifured by commenting whole nodes in XML configuration e.g.
     # https://docs.oracle.com/javadb/10.10.1.2/adminguide/radminjmxenabledisable.html
     # https://docs.wso2.com/display/ESB470/Default+Ports+of+WSO2+Products
+    # no wso2 jmx.xml
+    # using https://www.springbyexample.org/examples/spring-jmx.html
+    # and https://alvinalexander.com/java/jwarehouse/jetty-6.1.9/etc/jetty-jmx.xml.shtml
+    # for a mockup
+
     jmx_config = '/usr/share/wso2/apim/application/repository/conf/etc/jmx.xml'
+
+    xml_file =  '/tmp/jmx.xml'
+    xml_data = <<-EOF
+      <?xml version="1.0" encoding="UTF-8"?>
+      <beans xmlns="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:p="http://www.springframework.org/schema/p"
+             xmlns:context="http://www.springframework.org/schema/context"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                                 http://www.springframework.org/schema/beans/spring-beans.xsd
+                                 http://www.springframework.org/schema/context
+                                 http://www.springframework.org/schema/context/spring-context.xsd">
+
+          <context:component-scan base-package="org.springbyexample.jmx" />
+
+          <context:mbean-export/>
+
+          <!-- Expose JMX over JMXMP -->
+          <bean id="serverConnector" class="org.springframework.jmx.support.ConnectorServerFactoryBean" />
+
+          <!-- Client connector to JMX over JMXMP -->
+          <bean id="clientConnector" class="org.springframework.jmx.support.MBeanServerConnectionFactoryBean"
+                p:serviceUrl="service:jmx:jmxmp://localhost:9875" />
+
+          <!-- Client ServerManager proxy to JMX over JMXMP -->
+          <bean id="serverManagerProxy" class="org.springframework.jmx.access.MBeanProxyFactoryBean"
+                p:objectName="org.springbyexample.jmx:name=ServerManager"
+                p:proxyInterface="org.springbyexample.jmx.ServerManager"
+                p:server-ref="clientConnector" />
+          <New id="ConnectorServer" class="org.eclipse.jetty.jmx.ConnectorServer">
+            <Arg>
+                <New class="javax.management.remote.JMXServiceURL">
+                    <Arg type="java.lang.String">rmi</Arg>
+                    <Arg type="java.lang.String"/>
+                    <Arg type="java.lang.Integer">0</Arg>
+                    <Arg type="java.lang.String">/jndi/rmi://localhost:1099/jmxrmi</Arg>
+                </New>
+            </Arg>
+            <Arg>org.eclipse.jetty:name=rmiconnectorserver</Arg>
+            <Call name="start"/>
+        </New>
+      </beans>
+
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{xml_file}"
+      file = File.open(xml_file, 'w')
+      file.puts xml_data.strip
+      file.close
+    end
+    # one can choose the DOM role names
+    {
+      'Arg' => 'org.eclipse.jetty:name=rmiconnectorserver'
+    }.each do |custom_tag, text|
+      describe command("xmllint --xpath '//*[local-name()=\"#{custom_tag}\" and text()=\"#{text}\"]' '#{jmx_config}'") do
+        its(:stdout) { should_not match /XPath set is empty/ }
+      end
+    end
+    # one can choose the meaningful names
     {
       'RMIRegistry' => 11111,
       'RMIServer' => 9999,
     }.each do |service, port|
       describe command("xmllint --xpath '//*[local-name()=\"#{service}\"]' '#{jmx_config}'") do
+        # the ports will be disabled in the sut configuration. Node made invisible.
+        # the alterantive way (not shown here) is to set RMIStartService text to false
+        its(:stderr) { should match /XPath set is empty/ }
+      end
+    end
+    jmx_config = xml_file
+    {
+      'serverConnector' => 'id="serverConnector" class="org.springframework.jmx.support.ConnectorServerFactoryBean"',
+      'RMIServer' => 9999,
+    }.each do |bean_id, bean_package|
+      describe command("xmllint --xpath '//*[id()=\"#{service}\"]/@' '#{jmx_config}'") do
         # the ports will be disabled in the sut configuration. Node made invisible.
         # the alterantive way (not shown here) is to set RMIStartService text to false
         its(:stderr) { should match /XPath set is empty/ }
