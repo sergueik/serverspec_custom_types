@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'rexml/document'
+require 'fileutils'
 include REXML
 
 context 'xmllint' do
@@ -65,7 +66,7 @@ context 'xmllint' do
       -->
       </web-app>
     EOF
-    # To make this test pass one has to uncomment a few of 
+    # To make this test pass one has to uncomment a few of
     # stock cataline configuration <filter> DOM elements
     # or used the inline example above
     filter_name = 'httpHeaderSecurity'
@@ -216,6 +217,66 @@ context 'xmllint' do
       end
       describe port(port) do
         it { should_not be_listening }
+      end
+    end
+  end
+  context 'Tomcat web.xml Puppet uness condition' do
+    xml_file = '/tmp/web.xml'
+    xml_data = <<-EOF
+      <?xml version="1.0" encoding="UTF-8"?>
+      <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" version="3.1">
+        <filter>
+          <filter-name>httpHeaderSecurity</filter-name>
+          <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+          <async-supported>true</async-supported>
+        </filter>
+        <!--
+          <filter>
+            <filter-name>setCharacterEncodingFilter</filter-name>
+            <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+            <init-param>
+              <param-name>encoding</param-name>
+              <param-value>UTF-8</param-value>
+            </init-param>
+            <async-supported>true</async-supported>
+          </filter>
+        -->
+      <filter>
+        <filter-name>failedRequestFilter</filter-name>
+        <filter-class>
+          org.apache.catalina.filters.FailedRequestFilter
+        </filter-class>
+        <async-supported>true</async-supported>
+      </filter>
+
+      </web-app>
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{xml_file}"
+      file = File.open(xml_file, 'w')
+      file.puts xml_data.strip
+      file.close
+    end
+    web_xml = xml_file
+    filter_name = 'wrong name'
+    describe command(<<-EOF
+      xmllint --xpath "//*[local-name()='filter-name' and contains(text(), '#{filter_name}')]" '#{web_xml}'
+      echo "Exit status" $?
+    EOF
+    ) do
+      # its(:exit_status) { should be_in [1, 10] }
+      # can not expected 1 to respond to :in
+      # its(:exit_status) { should match Regexp.new( '(?:' + [1, 10].join('|') + ')') }
+      # can not expect 1 to match /(?:1|10)/
+      its(:stdout) { should match Regexp.new( 'Exit Status ' + '(?:' + [1, 10].join('|') + ')', Regexp::IGNORECASE) }
+      # its(:stdout) { should be_empty }
+      its(:stderr) { should match /XPath set is empty/ }
+      [
+        'XPath error : Invalid expression',
+        'mlXPathEval: evaluation failed',
+        'XPath evaluation failure',
+      ].each do |line|
+        its(:stderr) { should_not match line }
       end
     end
   end
