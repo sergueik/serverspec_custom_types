@@ -1,61 +1,47 @@
 require 'spec_helper'
 
-context 'Process Puppet Agent Logs' do
+context 'Examine result of Puppet apply resource run' do
 
-  context 'Summary' do
-    # TODO: ismx
-    lines = [
-      'failed: 0',
-    ]
+  base_dir = '/tmp'
+  list_of_dirs = %w|dir1 dir2|
+  
+  before(:each) do
     ruby_script = <<-EOF
-  require 'yaml'
-  require 'pp'
-
-  # Read Puppet Agent last run summary
-
-  puppet_last_run_summary = \\`puppet config print 'lastrunfile'\\`.chomp
-  data = File.read(puppet_last_run_summary)
-  # Parse
-  puppet_summary = YAML.load(data)
-  puts \\"Summary\\nResources\\n\\" + puppet_summary['resources'].to_yaml
-  EOF
-    describe command("ruby -e \"#{ruby_script}\"") do
-      its(:stderr) { should be_empty }
-      its(:exit_status) {should eq 0 }
-      lines.each do |line|
-        its(:stdout) do
-          should match  Regexp.new(line.gsub(/[()]/,"\\#{$&}").gsub('[','\[').gsub(']','\]'))
-        end
+      require 'fileutils'
+      list_of_dirs = #{list_of_dirs}
+      base_dir = "#{base_dir}"
+      list_of_dirs.each do |dirname|
+        dirpath = "\#{base_dir}/\#{dirname}"          
+        FileUtils.mkdir_p(dirpath) unless File.exists?(dirpath)
       end
-    end
+    EOF
+    Specinfra::Runner::run_command( <<-EOF
+      > /tmp/ruby_script.rb echo '#{ruby_script}'
+      ruby -e '#{ruby_script}'
+    EOF
+    )
   end
-
-  context 'State' do
-    # TODO: ismx
-    lines = [
-      'Class[Main]',
-    ]
-    ruby_script = <<-EOF
-  require 'yaml'
-  require 'pp'
-
-  # Read Puppet Agent last run state
-  # NOTE: escaping special characters to prevent execution by shell
-  puppet_statefile = \\`puppet config print 'statefile'\\`.chomp
-  data = File.read(puppet_statefile)
-  # Extract Resources
-  puppet_state = YAML.load(data)
-  puts puppet_state.keys.to_yaml
+  target_dir = "#{base_dir}/#{list_of_dirs[0]}"
+  puppet_manifest = <<-EOF
+    exec {'command with condiion':
+      command  => 'echo Done',
+      provider => shell,
+      logoutput => true,
+      onlyif   => 'test -e "#{target_dir}" && ! test -L "#{target_dir}"',
+    }
   EOF
-    describe command("ruby -e \"#{ruby_script}\"") do
-      its(:stderr) { should be_empty }
-      its(:exit_status) {should eq 0 }
-      lines.each do |line|
-        its(:stdout) do
-          should match  Regexp.new(line.gsub(/[()]/,"\\#{$&}").gsub('[','\[').gsub(']','\]'))
-        end
-      end
-    end
+  # NOTE: To be able run Puppet in clean ruby-less uru enviroment, 
+  # needed to install running one time from within uru:
+  # uru gem install nokogiri
+  describe command( <<-EOF
+    puppet apply -e "#{puppet_manifest.gsub(/\n/, '').gsub(/\s+/, ' ')}"
+    find #{base_dir} -maxdepth 1 -type d
+  EOF
+) do
+    its(:stderr) { should be_empty }
+    # to make rspec show the actual output, make the expectation unrealistic
+    its(:stdout) { should include 'Done' }
+    its(:stdout) { should include 'Exec[command with condiion]/returns: Done' }
+    its(:exit_status) {should eq 0 }
   end
 end
-
