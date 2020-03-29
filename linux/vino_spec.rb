@@ -12,6 +12,30 @@ context 'Standard' do
     it { should be_listening.with 'tcp6' }
   end
   context 'application configuration' do
+    describe command 'gsettings list-schemas' do
+      %w|
+        com.ubuntu.sound
+        com.ubuntu.user-interface
+        org.gnome.Charmap
+        org.gnome.desktop.interface
+        org.gnome.desktop.notifications
+      |.each do |key|
+        its(:stdout) { should contain key }
+      end
+    end	    
+    scheme = 'org.gnome.desktop.interface'
+    describe command "settings list-keys #{scheme}" do
+      %w|
+        document-font-name
+        gtk-color-scheme
+        icon-theme
+        monospace-font-name
+        scaling-factor
+        toolbar-style
+      |.each do |key|
+        its(:stdout) { should contain key }
+      end
+    end	    
     # vino-preference needs a display to list configuration details
     {
       'vnc-password' => '[a-z0-9]+=*$', #  $(echo -n "#{password}"|base64)
@@ -21,6 +45,7 @@ context 'Standard' do
       'prompt-enabled' => true, # can be configured to false
     }.each do |key,value|
       describe command "gsettings get org.gnome.Vino #{key}" do
+        its(:sterr) { should_not contain "No such schema 'org.gnome.Vino'" }
         if value.eql? ''
           its(:stdout) { should contain '' }
         else
@@ -83,7 +108,7 @@ context 'xFCE Session and Startup desktop launchers' do
   end
   context 'Blueman Bluetooth Manager applet' do
     desktop_launcher_file = "#{launcher_dir}/blueman.desktop"
-    describe file(desktop_launcher_file) do
+    describe file desktop_launcher_file  do
       it { should be_file }
       # #let or #subject called without a block (RuntimeError)
       # subject { $stderr.puts self }
