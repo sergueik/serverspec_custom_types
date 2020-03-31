@@ -1,14 +1,37 @@
 require 'docker_helper'
 require 'spec_helper'
+require 'pp'
 
+DEBUG = true
 describe 'Docker Image' do
- # describe docker_image('serverspec-example:latest') do
-  describe docker_image('ruby:2.3.3-alpine') do
-    # TODO: Execute serverspec commands locally on the host (instead of in docker)
-    before(:each) { set :backend, :exec }
-    xit { should exist }
+  # based on: https://github.com/ikauzak/dockerfile_tdd
+  expected_key = 'tag_test'
+  before(:all) do
+    @image = Docker::Image.build_from_dir('.')
+    # craft few entries not originally in the image 
+    @image.tag(repo: expected_key, tag: 'latest')
+    set :os, family: :alpine
+    set :backend, :docker
+    set :docker_image, @image.id
+    set :docker_container_create_options, { 'Entrypoint' => ['ash']}
+  end
+  it "should have the #{expected_key}" do
+    if DEBUG
+      PP.pp @image.json, $stderr
+    end
+    # expect(@image.json['Config']['Labels'].has_key?(expected_key))
+    expect(@image.json['Config'].has_key?('WorkingDir'))
+    expect(@image.json['Config']['WorkingDir'].eql?('/serverspec'))
+    expect(@image.json['Config'].has_key?('Cmd'))
+    [
+      'rake',
+       'spec'
+    ].each do |command|
+      expect(@image.json['Config']['Cmd'].include?(command))
+    end
   end
 end
+
 
 # the following largely just verifies Dockerfile DSL
 describe 'Dockerfile' do
@@ -103,7 +126,7 @@ describe 'Docker container' do
   before(:each) do
     set :backend, :docker
   end
-  container_name = ENV.fetch('CONTAINER_NAME','test_container')
+  container_name = ENV.fetch('CONTAINER_NAME','serverspec-example')
   describe docker_container(container_name) do
     before(:each) { set :backend, :exec }
     it { is_expected.to be_running }

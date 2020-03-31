@@ -1,6 +1,5 @@
 FROM ruby:2.3.3-alpine
-# LABEL maintainer=""
-ARG app_jar="example.basic.jar"
+
 ARG basedir="/serverspec"
 ARG sampledir="${basedir}/tmp"
 ARG packages="build-base libcurl libxml2-dev libxslt-dev libffi-dev libmcrypt-dev openssl jq libxml2-utils"
@@ -27,7 +26,6 @@ RUN mkdir -p "${sampledir}/"
 # NOTE: commenting the following lines leads to the error
 ADD "data.json" "${basedir}/data.json"
 ADD "data.xml" "${basedir}/data.xml"
-# NOTE: ib these lines
 ADD "data.json" "${sampledir}/data.json"
 ADD "data.xml" "${sampledir}/data.xml"
 
@@ -37,8 +35,6 @@ ADD "Rakefile" "${basedir}/Rakefile"
 ADD "Dockerfile" "${basedir}/Dockerfile"
 ADD "spec/spec_helper.rb" "${basedir}/spec/spec_helper.rb"
 ADD "spec/docker_helper.rb" "${basedir}/spec/docker_helper.rb"
-
-
 
 WORKDIR $basedir
 CMD ["rake", "spec"]
