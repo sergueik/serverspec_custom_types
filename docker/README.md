@@ -3,21 +3,22 @@
 This directory contains a `Dockerfile` and helpers derived from [](https://github.com/operep/docker-serverspec) project and [](https://github.com/iBossOrg/docker-dockerspec) and [ikauzak/dockerfile_tdd](https://github.com/ikauzak/dockerfile_tdd).
 
 ### Build
-
+* name the image
 ```sh
-export DOCKER_IMAGE=serverspec-example
-export CONTAINER_NAME=serverspe-example
+export DOCKER_IMAGE=serverspec-image
+export CONTAINER_NAME=serverspec-example
 ```
+* build the image
 ```sh
 docker build -f Dockerfile -t $DOCKER_IMAGE .
 ```
 
 ### Use
+
+* run
 ```sh
-docker run -e CONTAINER_NAME=$CONTAINER_NAME --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec $DOCKER_IMAGE
-```
-```sh
-docker run -e DOCKER_IMAGE=$DOCKER_IMAGE -e CONTAINER_NAME=$CONTAINER_NAME --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec $DOCKER_IMAGE 2>&1 |tee a.log
+export DEBUG=true
+docker run -e CONTAINER_NAME=$CONTAINER_NAME -e DEBUG=$DEBUG --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec $DOCKER_IMAGE 2>&1 |tee a.log
 ```
 
 You will observe one failing spec examines the committed images to find the one named
@@ -41,6 +42,7 @@ docker run -e DOCKER_IMAGE=$DOCKER_IMAGE -e CONTAINER_NAME=$CONTAINER_NAME -it -
 docker container prune -f
 docker image ls -a | grep $DOCKER_IMAGE 2>&1 | awk '{print $3}' | xargs -IX docker image rm -f X
 docker image prune -f
+docker system prune -f
 ```
 
 ### TODO:
@@ -64,5 +66,5 @@ while the files are present and the container shows them copied. The error only 
 Warning if the directory links  are used on the host, they will most likely point to nowhere in the container.
 ### See Also
 
- * [](https://github.com/iBossOrg/docker-dockerspec/blob/master/Dockerfile)
- * [](https://docs.docker.com/engine/reference/builder/)
+ * [iBossOrg/docker-dockerspec](https://github.com/iBossOrg/docker-dockerspec/blob/master/Dockerfile)
+ * [Docker documentation](https://docs.docker.com/engine/reference/builder/)

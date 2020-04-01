@@ -2,7 +2,13 @@ require 'docker_helper'
 require 'spec_helper'
 require 'pp'
 
-DEBUG = true
+if ENV.fetch('DEBUG', false) =~ /^(true|t|yes|y|1)$/i
+  DEBUG = true
+else
+  DEBUG = false
+end
+$stderr.puts ('DEBUG=' + DEBUG.to_s )
+
 describe 'Docker Image' do
   # based on: https://github.com/ikauzak/dockerfile_tdd
   expected_key = 'tag_test'
@@ -25,7 +31,7 @@ describe 'Docker Image' do
     expect(@image.json['Config'].has_key?('Cmd'))
     [
       'rake',
-       'spec'
+      'spec'
     ].each do |command|
       expect(@image.json['Config']['Cmd'].include?(command))
     end
