@@ -20,14 +20,8 @@ RUN apk add --update --no-cache $packages; rm -rf /var/cache/apk/*; apk add
 RUN gem install --no-rdoc --no-ri $gems $optional_gems
 
 RUN mkdir -p "${sampledir}"
-# RUN echo '{"foo":"bar"}' > "${sampledir}/example.json"
-# RUN echo '<?xml version="1.0"?><Server port="8005" shutdown="SHUTDOWN"></Server>' >"${sampledir}/example.xml"
-
-# NOTE: commenting both two following lines suddenly leads to 100% error
-ADD "data.json" "${basedir}/data.json"
-ADD "data.xml" "${basedir}/data.xml"
-ADD "data.json" "${sampledir}/data.json"
-ADD "data.xml" "${sampledir}/data.xml"
+RUN echo '{"foo":"bar"}' > "${sampledir}/example.json"
+RUN echo '<?xml version="1.0"?><Server port="8005" shutdown="SHUTDOWN"></Server>' >"${sampledir}/example.xml"
 
 RUN mkdir -p "${basedir}/spec/localhost"
 

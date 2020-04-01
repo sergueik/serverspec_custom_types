@@ -35,7 +35,7 @@ docker commit 881bce4c82e4 serverspec-example
 ### Examine
 
 ```sh
-docker run -e DOCKER_IMAGE=$DOCKER_IMAGE -e CONTAINER_NAME=$CONTAINER_NAME -it --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec serverspec-example /bin/ash
+docker run -it --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/spec/localhost:/serverspec/spec/localhost -w /serverspec $CONTAINER_NAME /bin/ash
 ```
 ### Recycle
 ```sh
@@ -44,10 +44,12 @@ docker image ls -a | grep $DOCKER_IMAGE 2>&1 | awk '{print $3}' | xargs -IX dock
 docker image prune -f
 docker system prune -f
 ```
+### Note
+Soft directory links will be meaningless in the mapped directory inside container.
 
-### TODO:
+### LEGACY:
 
-Debug the error:
+Debug the error in older version:
 ```js
 {
   "errorDetail": {
@@ -62,8 +64,7 @@ from adding a
 ```
 while the files are present and the container shows them copied. The error only affects serverspec run.
 
-### Note
-Warning if the directory links  are used on the host, they will most likely point to nowhere in the container.
+
 ### See Also
 
  * [iBossOrg/docker-dockerspec](https://github.com/iBossOrg/docker-dockerspec/blob/master/Dockerfile)
