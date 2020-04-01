@@ -1,5 +1,4 @@
 require 'spec_helper'
-
 # https://wiki.archlinux.org/index.php/Systemd/User
 # https://www.brendanlong.com/systemd-user-services-are-amazing.html
 # https://askubuntu.com/questions/676007/how-do-i-make-my-systemd-service-run-via-specific-user-and-start-on-boot
@@ -8,7 +7,7 @@ require 'spec_helper'
 # https://bugs.centos.org/view.php?id=8767
 # https://pbrisbin.com/posts/systemd-user/
 # https://answers.launchpad.net/ubuntu/+source/systemd/+question/287454
-    # elementary when user is logged with X. 
+    # elementary when user is logged with X.
     # Failing with various dbus errors in console
     # mkdir -p ~/.config/systemd/user
     # cd ~/.config/systemd/user
@@ -31,13 +30,13 @@ require 'spec_helper'
     # apt-get install dbus-user-session libpam-systemd
     # A reboot is required to replace the running dbus-daemon.
     # systemctl list-units | grep -i bus
-    # dbus.service  
+    # dbus.service
     #      loaded active running   D-Bus System Message Bus
     #
     # Failed to start dbus.service: Operation refused, unit dbus.service may be requested by dependency only.
     #
     # systemctl --user status -l sample_service
-    # ● sample_service.service - [Service description]
+    # * sample_service.service - [Service description]
     #    Loaded: loaded (/home/sergueik/.config/systemd/user/sample_service.service; e
     #    Active: inactive (dead) since Fri 2019-12-20 17:28:39 EST; 4s ago
     #   Process: 3670 ExecStart=/usr/bin/perl (code=exited, status=0/SUCCESS)
@@ -55,28 +54,25 @@ require 'spec_helper'
     # dbus-daemon --session --print-address 1
     # export DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-oS71hPJo0f
     # export DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-oS71hPJo0f
-    # sample_user@localhost:~$ systemctl --user start sample_service    
+    # sample_user@localhost:~$ systemctl --user start sample_service
     #              Failed to connect to bus: Connection refused
     # ls -l /run/user/1000/
     # total 0
     # srw-rw-rw- 1 vagrant vagrant  0 Dec 21 10:10 bus
     # drwxr-xr-x 2 vagrant vagrant 80 Dec 21 10:10 systemd
-
     # systemctl --user enable sample_service
     #    Activating service name='org.freedesktop.systemd1'
     # ** (process:4768): CRITICAL **: Unable to acquire bus name 'org.freedesktop.systemd1'.  Quitting.
-    # Activated service 'org.freedesktop.systemd1' failed: 
+    # Activated service 'org.freedesktop.systemd1' failed:
     # Process /usr/lib/x86_64-linux-gnu/systemd-shim exited with status 1
     # https://serverfault.com/questions/892465/starting-systemd-services-sharing-a-session-d-bus-on-headless-system
     # https://packages.ubuntu.com/bionic/dbus-user-session
     # https://packages.ubuntu.com/xenial-updates/dbus-user-session
     # https://packages.ubuntu.com/xenial/dbus-user-session
-
 context 'per-user systemd instance test' do
   unit = 'httpd'
   user = 'sample_user'
   systemd_user_dir = "/home/#{user}/.config/systemd/user"
-
   describe file "#{systemd_user_dir}/user-applications.target" do
     it { should be_file }
     it { should_not be_linked_to('/dev/null') }
@@ -104,12 +100,28 @@ context 'per-user systemd instance test' do
     #
     # [Install]
     # WantedBy=default.target
-  describe command(<<- EOF
+  service_name = 'nonexistent'
+  describe command(<<-EOF
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    systemctl --user status #{service_name} 2>/dev/null | strings
+  EOF
+  ) do
+    its (:exit_status) { should eq 3 }
+    its(:stdout) { should match /^\*\s#{service_name}.service/ }
+  end	
+  describe command(<<-EOF
+    unset XDG_RUNTIME_DIR
+    systemctl --user status nonexistent 2>/dev/null
+  EOF
+  ) do
+    its (:exit_status) { should eq 1 }
+    its(:stdout) { should match /^Failed to connect to bus: No such file or directory/ }
+  end	
+  describe command(<<-EOF
     ssh #{user}@$(hostname -f) systemctl --user import-environment VAR_TO_EXPOSE
     ssh #{user}@$(hostname -f) systemctl --user start user-applications.target
   EOF
   ) do
     its (:exit_status) { should eq 0 }
-  end	
-end
-
+  end
+  # need to create $user first to run these tests
