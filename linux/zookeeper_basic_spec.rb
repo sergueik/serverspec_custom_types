@@ -31,7 +31,15 @@ context 'zookeeper' do
 
   describe service('zookeeper') do
     it { should be_enabled.with_level(3) }
-    it { should be_running }
+    # common Ruby way of dispatching calls to methods 
+    # 'check_is_running_under_init'
+    # 'check_is_enabled_under_init'->service, level
+    # located in the module "Specinfra::Command::Module::Service::Init"
+    # via the evaluations like
+    # under = under ? "_under_#{under.gsub(/^under_/, '')}" : ''
+    # https://github.com/mizzy/serverspec/blob/master/lib/serverspec/type/service.rb
+    it { should be_running.under('init') }
+    it { should be_enabled.under('init').with_level(3) }
   end
   describe port '2181' do
     it {should be_listeningi.with('tcp') }
