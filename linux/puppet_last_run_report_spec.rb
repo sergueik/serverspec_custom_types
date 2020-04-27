@@ -2,6 +2,22 @@ require 'spec_helper'
 
 
 context 'Puppet Last Run Report' do
+  context 'Execute Simple static check after Puppet Apply creates Last Run Report' do
+    dummy_manifest_script = 'notify {"this is a test":}'
+    before(:each) do
+      Specinfra::Runner::run_command("puppet apply -e '#{dummy_manifest_script}'")
+    end
+    describe command(<<-EOF
+      tail -10 $(puppet config print lastrunreport) | grep '^status:' | grep -v 'failed'
+      tail -10 $(puppet config print lastrunreport) | grep '^status:' | grep -vq 'failed'
+    EOF
+    ) do
+        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
+        its(:stdout) {should match /status: (?!failed)/ }
+    end
+  end
   context 'Execute Puppet Agent embedded Ruby to examine Last Run Report' do
     # script_file = '/tmp/test.$$.rb'
     script_file = '/tmp/test.rb'
