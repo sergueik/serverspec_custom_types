@@ -1,0 +1,36 @@
+require 'rake'
+require 'rspec/core/rake_task'
+require 'yaml'
+# require 'highline/import'
+
+argv = ARGV
+env = argv.length < 2 ? 'test' : argv[1]
+
+case env
+when 'prod' then
+  yaml_file = 'prod.yaml'
+when 'test' then
+  yaml_file = 'test.yaml'
+else
+  puts 'Invalid argument, expected: [test|prod]'
+  exit(1)
+end
+
+properties = YAML.load_file("conf/#{yaml_file}")
+
+desc "Run serverspec to all hosts"
+task :serverspec => 'serverspec:all'
+
+namespace :serverspec do
+  task :all => properties.keys.map {|key| 'serverspec:' + key }
+  properties.keys.each do |key|
+    desc "Run serverspec to #{key}"
+    RSpec::Core::RakeTask.new(key.to_sym) do |t|
+      ENV['TARGET_HOST'] = properties[key][:hostname]
+      $stderr.puts ('Set TARGET_HOST=' + ENV['TARGET_HOST'])
+      # Ruby env, not system env
+      t.pattern = 'spec/{' + properties[key][:roles].join(',') + '}/*_spec.rb'
+      t.fail_on_error = false
+    end
+  end
+end
