@@ -1,0 +1,8 @@
+sample:
+  :roles:
+    - basic/
+    - common/
+  :hostname: 192.168.0.64
+  # psych::SyntaxError: found character that cannot start any token
+  # :hostname: %x|hostname -s|
+  # :hostname: `hostname -s`

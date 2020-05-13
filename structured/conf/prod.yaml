@@ -1,0 +1,4 @@
+sample:
+  :roles:
+    - common/
+  :hostname: 192.168.0.64
