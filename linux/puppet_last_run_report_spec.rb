@@ -2,6 +2,7 @@ require 'spec_helper'
 
 
 context 'Puppet Last Run Report' do
+
   context 'Execute Simple static check after Puppet Apply creates Last Run Report' do
     dummy_manifest_script = 'notify {"this is a test":}'
     before(:each) do
@@ -16,6 +17,50 @@ context 'Puppet Last Run Report' do
         its(:stderr) { should be_empty }
         its(:exit_status) {should eq 0 }
         its(:stdout) {should match /status: (?!failed)/ }
+    end
+  end
+  context 'Master loop' do
+    describe command(<<-COMMAND
+      MASTERS=$(cat <<EOF
+        puppetmaster1.domain.org
+        puppetmaster2.domain.org
+      EOF
+      )
+
+      for MASTER in $MASTERS ; do
+        echo $MASTER
+        # select another puppet master
+        sed -i "s|server *= .*$|server = $MASTER|g" /etc/puppetlabs/puppet/puppet.conf
+        puppet agent --test --no-noop | tee "/tmp/puppet.${MASTER}.log"
+        AGENT_STATUS=$?
+        echo "Examine agent status ${AGENT_STATUS}"
+        if [[ $AGENT_STATUS -eq 4 ]]; then
+          echo 'apply catalog failed'
+        fi
+        if [[ $AGENT_STATUS -eq 6 ]]; then
+          echo 'apply catalog reported failures'
+        fi
+        if [[ $AGENT_STATUS -eq 1 ]]; then
+          echo 'apply catalog fails'
+        fi
+        if [[ $AGENT_STATUS -eq 0 ]]; then
+          echo "Examine last run report $(puppet config print lastrunreport)"
+          tail -10 $(puppet config print lastrunreport) | grep '^status:' | grep -vq 'failed'
+          if [[ $? -ne 0 ]]; then
+            echo 'Puppet run failed'
+          fi
+        fi
+        if [[ $AGENT_STATUS -eq 2 ]]; then
+          echo 'apply catalog succeeded'
+          exit 0
+        fi
+      done
+    COMMAND
+    ) do
+        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
+        its(:stdout) {should match /apply catalog succeeded/ }
     end
   end
   context 'Execute Puppet Agent embedded Ruby to examine Last Run Report' do
