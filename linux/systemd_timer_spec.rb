@@ -21,7 +21,7 @@ context 'systemd timer' do
       '[Install]',
       'WantedBy=multi-user.target',
     ].each do |line|
-      # NOTE:  some of the entries may be optional or mutually-exclusive
+      # NOTE: some of the entries may be optional or mutually-exclusive
       # TODO: count matches to rank unit a good matching
       # its(:content) { should match Regexp.new(Regexp.escape(line)) }
       its(:content) { should match Regexp.new("^\s*" +line) }

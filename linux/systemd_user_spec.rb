@@ -56,7 +56,6 @@ require 'spec_helper'
     # Failed to get D-Bus connection: Failed to connect to socket /run/user/1003/dbus/user_bus_socket: No such file or director
     # dbus-daemon --session --print-address 1
     # export DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-oS71hPJo0f
-    # export DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-oS71hPJo0f
     # sample_user@localhost:~$ systemctl --user start sample_service
     #              Failed to connect to bus: Connection refused
     # ls -l /run/user/1000/
@@ -137,5 +136,5 @@ context 'per-user systemd instance test' do
   ), :if => false do
     its (:exit_status) { should eq 0 }
   end
-  # need to create $user first to run these tests
+  # NOTE: need to create $user user in order to run these tests
 end

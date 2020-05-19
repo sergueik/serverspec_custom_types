@@ -4,7 +4,7 @@ require 'fileutils'
 # https://www.freedesktop.org/software/systemd/man/systemd-escape.html
 # https://serverfault.com/questions/714592/how-does-this-variable-escaping-work-in-a-systemd-unit-file
 # https://www.freedesktop.org/software/systemd/man/systemd.service.html
-context 'Escaping backticks and special varialbles' do
+context 'Escaping backticks and special systemd varialbles' do
   context 'Conversion' do
     [
       '`date +%F`', # this one survives
@@ -36,7 +36,7 @@ context 'Escaping backticks and special varialbles' do
   end
   context 'Reverse' do
     {
-      'aps-my\\x20application' => 'aps/my application', 
+      'aps-my\\x20application' => 'aps/my application',
       '\\x60date\\x20\\x2b\\x25F\\x60' => '`date +%F`',
     }.each do |encoded_option, option|
       # TODO: extract the encoded_option from configuration instead of passing directly
