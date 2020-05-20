@@ -4,97 +4,200 @@ require 'find'
 $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
 
 # https://serverfault.com/questions/48109/how-to-find-files-with-incorrect-permissions-on-unix
-context 'Springboot Jar contents scan' do
+context 'Springboot jar' do
   jar_path = "/home/#{ENV.fetch('USER')}/src/springboot_study/basic-mysql/target"
   jar_filename = 'example.mysql.jar'
-  
-  # NOTE: when parenthesis omitted,
-  # unexpected keyword_do_block, expecting end-of-input
-  # syntax error, unexpected keyword_do_block, expecting keyword_end
- 
-  describe command( <<-EOF
-    jar tvf '#{jar_path}/#{jar_filename}' 2>&1 | grep '/$' | awk '{print $NF}'
-  EOF
-  ) do
-    %w|
-      org/springframework/
-      org/springframework/boot/
-      org/springframework/boot/loader/
-      org/springframework/boot/loader/data/
-      org/springframework/boot/loader/jar/
-      org/springframework/boot/loader/archive/
-      org/springframework/boot/loader/util/
-      BOOT-INF/lib/
-    |.each do |folder_name|
-      its(:stdout) {  should contain folder_name }
+  tmp_path = '/tmp'
+
+  message = 'Hello, Serverspec!'
+
+  context 'Jar contents scan' do
+
+    # NOTE: when parenthesis omitted,
+    # unexpected keyword_do_block, expecting end-of-input
+    # syntax error, unexpected keyword_do_block, expecting keyword_end
+
+    describe command( <<-EOF
+      jar tvf '#{jar_path}/#{jar_filename}' 2>&1 | grep '/$' | awk '{print $NF}'
+    EOF
+    ) do
+      %w|
+        org/springframework/
+        org/springframework/boot/
+        org/springframework/boot/loader/
+        org/springframework/boot/loader/data/
+        org/springframework/boot/loader/jar/
+        org/springframework/boot/loader/archive/
+        org/springframework/boot/loader/util/
+        BOOT-INF/lib/
+      |.each do |folder_name|
+        its(:stdout) {  should contain folder_name }
+      end
+    end
+
+    field = 3
+    describe command  "jar tvf '#{jar_path}/#{jar_filename}' 2>&1 | grep 'BOOT-INF/lib' | cut -d '/' -f #{field} | sed 's|\\-[0-9][0-9.]*\\(RELEASE\\)*\\(Final\\)*\\.jar||g' " do
+      %w|
+        antlr
+        aspectjweaver
+        byte-buddy
+        classmate
+        dom4j
+        hibernate-commons-annotations
+        hibernate-core
+        hibernate-validator
+        HikariCP
+        jackson-annotations
+        jackson-core
+        jackson-databind
+        jackson-datatype-jdk8
+        jackson-datatype-jsr310
+        jackson-module-parameter-names
+        jandex
+        javassist-3.23.1-GA.jar
+        javax.activation-api
+        javax.annotation-api
+        javax.persistence-api
+        javax.transaction-api
+        jaxb-api
+        jboss-logging
+        jul-to-slf4j
+        log4j-api
+        log4j-to-slf4j
+        logback-classic
+        logback-core
+        mysql-connector-java
+        slf4j-api
+        snakeyaml
+        spring-aop
+        spring-aspects
+        spring-beans
+        spring-boot
+        spring-boot-autoconfigure
+        spring-boot-starter
+        spring-boot-starter-aop
+        spring-boot-starter-data-jpa
+        spring-boot-starter-jdbc
+        spring-boot-starter-json
+        spring-boot-starter-logging
+        spring-boot-starter-tomcat
+        spring-boot-starter-validation
+        spring-boot-starter-web
+        spring-context
+        spring-core
+        spring-data-commons
+        spring-data-jpa
+        spring-expression
+        spring-jcl
+        spring-jdbc
+        spring-orm
+        spring-tx
+        spring-web
+        spring-webmvc
+        tomcat-embed-core
+        tomcat-embed-el
+        tomcat-embed-websocket
+        validation-api
+     |.each do |jar_name|
+       its(:stdout) {  should contain jar_name }
+     end
+   end
+  end
+  context 'partially successful run test' do
+
+    class_name = 'TryLoggerTest'
+    source_file = "#{tmp_path}/#{class_name}.java"
+    source_data = <<-EOF
+      import org.apache.logging.log4j.LogManager;
+      import org.apache.logging.log4j.Logger;
+
+      public class #{class_name}{
+
+        private static final Logger log = LogManager.getLogger(#{class_name}.class);
+
+        private static final Logger logger = LogManager.getLogger("#{class_name}");
+        public static void main(String[] args) {
+          logger.info("Hello, World!");
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      file = File.open(source_file, 'w')
+      file.puts source_data
+      file.close
+    end
+    describe command( <<-EOF
+      cd #{tmp_path}
+      jar xvf '#{jar_path}/#{jar_filename}' BOOT-INF/lib/log4j-api BOOT-INF/lib/log4j-to-slf4j BOOT-INF/lib/slf4j-api
+      cp BOOT-INF/lib/*jar .
+      for J in  $(ls -1 log4j-api-*.jar)
+      do
+        javac -cp $J '#{class_name}.java'
+        java -cp $J:. '#{class_name}'
+      done
+    EOF
+    ) do
+      its(:stdout) {  should contain 'extracted: BOOT-INF/lib/log4j-api' }
+      [
+        'Log4j2 could not find a logging implementation',
+        'Using SimpleLogger to log to the console'
+      ].each do |line|
+        its(:stderr) {  should contain line }
+      end
+      # when some needed jars are unavailable
+      # log4j compains but does not throw exception nor return error
+      its(:exit_status) { should eq 0 }
     end
   end
 
-  field = 3
-  describe command  "jar tvf '#{jar_path}/#{jar_filename}' 2>&1 | grep 'BOOT-INF/lib' | cut -d '/' -f #{field} | sed 's|\\-[0-9][0-9.]*\\(RELEASE\\)*\\(Final\\)*\\.jar||g' " do 
-    %w|
-      antlr
-      aspectjweaver
-      byte-buddy
-      classmate
-      dom4j
-      hibernate-commons-annotations
-      hibernate-core
-      hibernate-validator
-      HikariCP
-      jackson-annotations
-      jackson-core
-      jackson-databind
-      jackson-datatype-jdk8
-      jackson-datatype-jsr310
-      jackson-module-parameter-names
-      jandex
-      javassist-3.23.1-GA.jar
-      javax.activation-api
-      javax.annotation-api
-      javax.persistence-api
-      javax.transaction-api
-      jaxb-api
-      jboss-logging
-      jul-to-slf4j
-      log4j-api
-      log4j-to-slf4j
-      logback-classic
-      logback-core
-      mysql-connector-java
-      slf4j-api
-      snakeyaml
-      spring-aop
-      spring-aspects
-      spring-beans
-      spring-boot
-      spring-boot-autoconfigure
-      spring-boot-starter
-      spring-boot-starter-aop
-      spring-boot-starter-data-jpa
-      spring-boot-starter-jdbc
-      spring-boot-starter-json
-      spring-boot-starter-logging
-      spring-boot-starter-tomcat
-      spring-boot-starter-validation
-      spring-boot-starter-web
-      spring-context
-      spring-core
-      spring-data-commons
-      spring-data-jpa
-      spring-expression
-      spring-jcl
-      spring-jdbc
-      spring-orm
-      spring-tx
-      spring-web
-      spring-webmvc
-      tomcat-embed-core
-      tomcat-embed-el
-      tomcat-embed-websocket
-      validation-api
-   |.each do |jar_name|
-     its(:stdout) {  should contain jar_name }
-   end
- end
+  # every springboot app carries some common jars in a similar fashion vanilla tomcat server do
+  # demonstrate that one can extract those common jars from BOOT-INF/lib and compile the example exercising functionality from those
+  # https://logging.apache.org/log4j/2.x/manual/api.html
+  # https://www.eclipse.org/jetty/documentation/9.1.5.v20140505/example-logging-logback-centralized.html
+  context 'SpringBoot Jar tests' do
+
+    tmp_path = '/tmp'
+    class_name = 'BetterLoggerTest'
+    source_file = "#{tmp_path}/#{class_name}.java"
+    source_data = <<-EOF
+      import org.apache.logging.log4j.LogManager;
+      import org.apache.logging.log4j.Logger;
+
+      public class #{class_name}{
+        private static final Logger logger = LogManager.getLogger("#{class_name}");
+        public static void main(String[] args) {
+          logger.info("#{message}");
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      file = File.open(source_file, 'w')
+      file.puts source_data
+      file.close
+    end
+    describe command( <<-EOF
+      cd #{tmp_path}
+      jar xvf '#{jar_path}/#{jar_filename}' BOOT-INF/lib/log4j-api BOOT-INF/lib/log4j-to-slf4jBOOT-INF/lib/slf4j-api BOOT-INF/lib/logback-
+      cp BOOT-INF/lib/log4j-api-*jar .
+      for J in  $(ls -1 log4j-api-*.jar) ; do
+        javac -cp $J '#{class_name}.java';
+      done
+      java -cp .:BOOT-INF/lib/* '#{class_name}'
+    EOF
+    ) do
+      its(:stdout) { should contain 'extracted: BOOT-INF/lib/log4j-api' }
+      # log4j no longer compains about missing jars
+      [
+        'Log4j2 could not find a logging implementation',
+        'Using SimpleLogger to log to the console'
+      ].each do |line|
+        its(:stderr) {  should_not contain line }
+      end
+      its(:stdout) { should match /\[main\] INFO #{class_name} - #{message}/ }
+      its(:exit_status) { should eq 0 }
+    end
+  end
+
 end
