@@ -5,7 +5,7 @@ $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
 
 # https://serverfault.com/questions/48109/how-to-find-files-with-incorrect-permissions-on-unix
 context 'Springboot jar' do
-  jar_path = "/home/#{ENV.fetch('USER')}/src/springboot_study/basic-mysql/target"
+  jar_path = "/home/#{ENV.fetch('USER')}/workspace/springboot_study/basic-mysql/target"
   jar_filename = 'example.mysql.jar'
   tmp_path = '/tmp'
 
@@ -199,5 +199,62 @@ context 'Springboot jar' do
       its(:exit_status) { should eq 0 }
     end
   end
+  # https://www.baeldung.com/java-snake-yaml
+  context 'using snakeyaml' do
+    class_name = 'SnakeYamlTest'
+    source_file = "#{tmp_path}/#{class_name}.java"
+    source_data = <<-EOF
+      import java.io.FileInputStream;
+      import java.io.IOException;
+      import java.io.InputStream;
+      import java.util.Map;
 
+      import org.yaml.snakeyaml.Yaml;
+
+      public class #{class_name}{
+        public static void main(String[] args) throws IOException {
+
+          InputStream inputStream = new FileInputStream(args[0]);
+          Yaml yaml = new Yaml();
+          Map<String, Object> obj = yaml.load(inputStream);
+          System.out.println(obj);
+        }
+      }
+    EOF
+    yaml_file = "#{tmp_path}/data.yaml"
+    yaml_data = <<-EOF
+---
+a: b
+c:
+ - 1
+ - 2
+ - 3
+    EOF
+
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      file = File.open(source_file, 'w')
+      file.puts source_data
+      file.close
+      $stderr.puts "Writing #{yaml_file}"
+      file = File.open(yaml_file, 'w')
+      file.puts yaml_data
+      file.close
+    end
+    describe command( <<-EOF
+      cd #{tmp_path}
+      jar xvf '#{jar_path}/#{jar_filename}' BOOT-INF/lib/snakeyaml
+      cp BOOT-INF/lib/snakeyaml*jar .
+      for J in  $(ls -1 snakeyaml**.jar)
+      do
+        javac -cp $J '#{class_name}.java'
+        java -cp $J:. '#{class_name}' 'data.yaml'
+      done
+    EOF
+    ) do
+      its(:stdout) { should contain 'a=b' }
+      its(:exit_status) { should eq 0 }
+    end
+
+  end
 end
