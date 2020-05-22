@@ -210,14 +210,21 @@ context 'Springboot jar' do
       import java.util.Map;
 
       import org.yaml.snakeyaml.Yaml;
+      import org.yaml.snakeyaml.DumperOptions;
+      import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 
       public class #{class_name}{
         public static void main(String[] args) throws IOException {
 
           InputStream inputStream = new FileInputStream(args[0]);
-          Yaml yaml = new Yaml();
+          // https://www.programcreek.com/java-api-examples/org.yaml.snakeyaml.Yaml#11
+          DumperOptions dumperOptions = new DumperOptions();
+          //	dumperOptions.setDefaultFlowStyle(FlowStyle.BLOCK);
+          // 	dumperOptions.setDefaultFlowStyle(FlowStyle.FLOW);
+          Yaml yaml = new Yaml(dumperOptions);
           Map<String, Object> obj = yaml.load(inputStream);
           System.out.println(obj);
+          yaml.dump(obj);
         }
       }
     EOF
