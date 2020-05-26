@@ -10,6 +10,8 @@ context 'X11 display do' do
     # keyError:
     # key not found: "UID"
     uid = %x/ id -u  | tr -d '\\n'/
+    uid_command = "id -u  | tr -d '\\n'"
+    uid = command(uid_command).stdout
   end
   describe command(<<-EOF
     find /tmp/.X11-unix/ -type s -name 'X*' | xargs -IX lsof -U X 2>/dev/null
@@ -49,3 +51,4 @@ context 'X11 display do' do
   # TODO: sample vnc command with a wrong -display
 
 end
+
