@@ -34,3 +34,4 @@ end
 #     should have summary resources "failed", 1
 #     should have summary resources "changed", 0
 #     should have key value "status", "failed"
+

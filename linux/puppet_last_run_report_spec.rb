@@ -1,9 +1,31 @@
 require 'spec_helper'
 
 
-context 'Puppet Last Run Report' do
+context 'Puppet lastrun report' do
 
-  context 'Execute Simple static check after Puppet Apply creates Last Run Report' do
+  # TODO: uid check
+  context 'location of lastrun report' do
+    describe command(<<-EOF
+      puppet config print lastrunreport
+    EOF
+    ) do
+        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
+        its(:stdout) {should contain '/var/cache/puppet/state/last_run_report.yaml' }
+    end
+    user = 'sergueik'
+    describe command(<<-EOF
+      su - #{user} sh -c 'puppet config print lastrunreport'
+    EOF
+    ) do
+        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+        its(:stderr) { should be_empty }
+        its(:exit_status) {should eq 0 }
+        its(:stdout) {should contain "/home/#{user}/.puppet/cache/state/last_run_report.yaml" }
+    end
+  end
+  context 'Execute simple static check after puppet apply creates a lastrun report' do
     dummy_manifest_script = 'notify {"this is a test":}'
     before(:each) do
       Specinfra::Runner::run_command("puppet apply -e '#{dummy_manifest_script}'")
