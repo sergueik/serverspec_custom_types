@@ -203,8 +203,9 @@ context 'Springboot jar' do
     end
   end
   # https://www.baeldung.com/java-snake-yaml
-  context 'using snakeyaml' do
-    class_name = 'SnakeYamlTest'
+  context 'basics of using snakeyaml' do
+    class_name = 'SnakeYamliBasicTest'
+    data = 'basic'
     source_file = "#{tmp_path}/#{class_name}.java"
     source_data = <<-EOF
       import java.io.FileInputStream;
@@ -222,16 +223,17 @@ context 'Springboot jar' do
           InputStream inputStream = new FileInputStream(args[0]);
           // https://www.programcreek.com/java-api-examples/org.yaml.snakeyaml.Yaml#11
           DumperOptions dumperOptions = new DumperOptions();
-          //	dumperOptions.setDefaultFlowStyle(FlowStyle.BLOCK);
+          dumperOptions.setDefaultFlowStyle(FlowStyle.BLOCK);
           // 	dumperOptions.setDefaultFlowStyle(FlowStyle.FLOW);
           Yaml yaml = new Yaml(dumperOptions);
-          Map<String, Object> obj = yaml.load(inputStream);
+          Map<String, Object> obj = yaml.loadAs(inputStream, Map.class);
           System.out.println(obj);
+          // NOTE: dump produces no output
           yaml.dump(obj);
         }
       }
     EOF
-    yaml_file = "#{tmp_path}/data.yaml"
+    yaml_file = "#{tmp_path}/#{data}.yaml"
     yaml_data = <<-EOF
 ---
 a: b
@@ -258,7 +260,7 @@ c:
       for J in  $(ls -1 snakeyaml**.jar)
       do
         javac -cp $J '#{class_name}.java'
-        java -cp $J:. '#{class_name}' 'data.yaml'
+        java -cp $J:. '#{class_name}' '#{data}.yaml'
       done
     EOF
     ) do
@@ -268,8 +270,9 @@ c:
 
   end
   context 'using snakeyaml to validate yaml data' do
-    class_name = 'SnakeYamlTest'
+    class_name = 'SnakeYamlToolTest'
     source_file = "#{tmp_path}/#{class_name}.java"
+    data = 'hieradata'
     source_data = <<-EOF
       import java.io.FileInputStream;
       import java.io.IOException;
@@ -286,14 +289,8 @@ c:
         public static void main(String[] args) throws IOException {
 
           InputStream inputStream = new FileInputStream(args[0]);
-          // https://www.programcreek.com/java-api-examples/org.yaml.snakeyaml.Yaml#11
-          DumperOptions dumperOptions = new DumperOptions();
-          //	dumperOptions.setDefaultFlowStyle(FlowStyle.BLOCK);
-          // 	dumperOptions.setDefaultFlowStyle(FlowStyle.FLOW);
-          Yaml yaml = new Yaml(dumperOptions);
+          Yaml yaml = new Yaml();
 	  Map<String, Object> obj = yaml.loadAs(inputStream, Map.class);
-          // System.out.println(obj);
-          // yaml.dump(obj);
           Iterator<String> hostIterator = obj.keySet().iterator();
           while (hostIterator.hasNext()) {
             String hostname = hostIterator.next();
@@ -301,10 +298,10 @@ c:
             if (nodeConfig.containsKey("branch_name")
                &&
                nodeConfig.get("branch_name") != null
-               && 
+               &&
                nodeConfig.get("branch_name").toString().indexOf(branchName) == 0
                &&
-               !nodeConfig.containsKey("service_account")  
+               !nodeConfig.containsKey("service_account")
             ) {
                System.out.println(hostname);
             }
@@ -313,7 +310,7 @@ c:
         }
       }
     EOF
-    yaml_file = "#{tmp_path}/data.yaml"
+    yaml_file = "#{tmp_path}/#{data}.yaml"
     yaml_data = <<-EOF
 ---
 host1.domain.com:
@@ -366,7 +363,7 @@ host3.domain.com:
       for J in  $(ls -1 snakeyaml**.jar)
       do
         javac -cp $J '#{class_name}.java'
-        java -cp $J:. '#{class_name}' 'data.yaml'
+        java -cp $J:. '#{class_name}' '#{data}.yaml'
       done
     EOF
     ) do
@@ -374,6 +371,9 @@ host3.domain.com:
       its(:stderr) { should_not contain 'java.lang.NullPointerException' }
       its(:stdout) { should contain 'host2.domain.com' }
       its(:exit_status) { should eq 0 }
+      describe file "#{tmp_path}/#{class_name}.class" do
+        it {should exist}
+      end
     end
 
   end
