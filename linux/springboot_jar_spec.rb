@@ -5,7 +5,8 @@ $DEBUG = (ENV.fetch('DEBUG', false) =~ (/^(true|t|yes|y|1)$/i))
 
 # https://serverfault.com/questions/48109/how-to-find-files-with-incorrect-permissions-on-unix
 context 'Springboot jar' do
-  jar_path = "/home/#{ENV.fetch('USER')}/workspace/springboot_study/basic-mysql/target"
+   workspace = 'src' # on some nodes workspace = 'workspace'
+  jar_path = "/home/#{ENV.fetch('USER')}/#{workspace}/springboot_study/basic-mysql/target"
   jar_filename = 'example.mysql.jar'
   tmp_path = '/tmp'
 
@@ -156,7 +157,9 @@ context 'Springboot jar' do
   # https://logging.apache.org/log4j/2.x/manual/api.html
   # https://www.eclipse.org/jetty/documentation/9.1.5.v20140505/example-logging-logback-centralized.html
   context 'SpringBoot Jar tests' do
-
+    # NOTE: older SpringBoot releases like 1.4-x.RELEASE and disguised SB apps
+    # did not follow this directory pattern
+    #
     tmp_path = '/tmp'
     class_name = 'BetterLoggerTest'
     source_file = "#{tmp_path}/#{class_name}.java"
@@ -260,6 +263,116 @@ c:
     EOF
     ) do
       its(:stdout) { should contain 'a=b' }
+      its(:exit_status) { should eq 0 }
+    end
+
+  end
+  context 'using snakeyaml to validate yaml data' do
+    class_name = 'SnakeYamlTest'
+    source_file = "#{tmp_path}/#{class_name}.java"
+    source_data = <<-EOF
+      import java.io.FileInputStream;
+      import java.io.IOException;
+      import java.io.InputStream;
+      import java.util.Map;
+      import java.util.Iterator;
+
+      import org.yaml.snakeyaml.Yaml;
+      import org.yaml.snakeyaml.DumperOptions;
+      import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+
+      public class #{class_name}{
+        private static final String branchName = "prod";
+        public static void main(String[] args) throws IOException {
+
+          InputStream inputStream = new FileInputStream(args[0]);
+          // https://www.programcreek.com/java-api-examples/org.yaml.snakeyaml.Yaml#11
+          DumperOptions dumperOptions = new DumperOptions();
+          //	dumperOptions.setDefaultFlowStyle(FlowStyle.BLOCK);
+          // 	dumperOptions.setDefaultFlowStyle(FlowStyle.FLOW);
+          Yaml yaml = new Yaml(dumperOptions);
+	  Map<String, Object> obj = yaml.loadAs(inputStream, Map.class);
+          // System.out.println(obj);
+          // yaml.dump(obj);
+          Iterator<String> hostIterator = obj.keySet().iterator();
+          while (hostIterator.hasNext()) {
+            String hostname = hostIterator.next();
+            Map<String,Object>nodeConfig = (Map<String,Object>) obj.get(hostname);
+            if (nodeConfig.containsKey("branch_name")
+               &&
+               nodeConfig.get("branch_name") != null
+               && 
+               nodeConfig.get("branch_name").toString().indexOf(branchName) == 0
+               &&
+               !nodeConfig.containsKey("service_account")  
+            ) {
+               System.out.println(hostname);
+            }
+          }
+
+        }
+      }
+    EOF
+    yaml_file = "#{tmp_path}/data.yaml"
+    yaml_data = <<-EOF
+---
+host1.domain.com:
+  dc: oxdc
+  consul_name: transaction-server
+  server_role: server
+  branch_name: prod
+  datacenter: oxmoor
+  user: root
+  service_account: tomcat
+  servergroup: transactions
+host2.domain.com:
+  dc: oxdc
+  consul_name: transaction-server
+  server_role: server
+  branch_name: prod
+  datacenter: oxmoor
+  user: root
+ # service_account: tomcat
+  servergroup: transactions
+host3.domain.com:
+  dc: oxdc
+  consul_name: transaction-server
+  server_role: server
+  branch_name: prod
+  datacenter: oxmoor
+  user: root
+  service_account: tomcat
+  servergroup: transactions
+host3.domain.com:
+  dc: oxdc
+  datacenter: oxmoor
+  some_other_data: 123
+    EOF
+
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      file = File.open(source_file, 'w')
+      file.puts source_data
+      file.close
+      $stderr.puts "Writing #{yaml_file}"
+      file = File.open(yaml_file, 'w')
+      file.puts yaml_data
+      file.close
+    end
+    describe command( <<-EOF
+      cd #{tmp_path}
+      jar xvf '#{jar_path}/#{jar_filename}' BOOT-INF/lib/snakeyaml
+      cp BOOT-INF/lib/snakeyaml*jar .
+      for J in  $(ls -1 snakeyaml**.jar)
+      do
+        javac -cp $J '#{class_name}.java'
+        java -cp $J:. '#{class_name}' 'data.yaml'
+      done
+    EOF
+    ) do
+      its(:stderr) { should_not contain 'java.io.FileNotFoundException' }
+      its(:stderr) { should_not contain 'java.lang.NullPointerException' }
+      its(:stdout) { should contain 'host2.domain.com' }
       its(:exit_status) { should eq 0 }
     end
 
