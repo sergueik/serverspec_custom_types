@@ -40,10 +40,10 @@ context 'Examine result of Puppet apply resource run' do
       target_dir = "#{base_dir}/#{list_of_dirs[0]}"
       puppet_manifest = <<-EOF
         exec {'command with condition':
-          command  => 'echo Done',
-          provider => shell,
+          command   => 'echo Done',
+          provider  => shell,
           logoutput => true,
-          onlyif   => 'test -e "#{target_dir}" && ! test -L "#{target_dir}"',
+          onlyif    => 'test -e "#{target_dir}" && ! test -L "#{target_dir}"',
         }
       EOF
       describe command( <<-EOF
@@ -52,21 +52,21 @@ context 'Examine result of Puppet apply resource run' do
       EOF
     ) do
         its(:stderr) { should be_empty }
-        # to make rspec show the actual output, make the expectation unrealistic
+        # to make rspec display the actual output, add the expectation which will not be met
         its(:stdout) { should include 'Done' }
         its(:stdout) { should include 'Exec[command with condition]/returns: Done' }
         its(:exit_status) {should eq 0 }
       end
     end
-    context 'usign shell variables in puppet exec command' do
+    context 'using shell variables in puppet exec command' do
 
       target_dir = "#{base_dir}/#{list_of_dirs[0]}"
       puppet_manifest = <<-EOF
         \\$target_dir = '#{target_dir}'; exec {\\"command with condition for \\${target_dir}\\":
-          command  => 'echo Done',
-          provider => shell,
+          command   => 'echo Done',
+          provider  => shell,
           logoutput => true,
-          onlyif   => \\"TARGET_DIR=\\${target_dir};test -e \\\\\\${TARGET_DIR} && ! test -L \\\\\\${TARGET_DIR}\\",
+          onlyif    => \\"TARGET_DIR=\\${target_dir};test -e \\\\\\${TARGET_DIR} && ! test -L \\\\\\${TARGET_DIR}\\",
         }
       EOF
       describe command( <<-EOF
@@ -108,10 +108,10 @@ context 'Examine result of Puppet apply resource run' do
       target_dir = "#{base_dir}/#{list_of_dirs[0]}"
       puppet_manifest = <<-EOF
         exec {'command with condition':
-          command  => 'echo Done',
-          provider => shell,
+          command   => 'echo Done',
+          provider  => shell,
           logoutput => true,
-          onlyif   => 'test -e "#{target_dir}" && ! test -L "#{target_dir}"',
+          onlyif    => 'test -e "#{target_dir}" && ! test -L "#{target_dir}"',
         }
       EOF
       describe command( <<-EOF
@@ -127,5 +127,50 @@ context 'Examine result of Puppet apply resource run' do
       end
     end
   end
-end
+  context 'tests with user local library' do
+    # not uncommon with ops to rely on Python
+    lib_dir = "#{ENV.fetch('HOME')}/.local/lib/python2.7"
+    context 'dummy' do
+    
+      puppet_manifest = <<-EOF
+        \\$lib_dir = '#{lib_dir}'; exec {\\"command with dependencies in \\${lib_dir}\\":
+          command   => 'echo Done',
+          provider  => shell,
+          logoutput => true,
+          onlyif    => \\"LIB_DIR=\\${lib_dir}; test -d \\\\\\${LIB_DIR}\\",
+        }
+      EOF
+      describe command( <<-EOF
+        puppet apply -e "#{puppet_manifest.gsub(/\n/, '').gsub(/\s+/, ' ')}"
+      EOF
+    ) do
+        # in real scenario likely be some volatile facts one can not mock
+        its(:stderr) { should include 'Facter: error' }
+        its(:stdout) { should include 'Done' }
+        its(:stderr) { should_not include 'Could not parse for environment production' }
+        its(:stdout) { should match /Exec\[command with dependencies in .*\]\/returns: Done/ }
+        its(:exit_status) {should eq 0 }
+      end
+    end
+    context 'real', :if => ENV.has_key?('COMMAND') do
 
+      command = ENV.fetch('COMMAND', 'echo COMMAND not defined')
+      puppet_manifest = <<-EOF
+        \\$lib_dir = '#{lib_dir}'; exec {\\"command with dependencies in \\${lib_dir}\\":
+          command   => '#{command}',
+          provider  => shell,
+          logoutput => true,
+          onlyif    => \\"LIB_DIR=\\${lib_dir}; test -d \\\\\\${LIB_DIR}\\",
+        }
+      EOF
+      describe command( <<-EOF
+        puppet apply -e "#{puppet_manifest.gsub(/\n/, '').gsub(/\s+/, ' ')}"
+      EOF
+    ) do
+        its(:stderr) { should be_empty }
+        its(:stdout) { should be_empty }
+        its(:exit_status) {should eq 0 }
+      end
+    end
+
+  end
