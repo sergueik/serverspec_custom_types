@@ -129,7 +129,17 @@ context 'Examine result of Puppet apply resource run' do
   end
   context 'tests with user local library' do
     # not uncommon with ops to rely on Python
-    lib_dir = "#{ENV.fetch('HOME')}/.local/lib/python2.7"
+    lib_dir = "#{ENV.fetch('HOME')}/.local/lib/python2.7/site-packages"
+    # the contents are diverse:
+    # MySQLdb
+    # _mysql_exceptions.py
+    # _mysql_exceptions.pyc
+    # _mysql_exceptions.pyo
+    # MySQL_python-1.2.5-py2.7.egg-info
+    # _mysql.so
+    # PyYAML-5.3.1-py2.7.egg-info
+    # yaml
+
     context 'dummy' do
     
       puppet_manifest = <<-EOF
