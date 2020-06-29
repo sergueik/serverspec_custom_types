@@ -6,10 +6,9 @@ else
 end
 require 'fileutils'
 
-
 context 'Udeploy Agent Client tests' do
 
-  context 'xxx' do
+  context 'get resource children' do
     jars  = %w|
       uc-uDeployRestClient-1.0-SNAPSHOT.jar
       commons-codec-1.5.jar
@@ -18,7 +17,11 @@ context 'Udeploy Agent Client tests' do
     jar_path = '/tmp'
     path_separator = ':'
     jars_cp = jars.collect{|jar| "#{jar_path}/#{jar}"}.join(path_separator)
-
+    java_home = '/opt/java'
+    password = 'admin'
+    user = 'admin'
+    server = 'https://localhost:8443'
+    env = '172ecdb3-50a2-e489-6b50-1399b396b6fb' 
     class_name = 'BasicAgentClientTest'
     source_file = "#{class_name}.java"
 
@@ -30,8 +33,11 @@ context 'Udeploy Agent Client tests' do
 
       import org.apache.commons.codec.EncoderException;
       import com.urbancode.ud.client.AgentClient;
+      import com.urbancode.ud.client.ResourceClient;
+
       import org.codehaus.jettison.json.JSONException;
       import org.codehaus.jettison.json.JSONObject;
+      import org.codehaus.jettison.json.JSONArray;
 
       import java.util.ArrayList;
       import java.util.HashMap;
@@ -47,40 +53,72 @@ context 'Udeploy Agent Client tests' do
         private static AgentClient client;
         private static JSONObject data;
 
-        public static void main(String[] args) throws URISyntaxException, IOException, JSONException {
+        public static void main(String[] args)
+            throws URISyntaxException, IOException, JSONException {
           commandLineParser = new CommandLineParser();
-          commandLineParser.saveFlagValue("user");
-          commandLineParser.saveFlagValue("password");
-          commandLineParser.saveFlagValue("agent");
+          commandLineParser.flagsWithValues.add("user");
+          commandLineParser.flagsWithValues.add("password");
+          commandLineParser.saveFlagValue("server");
+          commandLineParser.saveFlagValue("env");
 
           commandLineParser.parse(args);
 
-          if (commandLineParser.hasFlag("debug")) {
+          if (commandLineParser.flags.containsKey("debug")) {
             debug = true;
           }
-          String user = commandLineParser.getFlagValue("user");
+          // static inner allows accessing private members from enclosing class
+          // directly
+          String user = commandLineParser.flags.get("user");
           if (user == null) {
-            System.err.println("Missing required argument: user - assuming default");
             user = "admin";
-            // return;
+            System.err.println("Missing argument: user - using default");
           }
-          String password = commandLineParser.getFlagValue("password");
+          String password = commandLineParser.flags.get("password");
           if (password == null) {
-            System.err.println("Missing required argument: password - assuming default");
             password = "admin";
-            // return;
+            System.err.println("Missing argument: password - using default");
           }
-
-          String agent = commandLineParser.getFlagValue("agent");
-          if (agent == null) {
-            System.err.println("Missing required argument: agent");
+          String server = commandLineParser.getFlagValue("server");
+          if (server == null) {
+            server = "https://localhost:8443";
+            System.err.println("Missing argument: server - using default");
+          }
+          // TODO: get env id legitimately
+          String env = commandLineParser.getFlagValue("env");
+          if (env == null) {
+            // env = "172ecdb3-50a2-e489-6b50-1399b396b6fb";
+            System.err.println("Missing required argument: env");
             return;
           }
-          client = new AgentClient(new URI("https://localhost:8443"), user, password);
-          if (client == null) {
-            throw new RuntimeException(String.format("failed to connect as %s / password %s", user, password));
-          } else {
-            data = client.getAgent(agent);
+
+          // explore resource hierarchy
+          ResourceClient resourceClient = new ResourceClient(new URI(server), user,
+              password);
+          if (resourceClient == null) {
+            throw new RuntimeException(String
+                .format("failed to connect as %s / password %s", user, password));
+          }
+          JSONArray jsonArray = resourceClient.getResourceChildren(env);
+          for (int index = 0; index != jsonArray.length(); index++) {
+            JSONObject childObject = jsonArray.getJSONObject(index);
+            System.out.println("  - " + childObject.getString("name"));
+          }
+          if (debug) {
+            System.out.println("{\"" + env + "\": " + jsonArray + " }");
+          }
+          for (int index = 0; index != jsonArray.length(); index++) {
+            JSONObject childObject = jsonArray.getJSONObject(index);
+            String id1 = childObject.getString("id");
+
+            JSONArray ce1 = resourceClient.getResourceChildren(id1);
+            // String id1 = "172ecdb9-54f7-c269-9cca-fd8bd9ee6341";
+            if (debug) {
+              System.out.println("{\"" + id1 + "\": " + ce1 + " }");
+            }
+            for (int index1 = 0; index1 != ce1.length(); index1++) {
+              JSONObject childObject1 = ce1.getJSONObject(index1);
+              System.out.println("    - " + childObject1.getString("name"));
+            }
           }
         }
 
@@ -138,7 +176,6 @@ context 'Udeploy Agent Client tests' do
 
             for (int n = 0; n < args.length; ++n) {
               if (args[n].charAt(0) == '-') {
-              // NOTE: will crash echo '${script_file}'
                 String name = args[n].replaceFirst("-", "");
                 String value = null;
                 // remove the dash
@@ -146,16 +183,26 @@ context 'Udeploy Agent Client tests' do
                   System.err.println("Examine: " + name);
                 }
                 if (flagsWithValues.contains(name) && n < args.length - 1) {
-                  value = args[++n];
+                  String data = args[++n];
+                  // https://www.baeldung.com/java-case-insensitive-string-matching
+                  value = data.matches("(?i)^env:[a-z_0-9]+")
+                      ? System.getenv(data.replaceFirst("(?i)^env:", "")) : data;
+
                   if (debug) {
-                    System.err.println("Collect value for: " + name + " = " + value);
+                    if (data.matches("(?i)^env:[a-z_0-9]+")) {
+                      System.err
+                          .println("Evaluate value for: " + name + " = " + value);
+
+                    } else {
+                      System.err
+                          .println("Collect value for: " + name + " = " + value);
+                    }
                   }
                 } else {
                   if (debug) {
                     System.err.println("Ignore the value for " + name);
                   }
                 }
-
                 flags.put(name, value);
               }
 
@@ -176,7 +223,8 @@ context 'Udeploy Agent Client tests' do
           // Example data:
           // -argument "{count:0, type:navigate, size:100, flag:true}"
           // NOTE: not using org.json to reduce size
-          public Map<String, String> extractExtraArgs(String argument) throws IllegalArgumentException {
+          public Map<String, String> extractExtraArgs(String argument)
+              throws IllegalArgumentException {
 
             final Map<String, String> extraArgData = new HashMap<>();
             argument = argument.trim().substring(1, argument.length() - 1);
@@ -184,7 +232,8 @@ context 'Udeploy Agent Client tests' do
               if (debug) {
                 System.err.println("Found invalid nested data");
               }
-              throw new IllegalArgumentException("Nested JSON athuments not supprted");
+              throw new IllegalArgumentException(
+                  "Nested JSON athuments not supprted");
             }
             final String[] pairs = argument.split(entrySeparator);
 
@@ -200,7 +249,7 @@ context 'Udeploy Agent Client tests' do
           }
 
         }
-      }    
+      }
     EOF
     before(:each) do
       $stderr.puts "Writing '/tmp/#{source_file}'"
@@ -210,13 +259,14 @@ context 'Udeploy Agent Client tests' do
     end
     describe command(<<-EOF
       1>/dev/null 2>/dev/null cd /tmp
-      javac -cp uc-uDeployRestClient-1.0-SNAPSHOT.jar:commons-codec-1.5.jar:uc-jettison-1.0-SNAPSHOT.jar '#{source_file}'
-      java -cp #{jars_cp}#{path_separator}. '#{class_name}' -agent dummy -user admin -password admin
+      export SECRET=#{password}
+      javac -cp #{jars_cp} '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}' -server #{server} -user #{user} -password env:SECRET -env #{env}
     EOF
     ) do
-      its(:exit_status) { should eq 1 }
-      its(:stdout) { should be_empty }
-      its(:stderr) { should contain 'No agent with id/name dummy' }
+      let(:path) { "/bin:/usr/bin:/sbin:#{java_home}/bin" }
+      its(:exit_status) { should eq 0 }
+      its(:stderr) { should be_empty }
     end
   end
 end
