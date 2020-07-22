@@ -27,8 +27,6 @@ context 'JDBC tests' do
   jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
   database_host = 'localhost'
   options = 'useUnicode=true'
-  database_host = 'localhost'
-  database_name = 'information_schema'
   # unable to set password access in information_schema:
   # ERROR 1109 (42S02): Unknown table 'user' in information_schema
   database_name = 'mysql'
@@ -37,7 +35,7 @@ context 'JDBC tests' do
   # experiencing challenges setting one on Centos / MariaDB
   password =  ''
 
-  context 'Connection check' do
+  context 'Connection check', :if => false do
     class_name = 'MySQLJDBCNoPasswordTest'
     database2 = 'mysql'
     database_name = database2
@@ -97,17 +95,23 @@ context 'JDBC tests' do
         its(:stderr) { should_not contain 'Not supported' }
     end
   end
-  context 'Assert' do
+  # session variables do not work through JDBC..
+  # http://www.sqlines.com/mysql/session_variables
+  # https://stackoverflow.com/questions/10797794/multiple-queries-executed-in-java-in-single-statement/28142845
+  # https://www.roseindia.net/jsp/mysql-allowMultiQueries-example.shtml
+  context 'Assert', :if => false do
     class_name = 'MySQLJDBCAssertTest'
     database_name = 'information_schema'
-    options = 'useUnicode=true&allowMultiQueries=true'
+    options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
     source_file = "#{class_name}.java"
 
-    source = <<-EOF
+    sourcei_data = <<-EOF
       import java.sql.Connection;
       import java.sql.DriverManager;
       import java.sql.ResultSet;
       import java.sql.Statement;
+      import java.sql.PreparedStatement;
+      import java.sql.CallableStatement;
 
       public class #{class_name} {
         public static void main(String[] argv) throws Exception {
@@ -130,7 +134,6 @@ context 'JDBC tests' do
             // which fails.
             Connection connection = DriverManager.getConnection(url, username, "");
 
-            // allowMultiQueries=true
             if (connection != null) {
               System.out.println("Connected to product: "
                   + connection.getMetaData().getDatabaseProductName());
@@ -139,38 +142,22 @@ context 'JDBC tests' do
                   ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
 
               // NOTE: minor problems with single quotes
-              // NOTE: cannt combine statements. Exception: ResultSet is from UPDATE. No Data
               String query = "SELECT character_set_name as name, description from character_sets INTO @variable; SELECT @variable";
-              query = "SELECT character_set_name from character_sets limit 1; SELECT character_set_name from character_sets";
 
               ResultSet resultSet = statement.executeQuery(query);
 
               // alternatively just
-              // resultSet.first();
-              while (resultSet.next()) {
-                String name = resultSet.getString(1);
-                // String description = resultSet.getString(2);
-                System.out.println("character set: " + name);
-                // System.out.println("description: " + description);
-              }
-              // https://alvinalexander.com/blog/post/jdbc/program-search-for-given-field-name-in-all-database-tables-in-d/
-              //  only single statements
-              query = "SELECT character_set_name as name, description from character_sets INTO @variable; SELECT @variable";
-              // TODO: java.sql.SQLException: ResultSet is from UPDATE. No Data
-              // java.sql.SQLException: The used SELECT statements have a different number of columns
-              resultSet = statement.executeQuery(query);
+              resultSet.first();
+              String name = resultSet.getString(1);
+              System.out.println("character set: " + name);
+              // String description = resultSet.getString(2);
+              // System.out.println("description: " + description);
 
-              // alternatively just
-              // resultSet.first();
-              while (resultSet.next()) {
-                String name = resultSet.getString(1);
-                // String description = resultSet.getString(2);
-                System.out.println("character set: " + name);
-                // System.out.println("description: " + description);
-              }
+              // https://alvinalexander.com/blog/post/jdbc/program-search-for-given-field-name-in-all-database-tables-in-d/
 
               resultSet.close();
-
+              statement.close();
+              connection.close();
             } else {
               System.out.println("Failed to connect");
             }
@@ -182,20 +169,109 @@ context 'JDBC tests' do
       }
 
     EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      Dir.chdir '/tmp'
+      file = File.open(source_file, 'w')
+      file.puts source_data.strip
+      file.close
+    end
     describe command(<<-EOF
       1>/dev/null 2>/dev/null pushd /tmp
-      echo '#{source}' > '#{source_file}'
       javac '#{source_file}'
       java -cp #{jars_cp}#{path_separator}. '#{class_name}'
       1>/dev/null 2>/dev/null popd
     EOF
     ) do
         its(:exit_status) { should eq 0 }
-        its(:stdout) { should match /Connected to product: MySQL/}
-        its(:stdout) { should match /Connected to catalog: #{database_name}/}
-        its(:stderr) { should_not contain 'Exception: Communications link failure' } # mysql server is not running
-        its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
-        its(:stderr) { should_not contain 'Not supported' }
+    end
+  end
+  context 'Multi Queries' do
+    class_name = 'MySQLJDBCMultiQueriesTest'
+    database_name = 'information_schema'
+    options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
+    source_file = "#{class_name}.java"
+
+    source_data = <<-EOF
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+      import java.sql.ResultSet;
+      import java.sql.Statement;
+      import java.sql.PreparedStatement;
+      import java.sql.CallableStatement;
+
+      public class #{class_name} {
+        public static void main(String[] argv) throws Exception {
+          String className = "#{jdbc_driver_class_name}";
+          try {
+            Class driverObject = Class.forName(className);
+            System.out.println("driverObject=" + driverObject);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" +
+            databaseName + "?" + options;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            Connection connection = DriverManager.getConnection(url, username, password);
+      
+            if (connection != null) {
+              System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
+              System.out.println("Connected to catalog: " + connection.getCatalog());
+      
+              // WARNING: On both MySQL 5.7 and MYSQL 8.x JDBC appears broken:
+              // when combine SQL statements only the first one gets executed
+              // the second and following are ignored
+              // below, even the field list is different
+              String query = "SELECT character_set_name, description from character_sets where character_set_name like 'utf16%' limit 1;"
+                  + "SELECT character_set_name from character_sets where description not like '%unicode%';" 
+                  + "SELECT character_set_name from character_sets where character_set_name like 'utf8%' limit 1;";
+              System.out.println("Executing combined query: " + query);
+      
+              PreparedStatement preparedStatement = connection.prepareStatement(query);
+      
+              preparedStatement.execute();
+              ResultSet resultSet = preparedStatement.getResultSet();
+              while (resultSet.next()) {
+                String name = resultSet.getString(1);
+                String description = resultSet.getString(2);
+                System.out.println("character set: " + name);
+                System.out.println("description: " + description);
+              }
+              resultSet.close();
+              preparedStatement.close();
+              connection.close();
+            } else {
+              System.out.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            // java.sql.SQLNonTransientConnectionException:
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      Dir.chdir '/tmp'
+      file = File.open(source_file, 'w')
+      file.puts source_data.strip
+      file.close
+    end
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+        its(:exit_status) { should eq 0 }
+        its(:stdout) { should match /character set: utf16/}
+        its(:stdout) { should_not match /character set: utf8/}
+        its(:stderr) { should be_empty }
     end
   end
 end
