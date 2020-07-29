@@ -88,6 +88,7 @@ context 'Assert tests' do
 
       end
       # https://bugs.mysql.com/bug.php?id=35634
+      # https://stackoverflow.com/questions/773889/way-to-abort-execution-of-mysql-scripts-raising-error-perhaps
       describe command(<<-EOF
         TEMP_FILE="/tmp/a.$$.sql"
         echo "#{sql}" > $TEMP_FILE
@@ -101,11 +102,30 @@ context 'Assert tests' do
         its(:stderr) { should contain 'Result consisted of more than one row' }
         its(:stdout) { should_not contain 'utf8' }
       end
+    end
+    # NOTE: the '$' needs additional escaping
+    context 'Failing assertion' do
+    
+      sql = <<-EOF      
+        use information_schema;
+        DELIMITER \\$\\$
+        DROP FUNCTION IF EXISTS sfKillConnection \\$\\$
+        CREATE FUNCTION sfKillConnection() RETURNS INT
+        BEGIN
+            SELECT connection_id() into @connectionId;
+            KILL @connectionId;
+            RETURN @connectionId;
+        END \\$\\$
+        DELIMITER ;
+        SET SESSION sql_mode = 'some string impossible to assign';
+        select count(1) from character_sets where character_set_name = 'utf7' limit 1 into @check_variable;
+        select if(@check_variable <> 1, sfKillConnection(), 0);
+      EOF
       describe command(<<-EOF
         TEMP_FILE="/tmp/a.$$.sql"
         echo "#{sql}" > $TEMP_FILE
-        mysql --database information_schema --abort-source-on-error --silent --batch -e "source $TEMP_FILE"
-        rm -f $TEMP_FILE
+        mysql --database information_schema --silent --batch -e "source $TEMP_FILE"
+        # rm -f $TEMP_FILE
       EOF
       ) do
         its(:stderr) { should_not be_empty }
