@@ -1,4 +1,10 @@
-require 'spec_helper'
+# NOTE: this logic not correct under uru
+if File.exists?( 'spec/windows_spec_helper.rb')
+  require_relative '../windows_spec_helper'
+else
+  require 'spec_helper'
+end
+require 'fileutils'
 
 context 'erb tests' do
 
