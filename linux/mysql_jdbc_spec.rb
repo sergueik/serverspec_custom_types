@@ -87,12 +87,12 @@ context 'JDBC tests' do
       1>/dev/null 2>/dev/null popd
     EOF
     ) do
-        its(:exit_status) { should eq 0 }
-        its(:stdout) { should match /Connected to product: MySQL/}
-        its(:stdout) { should match /Connected to catalog: #{database2}/}
-        its(:stderr) { should_not contain 'Exception: Communications link failure' } # mysql server is not running
-        its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
-        its(:stderr) { should_not contain 'Not supported' }
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should match /Connected to product: MySQL/}
+      its(:stdout) { should match /Connected to catalog: #{database2}/}
+      its(:stderr) { should_not contain 'Exception: Communications link failure' } # mysql server is not running
+      its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
+      its(:stderr) { should_not contain 'Not supported' }
     end
   end
   # session variables do not work through JDBC..
@@ -105,7 +105,7 @@ context 'JDBC tests' do
     options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
     source_file = "#{class_name}.java"
 
-    sourcei_data = <<-EOF
+    source_data = <<-EOF
       import java.sql.Connection;
       import java.sql.DriverManager;
       import java.sql.ResultSet;
@@ -142,10 +142,16 @@ context 'JDBC tests' do
                   ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
 
               // NOTE: minor problems with single quotes
-              String query = "SELECT character_set_name as name, description from character_sets INTO @variable; SELECT @variable";
+              String query = "SELECT character_set_name as name from character_sets limit 1 INTO @variable; SELECT @variable;";
 
-              ResultSet resultSet = statement.executeQuery(query);
-
+              PreparedStatement preparedStatement = connection.prepareStatement(query);
+      
+              preparedStatement.execute();
+              ResultSet resultSet = preparedStatement.getResultSet();
+              // query = "SELECT character_set_name as name from character_sets limit 1";
+              // ResultSet resultSet = statement.executeQuery(query);
+              // https://docs.oracle.com/javase/tutorial/jdbc/basics/retrieving.html#rs_interface
+		// https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html
               // alternatively just
               resultSet.first();
               String name = resultSet.getString(1);
@@ -183,7 +189,9 @@ context 'JDBC tests' do
       1>/dev/null 2>/dev/null popd
     EOF
     ) do
-        its(:exit_status) { should eq 0 }
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should_not match /character set: utf8/}
+      its(:stderr) { should be_empty }
     end
   end
   context 'Multi Queries' do
@@ -268,10 +276,10 @@ context 'JDBC tests' do
       1>/dev/null 2>/dev/null popd
     EOF
     ) do
-        its(:exit_status) { should eq 0 }
-        its(:stdout) { should match /character set: utf16/}
-        its(:stdout) { should_not match /character set: utf8/}
-        its(:stderr) { should be_empty }
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should match /character set: utf16/}
+      its(:stdout) { should_not match /character set: utf8/}
+      its(:stderr) { should be_empty }
     end
   end
 end
