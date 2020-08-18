@@ -93,6 +93,25 @@ context 'Permission scan' do
       it { result.should be_truthy }
     end
   end
+  context 'simply show file attributes' do
+  
+    filename = 'example'
+    dir = '/tmp'
+    filepath = "#{dir}/#{filename}"
+    before(:each) do
+      Specinfra::Runner::run_command( <<-EOF
+        touch '#{filepath}'
+        chmod 0755 '#{filepath}'
+      EOF
+      )
+    end
+      describe command(<<-EOF
+        find #{dir} -type f -exec stat -c '%a %n' {} \\;
+      EOF
+      ) do
+        its(:stdout) { should match /755 #{filepath}/ }
+      end
+  end
 end
 
 # In Puppet one would possibly do it like
