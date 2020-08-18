@@ -99,7 +99,7 @@ context 'JDBC tests' do
   # http://www.sqlines.com/mysql/session_variables
   # https://stackoverflow.com/questions/10797794/multiple-queries-executed-in-java-in-single-statement/28142845
   # https://www.roseindia.net/jsp/mysql-allowMultiQueries-example.shtml
-  context 'Assert' do
+  context 'Assert', :if => false do
     class_name = 'MySQLJDBCAssertTest'
     database_name = 'information_schema'
     options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
@@ -153,16 +153,15 @@ context 'JDBC tests' do
               // https://docs.oracle.com/javase/tutorial/jdbc/basics/retrieving.html#rs_interface
 		// https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html
               // alternatively just
-              if (resultSet != null ) {
-                resultSet.first();
-                String name = resultSet.getString(1);
-                System.out.println("character set: " + name);
+              resultSet.first();
+              String name = resultSet.getString(1);
+              System.out.println("character set: " + name);
+              // String description = resultSet.getString(2);
+              // System.out.println("description: " + description);
+
               // https://alvinalexander.com/blog/post/jdbc/program-search-for-given-field-name-in-all-database-tables-in-d/
 
-                resultSet.close();
-              } else { 
-                System.err.println("result set is empty");
-              }
+              resultSet.close();
               statement.close();
               connection.close();
             } else {
@@ -230,7 +229,7 @@ context 'JDBC tests' do
               System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
               System.out.println("Connected to catalog: " + connection.getCatalog());
       
-              // WARNING: MYSQL 8.x JDBC  is broken:
+              // WARNING: On both MySQL 5.7 and MYSQL 8.x JDBC appears broken:
               // when combine SQL statements only the first one gets executed
               // the second and following are ignored
               // below, even the field list is different
