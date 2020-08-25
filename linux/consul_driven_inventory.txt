@@ -11,7 +11,7 @@
 # and running a RHEL family OS
 
 LEADER=$(hostname -f)
-export PATH=$PATH:/usr/local/bin
+PATH=$PATH:/usr/local/bin
 export CONSUL_HTTP_SSL=true
 
 PACKAGE='oracle-java8-jdk'
@@ -144,7 +144,7 @@ PACKAGE_NAME='puppet-agent'
 APP='puppet'
 
 LEADER=$(hostname -f)
-export PATH=$PATH:/usr/local/bin
+PATH=$PATH:/usr/local/bin
 export CONSUL_HTTP_SSL=true
 
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
@@ -173,10 +173,22 @@ consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE_NAME \
 # only one run is allowed (controlled through lock file)
 
 LEADER=$(hostname -f)
-export PATH=$PATH:/usr/local/bin
+PATH=$PATH:/usr/local/bin
 export CONSUL_HTTP_SSL=true
 M='Applied catalog in '
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 "grep -i '$M' /var/log/messages | grep -v 'grep' |tail -1 | grep '$M'" | grep "$M"
 
 # gives the last completed run status or nothing allowing for a quick check for outliers
+
+
+# user readlink to workaroung the bash profile that is not being read when consul exec takes place
+VERSION_MAJOR='1.8.0'
+VERSION_BUILD='192'
+LEADER=$(hostname -f)
+PATH=$PATH:/usr/local/bin
+export CONSUL_HTTP_SSL=true
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"readlink $APP_DIR/java/bin/java" | grep jdk| grep -v $VERSION_BUILD
+
+# will report nodes that failed to upgrade to $VERSION_BUILD
