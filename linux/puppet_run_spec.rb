@@ -182,5 +182,5 @@ context 'Examine result of Puppet apply resource run' do
         its(:exit_status) {should eq 0 }
       end
     end
-
   end
+end
