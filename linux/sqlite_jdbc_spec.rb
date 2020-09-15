@@ -12,103 +12,186 @@ context 'JDBC tests' do
   # https://www.sqlitetutorial.net/sqlite-autoincrement/
   # https://docs.oracle.com/javase/tutorial/jdbc/basics/sqlrowid.html
   # https://www.sqlitetutorial.net/sqlite-java/sqlite-jdbc-driver/
+  # https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+  # https://github.com/xerial/sqlite-jdbc/releases/tag/3.30.1
+  # https://www.sqlite.org/download.html
+  # https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/
   context 'SQLite' do
-    jdbc_prefix = 'sqlite'
-    jdbc_path = '/usr/share/java'
-    jdbc_driver_class_name = 'org.sqlite.JDBC'
-    jars = ['sqlite-jdbc-3.8.7.jar']
-    path_separator = ':'
-    jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
-    table_name = 'COMPANY'
-    class_name = 'SQLiteJDBCTest'
-    source_file = "#{class_name}.java"
+    context 'Basic test' do
+      jdbc_prefix = 'sqlite'
+      jdbc_path = '/usr/share/java'
+      version = '3.8.7'
+      version = '3.30.1'
+      jars = ["sqlite-jdbc-#{version}.jar"]
+      jdbc_driver_class_name = 'org.sqlite.JDBC'
+      path_separator = ':'
+      jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
+      table_name = 'COMPANY'
+      class_name = 'SQLiteJDBCTest'
+      source_file = "#{class_name}.java"
 
-    source = <<-EOF
-    
-    import java.sql.Connection;
-      import java.sql.DriverManager;
-      import java.sql.PreparedStatement;
-      import java.sql.ResultSet;
-      import java.sql.SQLException;
-      import java.sql.Statement;
-      import java.sql.RowId;
+      source = <<-EOF
 
-      public class SQLiteJDBCTest {
+        import java.sql.Connection;
+        import java.sql.DriverManager;
+        import java.sql.PreparedStatement;
+        import java.sql.ResultSet;
+        import java.sql.SQLException;
+        import java.sql.Statement;
+        import java.sql.RowId;
 
-        public static void main(String[] args) throws ClassNotFoundException {
+        public class #{class_name} {
 
-          final String className = "#{jdbc_driver_class_name}";
+          public static void main(String[] args) throws ClassNotFoundException {
 
-          Class.forName(className);
-          final String databaseName = "#{table_name}";
-          String url = "jdbc:#{jdbc_prefix}:" + databaseName;
-            
-          // in memory
-          url = "jdbc:sqlite::memory:";
+            final String className = "#{jdbc_driver_class_name}";
 
-          final String tableName = "#{table_name}";
+            Class.forName(className);
+            final String databaseName = "#{table_name}";
+            String url = "jdbc:#{jdbc_prefix}:" + databaseName;
 
-          Connection connection = null;
-          try {
-            connection = DriverManager.getConnection(url);
-            System.out.println("Connected to product: "
-                + connection.getMetaData().getDatabaseProductName() + "\\t"
-                + "catalog: " + connection.getCatalog() + "\\t" + "schema: "
-                + connection.getSchema());
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(30);
+            // in memory
+            url = "jdbc:sqlite::memory:";
 
-            statement
-                .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
-            statement.executeUpdate(String.format("CREATE TABLE %s"
-                + "(ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL, AGE INT,"
-                + "ADDRESS CHAR(50), SALARY REAL)", tableName));
-            System.out.println(
-                String.format("Table %s was created successfully", tableName));
-            statement.executeUpdate(
-                "INSERT INTO COMPANY (NAME, ID, AGE, SALARY) VALUES ('microsoft', 1, 1, 0.0)");
-                // TODO: no such column: microsoft error from using shell to write the source
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                "INSERT INTO COMPANY (NAME, ID, AGE) VALUES (?, ?, ?)");
+            final String tableName = "#{table_name}";
 
-            preparedStatement.setString(1, "redhat");
-            preparedStatement.setInt(2, 2);
-            preparedStatement.setInt(3, 42);
-            preparedStatement.execute();
-            ResultSet resultSet = statement
-                .executeQuery("SELECT ROWID, NAME, ID FROM COMPANY");
-            while (resultSet.next()) {
-              System.out.println("rowid = " + resultSet.getString("ROWID") + "\\t"
-                  + " name = " + resultSet.getString("NAME") + "\\t" + "id = "
-                  + resultSet.getInt("ID"));
-            }
-
-          } catch (SQLException e) {
-            System.err.println(e.getMessage());
-          } finally {
+            Connection connection = null;
             try {
-              if (connection != null)
-                connection.close();
+              connection = DriverManager.getConnection(url);
+              System.out.println("Connected to product: "
+                  + connection.getMetaData().getDatabaseProductName() + "\\t"
+                  + "catalog: " + connection.getCatalog() + "\\t" + "schema: "
+                  + connection.getSchema());
+              Statement statement = connection.createStatement();
+              statement.setQueryTimeout(30);
+
+              statement
+                  .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
+              statement.executeUpdate(String.format("CREATE TABLE %s"
+                  + "(ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL, AGE INT,"
+                  + "ADDRESS CHAR(50), SALARY REAL)", tableName));
+              System.out.println(
+                  String.format("Table %s was created successfully", tableName));
+              statement.executeUpdate(
+                  "INSERT INTO COMPANY (NAME, ID, AGE, SALARY) VALUES ('microsoft', 1, 1, 0.0)");
+                  // TODO: no such column: microsoft error from using shell to write the source
+              PreparedStatement preparedStatement = connection.prepareStatement(
+                  "INSERT INTO COMPANY (NAME, ID, AGE) VALUES (?, ?, ?)");
+
+              preparedStatement.setString(1, "redhat");
+              preparedStatement.setInt(2, 2);
+              preparedStatement.setInt(3, 42);
+              preparedStatement.execute();
+              ResultSet resultSet = statement
+                  .executeQuery("SELECT ROWID, NAME, ID FROM COMPANY");
+              while (resultSet.next()) {
+                System.out.println("rowid = " + resultSet.getString("ROWID") + "\\t"
+                    + " name = " + resultSet.getString("NAME") + "\\t" + "id = "
+                    + resultSet.getInt("ID"));
+              }
+
             } catch (SQLException e) {
-              System.err.println(e);
+              System.err.println(e.getMessage());
+            } finally {
+              try {
+                if (connection != null)
+                  connection.close();
+              } catch (SQLException e) {
+                System.err.println(e);
+              }
             }
           }
         }
-      }
-    EOF
-    describe command(<<-EOF
-      1>/dev/null 2>/dev/null pushd /tmp
-      echo '#{source}' > '#{source_file}'
-      javac -cp #{jars_cp}#{path_separator}. '#{source_file}'
-      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
-      1>/dev/null 2>/dev/null popd
-    EOF
-    ) do
-        its(:exit_status) { should eq 0 }
-        its(:stdout) { should match /Connected to product: SQLite/}
-        its(:stdout) { should match /Table #{table_name} was created successfully/i }
-        its(:stdout) { should match /rowid = 1/}
-        its(:stderr) { should_not contain /exception|failure/i }
+      EOF
+      describe command(<<-EOF
+        1>/dev/null 2>/dev/null cd /tmp
+        echo '#{source}' > '#{source_file}'
+        javac -cp #{jars_cp}#{path_separator}. '#{source_file}'
+        java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      EOF
+      ) do
+          its(:exit_status) { should eq 0 }
+          its(:stdout) { should match /Connected to product: SQLite/}
+          its(:stdout) { should match /Table #{table_name} was created successfully/i }
+          its(:stdout) { should match /rowid = 1/}
+          its(:stderr) { should_not contain /exception|failure/i }
+      end
+    end
+    context 'Blob test' do
+      jdbc_prefix = 'sqlite'
+      jdbc_path = '/usr/share/java'
+      jdbc_driver_class_name = 'org.sqlite.JDBC'
+      version = '3.8.7'
+      version = '3.30.1'
+      jars = ["sqlite-jdbc-#{version}.jar"]
+      path_separator = ':'
+      jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
+      database_name = '/home/sergueik/.config/google-chrome/Default/Login Data'
+      class_name = 'SQLiteJDBCBlobTest'
+      source_file = "#{class_name}.java"
+
+      source = <<-EOF
+
+        import java.sql.Connection;
+        import java.sql.DriverManager;
+        import java.sql.PreparedStatement;
+        import java.sql.ResultSet;
+        import java.sql.SQLException;
+        import java.sql.SQLFeatureNotSupportedException;
+        import java.sql.Statement;
+        import java.sql.Blob;
+
+        public class #{class_name} {
+
+          public static void main(String[] args) throws ClassNotFoundException {
+
+            final String className = "#{jdbc_driver_class_name}";
+
+            Class.forName(className);
+            final String databaseName = "#{database_name}";
+            String url = "jdbc:#{jdbc_prefix}:" + databaseName;
+
+            Connection connection = null;
+            try {
+              connection = DriverManager.getConnection(url);
+              Statement statement = connection.createStatement();
+              statement.setQueryTimeout(30);
+              ResultSet resultSet = statement
+                  .executeQuery("SELECT action_url, username_value, password_value FROM logins");
+              while (resultSet.next()) {
+                System.out.println("action_url = " + resultSet.getString("action_url") + "	" + " username_value = " + resultSet.getString("username_value"));
+                Blob blob = resultSet.getBlob("password_value");
+                int length = (int) blob.length();
+                System.out.println( "password_value = " + blob.getBytes(0, length));
+              }
+
+            } catch (SQLFeatureNotSupportedException e) {
+              System.err.println("Exception: " + e.toString());
+            } catch (SQLException e) {
+              System.err.println("Exception: " + e.toString());
+            } catch (Exception e) {
+              System.err.println("Exception: " + e.getMessage());
+            } finally {
+              try {
+                if (connection != null)
+                  connection.close();
+              } catch (SQLException e) {
+                System.err.println(e);
+              }
+            }
+          }
+        }
+      EOF
+      describe command(<<-EOF
+        1>/dev/null 2>/dev/null cd /tmp
+        echo '#{source}' > '#{source_file}'
+        javac -cp #{jars_cp}#{path_separator}. '#{source_file}'
+        java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      EOF
+      ) do
+          its(:exit_status) { should eq 0 }
+          its(:stderr) { should_not contain 'java.sql.SQLFeatureNotSupportedException' }
+      end
     end
   end
 end
