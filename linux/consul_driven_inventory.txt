@@ -204,3 +204,14 @@ consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 MESSAGE='missing directory'
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 "LINK=\$(readlink ${APP_DIR}/java/bin/java); if test ! -d \$LINK ; then echo \"${MESSAGE} \$LINK\" ; fi" | grep "${MESSAGE}"
+
+
+# Nodes running localy application health checks e.g. AppDynamics analytics agent on port 9091
+
+LEADER=$(hostname -f)
+PATH=$PATH:/usr/local/bin
+export CONSUL_HTTP_SSL=true
+# running -I to workaround possibly heavy index page
+PORT=9091
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"curl -I  http://\$(hosrname -f):$PORT &> /dev/null; if [ \$? != 7 ]; then echo RUNNING; fi" | grep RUNNING
