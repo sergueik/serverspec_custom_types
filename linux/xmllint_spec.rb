@@ -137,7 +137,7 @@ context 'xmllint' do
       entries_size = entries.size.to_s # 3
       # see also http://xmlsoft.org/tree.html
       describe command(<<-EOF
-       test $(xmllint --debug '#{web_xml}' | grep -E 'content=#{entries_regexp}' | wc -l) -eq #{entries_size}
+        test $(xmllint --debug '#{web_xml}' | grep -c -E 'content=#{entries_regexp}') -eq #{entries_size}
       EOF
       ) do
         its(:exit_status) { should eq 0 }

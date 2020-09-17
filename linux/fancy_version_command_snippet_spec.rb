@@ -1,9 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-# origin: https://github.com/iBossOrg/docker-dockerspec/blob/master/spec/docker/10_docker_image_spec.rb
-# composes expectations in the Rails DSL (?) - style
 
 require 'spec_helper'
+
+# origin: https://github.com/iBossOrg/docker-dockerspec/blob/master/spec/docker/10_docker_image_spec.rb
+# composes expectations in the Rails DSL (?) - style
 
 describe 'Command as subject' do
   # supported
@@ -19,7 +20,9 @@ describe 'Command as subject' do
     describe "Command \"#{binary_path}\"" do
       subject { file(binary_path) }
       let(:version_regex) { /\W#{version}\W/ }
-      let(:version_command) { "#{binary_path} #{args.nil? ? '--version' : args}" }
+      # javac does not support the '--option' argument style, 
+      # unlike majority of other tools
+      let(:version_command) { "#{binary_path} #{args.nil? ? '-version' : args}" }
       it "should be installed #{version.nil? ? nil : " with version \"#{version}\""}" do
         expect(subject).to exist
         expect(file(binary_path)).to be_executable
@@ -28,5 +31,3 @@ describe 'Command as subject' do
     end
   end
 end
-
-
