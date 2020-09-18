@@ -48,20 +48,27 @@ context 'JDBC tests' do
           String url = "jdbc:#{jdbc_prefix}:" + databaseName;
 
           Connection connection = null;
-          try {
             connection = DriverManager.getConnection(url);
             Statement statement = connection.createStatement();
             statement.setQueryTimeout(30);
-            ResultSet resultSet = statement.executeQuery("SELECT action_url, username_value, password_value FROM logins");
+            ResultSet resultSet = statement.executeQuery("#{query}");
             while (resultSet.next()) {
-              System.out.println("action_url = " + resultSet.getString("action_url") + "\n" + 
-                                 "username_value = " + resultSet.getString("username_value") + "\n" +
+              System.out.println("action_url = " + resultSet.getString("action_url") + "\\n" +
+                                 "username_value = " + resultSet.getString("username_value") + "\\n" +
                                   "pasword_hash = " + resultSet.getString(4)
                                  );
-              // manages to load TEXT columns but fails with BLOB one
-              Blob blob = resultSet.getBlob("password_value");
-              int length = (int) blob.length();
-              System.out.println( "password_value = " + blob.getBytes(0, length));
+              // use getBytes to load BLOB column
+              // https://github.com/xerial/sqlite-jdbc/blob/master/src/main/java/org/sqlite/jdbc3/JDBC3ResultSet.java#L249
+              byte[] blob = resultSet.getBytes("password_value");
+              // https://github.com/xerial/sqlite-jdbc/blob/master/src/main/java/org/sqlite/jdbc4/JDBC4ResultSet.java#L387
+             /*
+              public Blob getBlob(int col) throws SQLException { throw unused(); }
+               protected SQLException unused() {
+                 return new SQLFeatureNotSupportedException();
+              }
+              */
+             int length = (int) blob.length ;
+              System.out.println( "password_value = " + blob);
             }
 
               if (connection != null)
@@ -82,20 +89,17 @@ context 'JDBC tests' do
         'action_url' => 'http://localhost:8080/configSubmit',
         'username_value' => '[a-z0-9:.\/]+',
         'pasword_hash' => '[a-f0-9]+',
+        'pasword_value' => '[[@a-z0-9]]+',
       }.each do |k,v|
         line = "#{k} = #{v}"
-        its(:stdout) { should match Regexp.new(line) }
+        its(:stdout) { should match Regexp.new(line, Regexp::IGNORECASE) }
       end
       its(:stderr) { should_not contain 'java.sql.SQLFeatureNotSupportedException' }
-        # https://github.com/xerial/sqlite-jdbc/blob/master/src/main/java/org/sqlite/jdbc4/JDBC4ResultSet.java#L387
-        # public Blob getBlob(int col) throws SQLException { throw unused(); }
-        # protected SQLException unused() {
-        #   return new SQLFeatureNotSupportedException();
-        # }
-        # Exception in thread "main" java.sql.SQLFeatureNotSupportedException
-        # at org.sqlite.jdbc4.JDBC4ResultSet.unused(JDBC4ResultSet.java:347)
-        # at org.sqlite.jdbc4.JDBC4ResultSet.getBlob(JDBC4ResultSet.java:390)
-        # at Test.main(Test.java:32)
+      # Exception in thread "main" java.sql.SQLFeatureNotSupportedException
+      # at org.sqlite.jdbc4.JDBC4ResultSet.unused(JDBC4ResultSet.java:347)
+      # at org.sqlite.jdbc4.JDBC4ResultSet.getBlob(JDBC4ResultSet.java:390)
+      # at Test.main(Test.java:32)
     end
   end
 end
+
