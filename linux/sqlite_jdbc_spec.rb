@@ -152,33 +152,55 @@ context 'JDBC tests' do
             String url = "jdbc:#{jdbc_prefix}:" + databaseName;
 
             Connection connection = null;
-            try {
-              connection = DriverManager.getConnection(url);
-              Statement statement = connection.createStatement();
-              statement.setQueryTimeout(30);
-              ResultSet resultSet = statement
-                  .executeQuery("SELECT action_url, username_value, password_value FROM logins");
-              while (resultSet.next()) {
-                System.out.println("action_url = " + resultSet.getString("action_url") + "	" + " username_value = " + resultSet.getString("username_value"));
-                Blob blob = resultSet.getBlob("password_value");
-                int length = (int) blob.length();
-                System.out.println( "password_value = " + blob.getBytes(0, length));
+            connection = DriverManager.getConnection(url);
+            Statement statement = connection.createStatement();
+            statement.setQueryTimeout(30);
+            ResultSet resultSet = statement
+                .executeQuery("SELECT action_url, username_value, password_value FROM logins");
+            while (resultSet.next()) {
+              System.out.println("action_url = " + resultSet.getString("action_url") + "	" + " username_value = " + resultSet.getString("username_value"));
+            // use getBytes to load BLOB column
+            // https://github.com/xerial/sqlite-jdbc/blob/master/src/main/java/org/sqlite/jdbc3/JDBC3ResultSet.java#L249
+            // https://www.sqlitetutorial.net/sqlite-java/jdbc-read-write-blob/
+
+
+            FileOutputStream fos = null;
+            // write binary stream into file
+              cnt++;
+              String filename = "/tmp/a" + cnt + ".txt";
+              File file = new File(filename);
+              try {
+              fos = new FileOutputStream(file);
+
+              System.out.println("Writing BLOB to file " + file.getAbsolutePath());
+              InputStream input = resultSet.getBinaryStream("password_value");
+              byte[] readBuffer = new byte[1024];
+              byte[] keepBufer = null;
+
+              int readCnt = 0;
+              while ((readCnt =input.read(readBuffer)) > 0) {
+                System.out.println("Read " +  readCnt + " bytes");
+                // keepBufer = new byte[keepBufer.length + readBuffer.length];
+                // System.arraycopy(readBuffer, 0, keepBufer, 0, readBuffer.length);
+                fos.write( readBuffer, 0, readCnt);
+                System.out.println("Trying to read more");
+                  readCnt = input.read(readBuffer);
+                System.out.println("Read " +  readCnt + " bytes");
+              }
+              } catch(IOException e) {
+                System.out.println("Excption " + e.toString());
               }
 
-            } catch (SQLFeatureNotSupportedException e) {
-              System.err.println("Exception: " + e.toString());
-            } catch (SQLException e) {
-              System.err.println("Exception: " + e.toString());
-            } catch (Exception e) {
-              System.err.println("Exception: " + e.getMessage());
-            } finally {
-              try {
-                if (connection != null)
-                  connection.close();
-              } catch (SQLException e) {
-                System.err.println(e);
-              }
+              byte[] blob = resultSet.getBytes("password_value");
+            // https://github.com/xerial/sqlite-jdbc/blob/master/src/main/java/org/sqlite/jdbc4/JDBC4ResultSet.java#L387
+            /*
+              public Blob getBlob(int col) throws SQLException { throw unused(); }
+               protected SQLException unused() {
+                 return new SQLFeatureNotSupportedException();
             }
+            */
+           int length = (int) blob.length ;
+            System.out.println( "password_value = " + blob);
           }
         }
       EOF
