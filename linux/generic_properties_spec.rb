@@ -1,7 +1,8 @@
 require 'spec_helper'
 require 'fileutils'
 
-# examine configuration file, e.g. desktop confirm that it has specific entries in a specific section using plain sed
+# examine configuration file, e.g. desktop application launcher
+# confirm that it has specific entries in a specific section using plain sed
 context 'Parsing configuration' do
   basedir = '/tmp'
   datafile = "#{basedir}/file.txt"
@@ -24,7 +25,7 @@ context 'Parsing configuration' do
 
   context 'inspection' do
     describe command( <<-EOF
-      >/dev/null pushd #{basedir}
+      cd #{basedir}
       sed -rn '/\\[#{key1}\\]/,/^\\[/p' #{datafile}
     EOF
     ) do
@@ -32,7 +33,8 @@ context 'Parsing configuration' do
       its(:stderr) { should be_empty }
       [
         'one 1',
-        'one 2'
+        'one 2',
+        'dummy to debug the output'
       ].each do |value|
         its(:stdout) { should contain '=' + value }
       end
@@ -46,4 +48,3 @@ context 'Parsing configuration' do
     end
   end
 end
-
