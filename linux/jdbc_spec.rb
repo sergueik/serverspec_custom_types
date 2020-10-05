@@ -12,7 +12,8 @@ context 'JDBC tests' do
   path_separator = ':'
   application = 'Tomcat Application Name'
   jdbc_path = "#{catalina_home}/webapps/#{application}/WEB-INF/lib/"
-  config_file_path = "#{catalina_home}/conf/context.xml"
+  server_file_path = "#{catalina_home}/conf/server.xml"
+  context_file_path = "#{catalina_home}/conf/context.xml"
 
   # yum erase -q -y java-1.8.0-openjdk
   # yum install -q -y java-1.8.0-openjdk-devel
@@ -359,6 +360,8 @@ context 'JDBC tests' do
       entity = 'confluence'
       class_name = 'TestConnectionWithCredentialsInUrl'
       source_file = "#{class_name}.java"
+      context_xpath_template= '/Context/Resource[ @name = \\"jdbc/%s\\"]'
+      server_xpath_template= '/Server/GlobalNamingResources/Resource[ @name = \\"jdbc/%s\\"]'
       source = <<-EOF
 
         import java.io.File;
@@ -388,12 +391,13 @@ context 'JDBC tests' do
           public static void main(String[] args) throws SAXException, IOException, ParserConfigurationException, XPathExpressionException, ClassNotFoundException, SQLException {
             DocumentBuilder db = (DocumentBuilderFactory.newInstance())
                 .newDocumentBuilder();
-            String configFilePath = "#{config_file_path}";
+            String configFilePath = "#{context_file_path}";
+            // String configFilePath = "#{server_file_path}";
             Document document = db.parse(new FileInputStream(new File(configFilePath)));
             XPath xpath = (XPathFactory.newInstance()).newXPath();
             String entity = "#{entity}";
-            String xpathLocator = String
-                .format("/Context/Resource[ @name = \\"jdbc/%s\\"]", entity);
+            String xpathLocator = String.format("#{context_xpath_template}", entity);
+            // String xpathLocator = String.format("#{server_xpath_template}", entity);
             System.err.println(String.format("Looking for \\"%s\\"", xpathLocator));
             Element userElement = (Element) xpath.evaluate(xpathLocator, document,
                 XPathConstants.NODE);
@@ -577,7 +581,7 @@ context 'JDBC tests' do
             String tableName = "#{table_name}";
             DocumentBuilder db = (DocumentBuilderFactory.newInstance())
                 .newDocumentBuilder();
-            String configFilePath = "#{config_file_path}";
+            String configFilePath = "#{context_file_path}";
             Document document = db.parse(new FileInputStream(new File(configFilePath)));
             XPath xpath = (XPathFactory.newInstance()).newXPath();
             String entity = "#{entity}";
