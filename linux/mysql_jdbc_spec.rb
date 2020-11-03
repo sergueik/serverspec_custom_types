@@ -282,4 +282,80 @@ context 'JDBC tests' do
       its(:stderr) { should be_empty }
     end
   end
+  context 'Stored Procedure' do
+  #  DELIMITER //
+  #  CREATE PROCEDURE simpleproc (OUT param1 INT) BEGIN SELECT 42 INTO param1 FROM dual; end//
+  #  DELIMETER ;
+    class_name = 'MySQLJDBCStoredProcedureTest'
+    database_name = 'test'
+    options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
+    source_file = "#{class_name}.java"
+
+    source_data = <<-EOF
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+      import java.sql.ResultSet;
+      import java.sql.Statement;
+      import java.sql.CallableStatement;
+      import java.sql.PreparedStatement;
+
+      public class #{class_name} {
+        public static void main(String[] argv) throws Exception {
+          String className = "#{jdbc_driver_class_name}";
+          try {
+            Class driverObject = Class.forName(className);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" +
+            databaseName + "?" + options;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            Connection connection = DriverManager.getConnection(url, username, password);
+      
+            if (connection != null) {
+              // http://www.java2s.com/Tutorials/Java/JDBC/0050__JDBC_CallableStatement.htm
+              // http://www.java2s.com/Code/JavaAPI/java.sql/CallableStatementexecute.htm
+              CallableStatement callableStatement = connection.prepareCall("{call simpleproc(?)}");
+              // cstmt.setInt(1, 100);
+              // https://docs.oracle.com/javase/8/docs/api/java/sql/Types.html
+              // callableStatement.registerOutParameter(1, java.sql.Types.VARCHAR);
+              callableStatement.registerOutParameter(1, java.sql.Types.INTEGER);
+              callableStatement.execute();
+              int number = callableStatement.getInt(1);
+              System.out.println("Statement returns: "  + number);
+              connection.close();
+            } else {
+              System.err.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            // java.sql.SQLNonTransientConnectionException:
+            System.err.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      Dir.chdir '/tmp'
+      file = File.open(source_file, 'w')
+      file.puts source_data.strip
+      file.close
+    end
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should match /Statement returns: 42/}
+      its(:stderr) { should be_empty }
+    end
+  end
 end
+
