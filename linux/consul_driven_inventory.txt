@@ -214,4 +214,15 @@ export CONSUL_HTTP_SSL=true
 # running -I to workaround possibly heavy index page
 PORT=9091
 consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
-"curl -I  http://\$(hosrname -f):$PORT &> /dev/null; if [ \$? != 7 ]; then echo RUNNING; fi" | grep RUNNING
+"curl -I  http://\$(hostname -f):$PORT &> /dev/null; if [ \$? != 7 ]; then echo RUNNING; fi" | grep RUNNING
+
+
+# RAM
+LEADER=$(hostname -f)
+PATH=$PATH:/usr/local/bin
+MESSAGE='RAM'
+export CONSUL_HTTP_SSL=true
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"$MESSAGE=\$(free -g | grep Mem: | awk '{print \$2}'); echo \"NODE \$(hostname -f) $MESSAGE \$$MESSAGE\";" | grep $MESSAGE
+
+
