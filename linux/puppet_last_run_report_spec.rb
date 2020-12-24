@@ -3,26 +3,43 @@ require 'spec_helper'
 
 context 'Puppet lastrun report' do
 
+  context 'Extraction of inventory from last run summary report' do
+
+    # date -d@$(tail last_run_summary_yaml|grep 'last_run' | awk '{print $2}')
+    # will return the puppet last run date time 
+    # formatted like standard unix date
+    # Wed Dec 9 14:00:00 EST 2020
+   	   
+    describe command(<<-EOF
+      date -d@$(tail last_run_summary_yaml|grep 'last_run' | awk '{print $2}')
+    EOF
+    ) do
+      let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+      its(:stderr) { should be_empty }
+      its(:exit_status) {should eq 0 }
+      its(:stdout) {should contain 'Wed Dec 9 14:00:00 EST 2020' }
+    end
+  end 
   # TODO: uid check
   context 'location of lastrun report' do
     describe command(<<-EOF
       puppet config print lastrunreport
     EOF
     ) do
-        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
-        its(:stderr) { should be_empty }
-        its(:exit_status) {should eq 0 }
-        its(:stdout) {should contain '/var/cache/puppet/state/last_run_report.yaml' }
+      let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+      its(:stderr) { should be_empty }
+      its(:exit_status) {should eq 0 }
+      its(:stdout) {should contain '/var/cache/puppet/state/last_run_report.yaml' }
     end
     user = 'sergueik'
     describe command(<<-EOF
       su - #{user} sh -c 'puppet config print lastrunreport'
     EOF
     ) do
-        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
-        its(:stderr) { should be_empty }
-        its(:exit_status) {should eq 0 }
-        its(:stdout) {should contain "/home/#{user}/.puppet/cache/state/last_run_report.yaml" }
+      let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+      its(:stderr) { should be_empty }
+      its(:exit_status) {should eq 0 }
+      its(:stdout) {should contain "/home/#{user}/.puppet/cache/state/last_run_report.yaml" }
     end
   end
   context 'Execute simple static check after puppet apply creates a lastrun report' do
@@ -35,10 +52,10 @@ context 'Puppet lastrun report' do
       tail -10 $(puppet config print lastrunreport) | grep '^status:' | grep -vq 'failed'
     EOF
     ) do
-        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
-        its(:stderr) { should be_empty }
-        its(:exit_status) {should eq 0 }
-        its(:stdout) {should match /status: (?!failed)/ }
+      let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+      its(:stderr) { should be_empty }
+      its(:exit_status) {should eq 0 }
+      its(:stdout) {should match /status: (?!failed)/ }
     end
   end
   context 'Master loop' do
@@ -79,10 +96,10 @@ context 'Puppet lastrun report' do
       done
     COMMAND
     ) do
-        let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
-        its(:stderr) { should be_empty }
-        its(:exit_status) {should eq 0 }
-        its(:stdout) {should match /apply catalog succeeded/ }
+      let(:path) { '/opt/puppet/bin:/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:/sbin:/bin:/usr/sbin:/usr/bin' }
+      its(:stderr) { should be_empty }
+      its(:exit_status) {should eq 0 }
+      its(:stdout) {should match /apply catalog succeeded/ }
     end
   end
   context 'Execute Puppet Agent embedded Ruby to examine Last Run Report' do
