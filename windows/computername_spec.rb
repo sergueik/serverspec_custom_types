@@ -9,11 +9,13 @@ context 'Windows Hostname' do
   # the $env:COMPUTERNAME will display the NETBIOS-truncated to 15 char portion
 
   hostname = Socket.gethostname
-
-  describe command 'write-output ([System.Net.Dns]::GetHostName())' do
-    its(:stdout) { should match hostname }
-  end
-  describe command 'write-output ((Get-WmiObject win32_computersystem).DNSHostName)' do
-    its(:stdout) { should match hostname }
+  [ 
+    'write-output ((Get-WmiObject win32_computersystem).DNSHostName)',
+    'write-output ([System.Net.Dns]::GetHostName())',
+    'hostname.exe'
+  ].each do |commandline|
+    describe command commandline do
+      its(:stdout) { should match hostname }
+    end
   end
 end
