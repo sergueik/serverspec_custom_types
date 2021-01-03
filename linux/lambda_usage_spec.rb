@@ -1,32 +1,19 @@
 require 'spec_helper'
 
 context 'Using Lambda Ruby syntax to compose serverspec' do
-  # Introduced in Ruby 2.3, the squiggly heredoc removes extra indentation
+  # squiggly heredoc removes extra indentation
   # https://www.rubyguides.com/2018/11/ruby-heredoc/
-  # With earlier Ruby, '<<~'  just fails
-  # ruby 2.1.x
-  #
-  # syntax error, unexpected <<
   script = <<~EOF
-    tasklist.exe
+    ps ax -opid -oppid -ocomm -oargs 
   EOF
-  # NOTE: with %x should be using executables not Powershell cmdlets
-  # ``': No such file or directory - get-process (Errno::ENOENT)
   run_script = lambda { |script|
-    script.gsub!(/\r?\n/, '')
+    script.gsub!(/\n/, '')
     $stderr.puts ('running:' + script)
     output = %x|#{script}|
-    # NOTE: %x will not return status
-    # mock it...
+    # NOTE: %x does not return process status
     status = true
     $stderr.puts ('status: ' + status.to_s)
     $stderr.puts ('output: ' + output)
-    # TODO:
-    # o = Specinfra::Runner::run_command(s)
-    # C:/uru/ruby/lib/ruby/gems/2.3.0/gems/specinfra-2.66.2/lib/specinfra/backend/cmd.rb:52:in `powershell':
-    # undefined method `metadata' for nil:NilClass (NoMethodError)
-    # $stderr.puts ('Lambda got status: ' + o.status.to_s)
-    # $stderr.puts ('Lambda got output: ' + o.output.chomp)
     [ status, output]
   }
   context 'test' do
