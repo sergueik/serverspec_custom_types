@@ -41,10 +41,16 @@ context 'Pipes' do
       $pipe_reader = new-object System.IO.StreamReader($pipe_in)
 
       $pipe_writer.WriteLine($command)
-      while (($result =  $pipe_reader.Readline()) -notmatch "BatchCommand finished") {
-        # NOTE: need a better loop control
-        write-output $result
-        $has_result = $true
+      while ($true) {
+        $result = $pipe_reader.Readline()
+        if ($result -eq $null -or $result -eq '') {
+          if ($has_result) {
+             break;
+          }
+        } else {
+          write-output $result
+          $has_result = $true
+        }
       }
 
       $pipe_in.Dispose()
