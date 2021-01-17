@@ -42,4 +42,10 @@ context 'UAC' do
     end
   end
   end
+  # origin: http://forum.oszone.net/thread-347672.html
+  describe command '!!([Runtime.InteropServices.Marshal]::ReadInt32([IntPtr]0x7ffe02f0) -band 2)' do
+    its(:exit_status) { should be 0 }
+    its(:stdout) { should contain 'True' } # UAC is turned on
+  end
+
 end
