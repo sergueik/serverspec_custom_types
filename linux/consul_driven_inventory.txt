@@ -226,3 +226,32 @@ consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
 "$MESSAGE=\$(free -g | grep Mem: | awk '{print \$2}'); echo \"NODE \$(hostname -f) $MESSAGE \$$MESSAGE\";" | grep $MESSAGE
 
 
+
+# Heartbeat log'
+
+LEADER=$(hostname -f)
+# https://reflectoring.io/spring-boot-health-check/
+# https://www.baeldung.com/spring-boot-actuators
+# https://github.com/jgreene-cwt/spring-boot-heartbeat
+PATH=$PATH:/usr/local/bin
+LOGFILE='/opt/tomcat/current/logs/custom.log'
+PROVIDER='SpringBootHeartbeat'
+export CONSUL_HTTP_SSL=true
+
+# Custom Log file $LOGFILE present but messages from $PROVIDER not in there
+# NOTE: extra parenthesis arond ! grep ... not needed but possible
+MESSAGE='NO HEARTBEAT'
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"test -e $LOGFILE && (! grep -q '$PROVIDER' $LOGFILE && echo \"$MESSAGE \$( hostname -f)\";)" | grep "${MESSAGE}" | sort
+
+
+# Custom Log file $LOGFILE absent
+MESSAGE='MISSING LOG'
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"test -e $LOGFILE || echo \"$MESSAGE \$(hostname -f)\";" | grep "${MESSAGE}" | sort
+
+# Log messages from $PROVIDER found in custom log $LOGFILE
+MESSAGE='WORKING'
+consul exec -http-addr https://$LEADER:8543 --node=$TARGET_NODE \
+"grep -q '$PROVIDER' $LOGFILE && echo \"$MESSAGE \$(hostname -f)\";" | grep "${MESSAGE}" | sort
+
