@@ -3,7 +3,14 @@ require_relative '../windows_spec_helper'
 
 context 'LibreOffice python' do
   # see also: https://github.com/unoconv/unoconv
-  python_version = '3.5.5'
+  #
+  office_verison = '7'
+  embedded_python_versions =
+  {
+    '6' => '3.5.5'
+    '7' => '3.7.7'
+  }
+  python_version = embedded_python_versions[office_version]
   libreoffice_home = 'c:\Program Files\LibreOffice'
   [
     "#{libreoffice_home}\\program\\python3.dll",
@@ -14,7 +21,7 @@ context 'LibreOffice python' do
       it { should be_file }
     end
   end
-  custom_path = "#{libreoffice_home}\\program;#{libreoffice_home}\\program\\python-core-#{python_version}\\bin"
+  custom_path = "#{libreoffice_home}\\programi";"#{libreoffice_home}\\program\\python-core-#{python_version}\\bin"
   describe command 'python -V' do
     let(:path) { custom_path }
     its(:exit_status) { should eq 0 }
