@@ -4,6 +4,12 @@ context 'Shortcuts' do
 
   context 'Basic Test' do
     link_basename = 'cmd - Administrator'
+    # NOTE: the Powershell 5.x way needs elevation:
+    # new-item -itemtype symboliclink -path "c:\users\${env:USERNAME}\Desktop" -name 'example.lnk' -value 'c:\windows\system32\calc.exe'
+    # new-item : Administrator privilege required for this operation
+    # this problem does not exist under serverspec but makes
+    # cmdlet useless for general user
+
     # NOTE: WMI routinely returns *collections* of objects
     # E.g. 'get-wmiobject' a.k.a. 'gwmi' cmdlet with 'win32_userprofile' will contain *every* profile found in the system
     # including auto-created accounts: 'ASP.NET v4.0', 'DefaultAppPool', 'Classic .Net AppPool' without predictable SIDs
