@@ -61,5 +61,22 @@ describe command("/bin/crontab -u #{cronjob_user} -l") do
   end
 end
 
+context 'custom cron job add' do
+  # NOTE: found in some UCD component processes
+  # a funny way to append the file
+  message = '# this is a new job'
+  before(:each) do
+    Specinfra::Runner::run_command( <<-EOF
+      1>&2 echo crontab -l \|{ cat; echo "#{message}"; }\|crontab -
+      crontab -l |{ cat; echo "#{message}"; }|crontab -
+    EOF
+    )
+  end
+  describe command '/usr/bin/crontab -l' do
+    its(:exit_status) { should eq 0 }
+    its(:stdout) { should contain message}
+  end
+end
+
 # TODO: examine closely the run logs
 # https://www.inmotionhosting.com/support/website/cron-jobs/did-cron-job-run
