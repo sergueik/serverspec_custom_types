@@ -58,10 +58,10 @@ context 'LibreOffice python' do
     its(:exit_status) { should eq 0 }
     its(:stdout) { should contain 'test' }
   end
-  context 'wrapper', :if => false do
+  context 'wrapper' do
     python_launhcer_script = <<-EOF
       path=%path%;c:\\Program Files\\LibreOffice\\program;c:\\Program Files\\LibreOffice\\program\\python-core-#{python_version}\\bin
-      python -c "help(""modules"")"
+      python.exe -c "help(""modules"")"
     EOF
     describe command(<<-EOF
       write-output '#{python_launhcer_script}'| out-file -filepath "a.cmd" -encoding ASCII
@@ -76,8 +76,20 @@ context 'LibreOffice python' do
       end
       # add a guaranteed to fail to actually see the output
       its(:stderr) { should be_empty }
-    end  
-    # python -c "help(""modules"")"
-    # $env:path = "${env:path};c:\Program Files\LibreOffice\program;c:\Program Files\LibreOffice\program\python-core-3.5.5\bin"
+    end
+    describe command(<<-EOF
+      $env:path = "${env:path};c:\\Program Files\\LibreOffice\\program;c:\\Program Files\\LibreOffice\\program\\python-core-#{python_version}\\bin"
+      & python.exe -c "help('modules');quit()"
+    EOF
+    ) do
+      %w|
+      __future__
+      |.each do |line|
+        its(:stdout) { should contain line }
+      end
+      # add a guaranteed to fail to actually see the output
+      its(:stderr) { should be_empty }
+    end
   end
 end
+
