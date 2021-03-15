@@ -103,11 +103,20 @@ context 'Systemd' do
       end
     end
   end
+  # https://vic.demuzere.be/articles/using-systemd-user-units/
+  # https://www.brendanlong.com/systemd-user-services-are-amazing.html
+  # https://www.juev.org/2015/05/25/systemd/ (in Russian)
+  # https://www.linux.org.ru/forum/desktop/9268186 (in Russian)
+  # https://github.com/zoqaeski/systemd-user-units
+  # https://github.com/ahkok/user-session-units
+  # https://itsecforu.ru/2020/04/05/%F0%9F%90%A7-%D0%BA%D0%B0%D0%BA-%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D1%82%D0%B8%D1%82%D1%8C-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D1%8B-systemd-%D0%B1%D0%B5%D0%B7-%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2/ (in Russian)
+  # https://medium.com/@alexeypetrenko/systemd-user-level-persistence-25eb562d2ea8
+  # 
   context 'Systemd expressions' do
     # https://www.freedesktop.org/software/systemd/man/systemd-escape.html
     # https://serverfault.com/questions/714592/how-does-this-variable-escaping-work-in-a-systemd-unit-file
     # https://www.freedesktop.org/software/systemd/man/systemd.service.html
-    context 'Escaping backticks and special systemd varialbles' do
+    context 'Escaping backticks and special systemd variables' do
       context 'Conversion' do
         [
           '`date +%F`', # this one survives
