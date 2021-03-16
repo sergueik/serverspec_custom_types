@@ -20,7 +20,7 @@ context 'Shortcuts' do
   # Despite API name the CreateShortcut method is not meant to create the lnk file
   # but rather deserialzies the shortcut file as an object.
   describe command(<<-EOF
-  
+
     $link_fullpath = "$HOME\\Desktop\\#{link_name}.lnk"
     $obj_shell = New-Object -ComObject WScript.Shell
     $obj_link = $obj_shell.CreateShortcut($link_fullpath.FullName)
@@ -33,7 +33,15 @@ context 'Shortcuts' do
       end
     end
   end
-end
+  context 'launching in cmd' do
+    link_name = 'powershell.exe command example'
+    describe command(<<-EOF
 
-
+      $link_fullpath = "$HOME\\Desktop\\#{link_name}.lnk"
+       cmd %%- /c start "" "${link_fullpath}"
+      EOF
+    ) do
+      its(:stdout) { should match 'test' }
+    end
+  end
 end
