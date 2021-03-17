@@ -20,7 +20,7 @@ context 'Shortcuts' do
   # Despite API name the CreateShortcut method is not meant to create the lnk file
   # but rather deserialzies the shortcut file as an object.
   describe command(<<-EOF
-
+  
     $link_fullpath = "$HOME\\Desktop\\#{link_name}.lnk"
     $obj_shell = New-Object -ComObject WScript.Shell
     $obj_link = $obj_shell.CreateShortcut($link_fullpath.FullName)
@@ -35,13 +35,16 @@ context 'Shortcuts' do
   end
   context 'launching in cmd' do
     link_name = 'powershell.exe command example'
-    describe command(<<-EOF
-
-      $link_fullpath = "$HOME\\Desktop\\#{link_name}.lnk"
-       cmd %%- /c start "" "${link_fullpath}"
+    # NOTE: have to triple the quotes around the first argument
+    # double quotes lead to "Specified COMMAND search directory bad" error
+    describe command(<<-EOF    
+      $link_fullpath = "${env:USERPROFILE}\\Desktop\\#{link_name}.lnk"
+        cmd %%- /c start """""" "${link_fullpath}"
       EOF
     ) do
-      its(:stdout) { should match 'test' }
+      its(:exit_status) { should eq 0 }
+      # will not get the output
+      its(:stdout) { should be_empty }
     end
   end
 end

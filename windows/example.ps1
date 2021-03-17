@@ -1,4 +1,7 @@
+param(
+  $delay = 10
+)
 write-host 'test'
-start-sleep 1
+start-sleep $delay
 # NOTE: need to close
 exit 0
