@@ -7,9 +7,9 @@ context 'Symbolic Links' do
     pushd 'c:/temp'
     mkdir 'directory_target' -erroraction 'silentlycontinue'
     touch 'file_target'
-    cmd %%- /c mklink /D 'directory_link' 'directory_target'
-    cmd %%- /c mklink /D 'file_link' 'file_target'
-    cmd %%- /c mklink /J 'directory_junction' 'directory_target'
+    cmd %%- /c mklink /D directory_link directory_target
+    cmd %%- /c mklink file_link file_target
+    cmd %%- /c mklink /J directory_junction directory_target
   EOF
   ) end
 
@@ -41,7 +41,7 @@ context 'Symbolic Links' do
     symlink_path = 'C:/temp/directory_link'
     symlink_parent_path = 'c:/temp'
     describe command(<<-EOF
-      $symlink_path = '#{symlink_path}' -replace '/' , '\\'
+      $symlink_path = '#{symlink_path}' -replace '/' , '\\';
       (new-object -ComObject 'Shell.Application').NameSpace(0).ParseName($symlink_path).ExtendedProperty('LinkTarget')
     EOF
     ) do
@@ -52,6 +52,7 @@ context 'Symbolic Links' do
   context 'Powershell' do
     symlink_path = 'C:/temp/directory_link'
     symlink_parent_path = 'c:/temp'
+    file_target = 'file_target'
     describe command(<<-EOF
       $symlink_parent_path = '#{symlink_parent_path}'
       $symlink_path = '#{symlink_path}'
@@ -82,14 +83,41 @@ context 'Symbolic Links' do
     end
   end
   context 'CMD' do
-    symlink_path = 'C:/temp/directory_link'
-    symlink_parent_path = 'c:/temp'
-    describe command(<<-EOF
-      $symlink_parent_path = '#{symlink_parent_path}' -replace '/' , '\\'
-      cmd %%- /c dir /A:L $symlink_parent_path
-    EOF
-    ) do
-      its(:stdout) { should match Regexp.new('directory_target') }
+    context 'directory symlinks and reparse points' do
+      symlink_path = 'C:/temp/directory_link'
+      describe command(<<-EOF
+        $symlink_path = '#{symlink_path}' -replace '/' , '\\'
+        cmd %%- /c dir /ADL $symlink_path*
+      EOF
+      ) do
+        its(:stdout) { should match Regexp.new('directory_target') }
+      end
+      symlink_parent_path = 'C:/temp'
+      describe command(<<-EOF
+        $symlink_parent_path = '#{symlink_parent_path}' -replace '/' , '\\'
+        cmd %%- /c dir /adl $symlink_parent_path
+      EOF
+      ) do
+        its(:stdout) { should match Regexp.new('directory_target') }
+      end
+    end
+    context 'file symlinks' do
+      symlink_path = 'C:/temp/file_link'
+      describe command(<<-EOF
+        $symlink_path = '#{symlink_path}' -replace '/' , '\\'
+        cmd %%- /c dir /L $symlink_path
+      EOF
+      ) do
+        its(:stdout) { should match Regexp.new('file_target') }
+      end
+      symlink_parent_path = 'C:/temp'
+      describe command(<<-EOF
+        $symlink_parent_path = '#{symlink_parent_path}' -replace '/' , '\\'
+        cmd %%- /c dir /a-dl $symlink_parent_path
+      EOF
+      ) do
+        its(:stdout) { should match Regexp.new('file_target') }
+      end
     end
   end
   context 'Parsing cmd output' do
