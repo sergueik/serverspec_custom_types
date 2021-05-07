@@ -7,10 +7,24 @@ context 'Standard' do
   describe process 'vino-server' do
     it { should be_running }
   end
-  describe port 5900 do
+  vnc_tcp_port = 5900
+  describe port vnc_tcp_port do
     it { should be_listening.with 'tcp' }
     it { should be_listening.with 'tcp6' }
   end
+  context 'vnc xfce process tree' do
+    describe command( <<-EOF
+      PID=$(ps ax -ocmd,args,pid,ppid| grep vin[o] |awk '{print $NF}')
+      ps -P $PID
+      ps -wP $PID| grep -o 'xfce4-session'
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stderr) { should be_empty }
+      its(:stdout) { should contain 'xfce4-session' }
+    end
+  end
+  # NOTE: not all settings are present on a vanilla ubuntu system
   context 'application configuration' do
     describe command 'gsettings list-schemas' do
       %w|
@@ -22,7 +36,7 @@ context 'Standard' do
       |.each do |key|
         its(:stdout) { should contain key }
       end
-    end	    
+    end	
     scheme = 'org.gnome.desktop.interface'
     describe command "settings list-keys #{scheme}" do
       %w|
@@ -35,7 +49,7 @@ context 'Standard' do
       |.each do |key|
         its(:stdout) { should contain key }
       end
-    end	    
+    end	
     # vino-preference needs a display to list configuration details
     {
       'vnc-password' => '[a-z0-9]+=*$', #  $(echo -n "#{password}"|base64)
@@ -96,7 +110,7 @@ context 'xFCE Session and Startup desktop launchers' do
         'Name'          => 'vino-server',
         'Comment'       => 'VNC Server',
         'Exec'          => '/usr/lib/vino/vino-server',
-        'NoDisplay'     => true, # on headless host
+        # 'NoDisplay'     => true, # TODO: limit this test to headless hosts
         'OnlyShowIn'    => 'XFCE;',
         'StartupNotify' => 'false',
         'Terminal'      => 'false',
