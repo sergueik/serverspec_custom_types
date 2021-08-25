@@ -54,7 +54,7 @@ context 'Windows Shares' do
       its(:exit_status) { should eq 0 }
       # NOTE: Preparing modules for first use error
       {'path' => 'c:\\temp'}.each do |key,value|
-        its (:stdout) { should match(Regexp.new( "#{key} * : *" + Regexp.escape(value), Regexp.IRNORECASE)) }
+        its (:stdout) { should match(Regexp.new( "#{key} * : *" + Regexp.escape(value), Regexp::IGNORECASE)) }
     end
   end
 end
