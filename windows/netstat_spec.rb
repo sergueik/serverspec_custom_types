@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+
 context 'Inspecting Netstat' do
   # The command below is the equivalent of a linux shell command
   # ps -p $(sudo netstat -oanpt | grep $connected_port|awk '{print $7}' | sed 's|/.*||')
@@ -20,5 +21,15 @@ EOF
 ) do
     its(:stdout) { should match /TNSLSNR/io }
   end
-
+  # semicolon terminators added for readability - not strictly necessary
+  describe command (<<-EOF
+    $o = & netstat.exe -ano -p TCP|where-object {$_ -match '0.0.0.0:22'};
+    $o | where-object {$_ -match 'LISTENING *([0-9]+)' }  |out-null;
+    $p = $Matches.1;
+    $n = get-CIMInstance win32_process | where-object { $_.Processid -eq $p} | select-object -expandproperty Name;
+    write-output $n;
+  EOF
+  ) do
+    its(:stdout) { should contain 'sshd.exe' }
+  end
 end
