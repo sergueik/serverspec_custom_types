@@ -1,8 +1,6 @@
 require_relative '../windows_spec_helper'
+# http://ss64.com/ps/get-winevent.html
 
-# See also:
-# https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/wevtutil
-# https://docs.microsoft.com/en-us/windows/win32/wes/windows-event-log-tools
 context 'Event Log' do
     logname = 'Microsoft-Windows-PowerShell/Operational'
     describe command(<<-EOF
@@ -17,6 +15,24 @@ context 'Event Log' do
     ) do
         its(:stdout) { should match /name: #{logname}/io }
         its(:stdout) { should match /enabled: true/io }
+    end
+    logfilename = '%SystemRoot%/System32/Winevt/Log/Microsoft-Windows-PowerShell%4Operational.evtx'
+    describe command(<<-EOF
+        property = 'logFileName'
+
+        $logname = '#{logname}'
+        $data = & wevtutil.exe gl $logname |  
+        convertfrom-string  | 
+        where-object { $_.'P2' -match $property } | 
+        select-object -expandproperty 'P3'
+        $data -replace '\\\\', '/'
+
+
+      EOF
+    ) do
+        its(:stdout) { should contain logfilename }
+	# ArgumentError:  too short meta escape
+
     end
     describe command(<<-EOF
         & wevtutil.exe qe #{logname}
