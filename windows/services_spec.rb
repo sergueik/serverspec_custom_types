@@ -139,18 +139,33 @@ context 'Services' do
     end
   end
   context 'Service Binary Path' do
-    # real life example -  upgrading Cygwin to Microsoft Open SSH Server 
+    # real life example -  upgrading Cygwin to Microsoft Open SSH Server
     service_name = 'sshd'
     binary_path = 'C:/cygwin/bin/cygrunsrv.exe'
-    describe command (<<-EOF
-      $service_name = '#{service_name}'
-      $result = (get-wmiobject win32_service -filter ('name="{0}"' -f $service_name)  |select-object -expandproperty pathname ) -replace '\\\\', '/'; 
-      write-output $result
-    EOF
-    ) do
-      its(:stdout) { should contain binary_path }
-      # its(:stderr) { should be_empty }
-      # its(:exit_status) {should eq 0 }
+    context  'wmi' do
+      describe command (<<-EOF
+        $service_name = '#{service_name}'
+        $result = (get-wmiobject win32_service -filter ('name="{0}"' -f $service_name)  |select-object -expandproperty pathname ) -replace '\\\\', '/';
+        write-output $result
+      EOF
+      ) do
+        its(:stdout) { should contain binary_path }
+        end
+    end
+
+    context 'SC' do
+      describe command (<<-EOF
+        $service_name = '#{service_name}'
+        $property_name = 'BINARY_PATH_NAME'
+        $field = 'P4'
+        $result = (& sc.exe qc $service_name | select-string -pattern $property_name |
+           select-object -first 1 |
+           convertfrom-string )."${field}"  -replace '\\\\', '/';
+        write-output $result
+      EOF
+      ) do
+        its(:stdout) { should contain binary_path }
+      end
     end
   end
 end
