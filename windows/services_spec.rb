@@ -145,12 +145,23 @@ context 'Services' do
     context  'wmi' do
       describe command (<<-EOF
         $service_name = '#{service_name}'
-        $result = (get-wmiobject win32_service -filter ('name="{0}"' -f $service_name)  |select-object -expandproperty pathname ) -replace '\\\\', '/';
+        $result = (get-wmiobject win32_service -filter ('name="{0}"' -f $service_name) |
+          select-object -expandproperty pathname ) -replace '\\\\', '/';
         write-output $result
       EOF
       ) do
         its(:stdout) { should contain binary_path }
-        end
+      end
+      describe command (<<-EOF
+        $service_name = '#{service_name}'
+        $result = (get-wmiobject win32_service | where-object { $_.Name -contains $service_name }|
+          select-object -first 1 |
+          select-object -expandproperty pathname ) -replace '\\\\', '/';
+        write-output $result
+      EOF
+      ) do
+        its(:stdout) { should contain binary_path }
+      end
     end
 
     context 'SC' do
