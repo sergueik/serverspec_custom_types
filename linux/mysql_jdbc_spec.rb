@@ -324,26 +324,17 @@ context 'JDBC tests' do
               String query = "SELECT count(*) as cnt from character_sets where character_set_name like 'koi%';";
               System.out.println("Executing count query: " + query);
               ResultSet resultSet = connection.createStatement().executeQuery(query);
-              resultSet.first();
+              resultSet.next();
+              // NOTE: failing with Postgres: resultSet().first()
+              // org.postgresql.util.PSQLException: Operation requires a scrollable ResultSet, but this ResultSet is FORWARD_ONLY
               final int cnt = resultSet.getInt(1);
               System.out.println("cnt: " + cnt);
-              /*
-                // # https://www.tabnine.com/code/java/methods/java.sql.Statement/executeQuery
-                final List<Map<String, Object>> rows = getRows(resultSet);
-                Assert.assertEquals(
-                ImmutableList.of(
-                ImmutableMap.of("cnt", 0L)
-                ),
-                rows
-                );
-              */
               resultSet.close();
               connection.close();
             } else {
               System.out.println("Failed to connect");
             }
           } catch (Exception e) {
-            // java.sql.SQLNonTransientConnectionException:
             System.out.println("Exception: " + e.getMessage());
             e.printStackTrace();
           }
@@ -369,7 +360,6 @@ context 'JDBC tests' do
       its(:stderr) { should be_empty }
     end
   end
-
   context 'Stored Procedure' do
   #  DELIMITER //
   #  CREATE PROCEDURE simpleproc (OUT param1 INT) BEGIN SELECT 42 INTO param1 FROM dual; end//
@@ -446,5 +436,6 @@ context 'JDBC tests' do
     end
   end
 end
+
 
 
