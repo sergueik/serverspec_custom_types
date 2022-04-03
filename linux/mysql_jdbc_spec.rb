@@ -145,7 +145,7 @@ context 'JDBC tests' do
               String query = "SELECT character_set_name as name from character_sets limit 1 INTO @variable; SELECT @variable;";
 
               PreparedStatement preparedStatement = connection.prepareStatement(query);
-      
+
               preparedStatement.execute();
               ResultSet resultSet = preparedStatement.getResultSet();
               // query = "SELECT character_set_name as name from character_sets limit 1";
@@ -224,22 +224,22 @@ context 'JDBC tests' do
             final String username = "#{username}";
             final String password = "#{password}";
             Connection connection = DriverManager.getConnection(url, username, password);
-      
+
             if (connection != null) {
               System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
               System.out.println("Connected to catalog: " + connection.getCatalog());
-      
+
               // WARNING: On both MySQL 5.7 and MYSQL 8.x JDBC appears broken:
               // when combine SQL statements only the first one gets executed
               // the second and following are ignored
               // below, even the field list is different
               String query = "SELECT character_set_name, description from character_sets where character_set_name like 'utf16%' limit 1;"
-                  + "SELECT character_set_name from character_sets where description not like '%unicode%';" 
+                  + "SELECT character_set_name from character_sets where description not like '%unicode%';"
                   + "SELECT character_set_name from character_sets where character_set_name like 'utf8%' limit 1;";
               System.out.println("Executing combined query: " + query);
-      
+
               PreparedStatement preparedStatement = connection.prepareStatement(query);
-      
+
               preparedStatement.execute();
               ResultSet resultSet = preparedStatement.getResultSet();
               while (resultSet.next()) {
@@ -282,6 +282,94 @@ context 'JDBC tests' do
       its(:stderr) { should be_empty }
     end
   end
+
+
+  context 'Count Queries' do
+    class_name = 'MySQLJDBCCountQueryTest'
+    database_name = 'information_schema'
+    options = 'useUnicode=true&characterEncoding=UTF-8'
+    source_file = "#{class_name}.java"
+
+    source_data = <<-EOF
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+      import java.sql.ResultSet;
+      import java.sql.Statement;
+      import java.sql.PreparedStatement;
+      import java.sql.CallableStatement;
+      import java.util.List;
+      import java.util.Map;
+
+      public class #{class_name} {
+        public static void main(String[] argv) throws Exception {
+          String className = "#{jdbc_driver_class_name}";
+          try {
+            Class driverObject = Class.forName(className);
+            System.out.println("driverObject=" + driverObject);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" +
+            databaseName + "?" + options;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            Connection connection = DriverManager.getConnection(url, username, password);
+
+            if (connection != null) {
+              System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
+              System.out.println("Connected to catalog: " + connection.getCatalog());
+
+              String query = "SELECT count(*) as cnt from character_sets where character_set_name like 'koi%';";
+              System.out.println("Executing count query: " + query);
+              ResultSet resultSet = connection.createStatement().executeQuery(query);
+              resultSet.first();
+              final int cnt = resultSet.getInt(1);
+              System.out.println("cnt: " + cnt);
+              /*
+                // # https://www.tabnine.com/code/java/methods/java.sql.Statement/executeQuery
+                final List<Map<String, Object>> rows = getRows(resultSet);
+                Assert.assertEquals(
+                ImmutableList.of(
+                ImmutableMap.of("cnt", 0L)
+                ),
+                rows
+                );
+              */
+              resultSet.close();
+              connection.close();
+            } else {
+              System.out.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            // java.sql.SQLNonTransientConnectionException:
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      Dir.chdir '/tmp'
+      file = File.open(source_file, 'w')
+      file.puts source_data.strip
+      file.close
+    end
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should match /cnt: 2/}
+      its(:stderr) { should be_empty }
+    end
+  end
+
   context 'Stored Procedure' do
   #  DELIMITER //
   #  CREATE PROCEDURE simpleproc (OUT param1 INT) BEGIN SELECT 42 INTO param1 FROM dual; end//
@@ -314,7 +402,7 @@ context 'JDBC tests' do
             final String username = "#{username}";
             final String password = "#{password}";
             Connection connection = DriverManager.getConnection(url, username, password);
-      
+
             if (connection != null) {
               // http://www.java2s.com/Tutorials/Java/JDBC/0050__JDBC_CallableStatement.htm
               // http://www.java2s.com/Code/JavaAPI/java.sql/CallableStatementexecute.htm
@@ -358,4 +446,5 @@ context 'JDBC tests' do
     end
   end
 end
+
 
