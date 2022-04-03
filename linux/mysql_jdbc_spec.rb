@@ -360,6 +360,134 @@ context 'JDBC tests' do
       its(:stderr) { should be_empty }
     end
   end
+  context 'StreamLike Processed Queries' do
+    class_name = 'MySQLJDBCStreamLikeQueryTest'
+    database_name = 'information_schema'
+    options = 'useUnicode=true&characterEncoding=UTF-8'
+    source_file = "#{class_name}.java"
+
+    source_data = <<-EOF
+      import java.sql.Array;
+      import java.sql.CallableStatement;
+      import java.sql.Connection;
+      import java.sql.DatabaseMetaData;
+      import java.sql.Date;
+      import java.sql.DriverManager;
+      import java.sql.PreparedStatement;
+      import java.sql.ResultSet;
+      import java.sql.ResultSetMetaData;
+      import java.sql.SQLException;
+      import java.sql.Statement;
+      import java.sql.Timestamp;
+      import java.sql.Types;
+      import java.util.ArrayList;
+      import java.util.HashMap;
+      import java.util.List;
+      import java.util.Map;
+      import java.util.Properties;
+      import java.util.Set;
+
+      public class #{class_name} {
+        public static void main(String[] argv) throws Exception {
+          String className = "#{jdbc_driver_class_name}";
+          try {
+            Class driverObject = Class.forName(className);
+            System.out.println("driverObject=" + driverObject);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" +
+            databaseName + "?" + options;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            Connection connection = DriverManager.getConnection(url, username, password);
+
+            if (connection != null) {
+              System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
+              System.out.println("Connected to catalog: " + connection.getCatalog());
+
+              String query = "SELECT count(*) as cnt from character_sets where character_set_name like 'koi%';";
+              System.out.println("Executing count query: " + query);
+              ResultSet resultSet = connection.createStatement().executeQuery(query);
+              final List<Map<String, Object>> rows = getRows(resultSet);
+              final long cnt = (long) rows.get(0).get("cnt");
+              System.out.println("cnt: " + cnt);
+              // https://github.com/apache/druid/blob/master/sql/src/test/java/org/apache/druid/sql/avatica/DruidAvaticaHandlerTest.java#L1095
+              // https://www.tabnine.com/code/java/methods/java.sql.Statement/executeQuery
+              /*
+                Assert.assertEquals(
+                ImmutableList.of(
+                ImmutableMap.of("cnt", 0L)
+                ),
+                rows
+                );
+              */
+              resultSet.close();
+              connection.close();
+            } else {
+              System.out.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            // java.sql.SQLNonTransientConnectionException:
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+        // origin:
+        // https://github.com/apache/druid/blob/master/sql/src/test/java/org/apache/druid/sql/avatica/DruidAvaticaHandlerTest.java#L1399
+        private static List<Map<String, Object>> getRows(final ResultSet resultSet) throws SQLException {
+          return getRows(resultSet, null);
+        }
+
+        private static List<Map<String, Object>> getRows(final ResultSet resultSet, final Set<String> returnKeys) throws SQLException {
+          try {
+            final ResultSetMetaData metaData = resultSet.getMetaData();
+            final List<Map<String, Object>> rows = new ArrayList<>();
+            while (resultSet.next()) {
+              final Map<String, Object> row = new HashMap<>();
+              for (int i = 0; i < metaData.getColumnCount(); i++) {
+                if (returnKeys == null
+                    || returnKeys.contains(metaData.getColumnLabel(i + 1))) {
+                  Object result = resultSet.getObject(i + 1);
+                  if (result instanceof Array) {
+                    row.put(metaData.getColumnLabel(i + 1),
+                        ((Array) result).getArray());
+                  } else {
+                    row.put(metaData.getColumnLabel(i + 1), result);
+                  }
+                }
+              }
+              rows.add(row);
+            }
+            return rows;
+          } finally {
+            resultSet.close();
+          }
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      Dir.chdir '/tmp'
+      file = File.open(source_file, 'w')
+      file.puts source_data.strip
+      file.close
+    end
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should match /cnt: 2/}
+      its(:stderr) { should be_empty }
+    end
+  end
+
   context 'Stored Procedure' do
   #  DELIMITER //
   #  CREATE PROCEDURE simpleproc (OUT param1 INT) BEGIN SELECT 42 INTO param1 FROM dual; end//
@@ -368,6 +496,7 @@ context 'JDBC tests' do
     database_name = 'test'
     options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
     source_file = "#{class_name}.java"
+    # NOTE when a SQL is embedded in the Java code of the test snippet need to write the source file via File class
 
     source_data = <<-EOF
       import java.sql.Connection;
