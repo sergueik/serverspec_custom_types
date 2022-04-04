@@ -171,11 +171,35 @@ context 'Services' do
         $field = 'P4'
         $result = (& sc.exe qc $service_name | select-string -pattern $property_name |
            select-object -first 1 |
-           convertfrom-string )."${field}"  -replace '\\\\', '/';
+           convertfrom-string )."${field}" -replace '\\\\', '/';
         write-output $result
       EOF
       ) do
         its(:stdout) { should contain binary_path }
+      end
+      service_name = 'DBWriter'
+      describe command (<<-EOF
+        # NOTE: whitespace-sensitive
+        $service_name = '#{service_name}'
+        & sc.exe config $service_name start= disabled
+      EOF
+      ) do
+        # NOTE: trailing newline is leading to fail to examine through "contain"
+        its(:stdout) { should_not contain "[SC] ChangeServiceConfig SUCCESS\n"}
+        # NOTE: Perl-style \Q \E modifiers are not recognized
+        its(:stdout) { should match /\[SC\] ChangeServiceConfig SUCCESS/}
+      end
+      describe command (<<-EOF
+        $service_name = '#{service_name}'
+        $property_name = 'START_TYPE'
+        $field = 'P5'
+        $result = (& sc.exe qc $service_name | select-string -pattern $property_name |
+           select-object -first 1 |
+           convertfrom-string )."${field}"
+        write-output $result
+      EOF
+      ) do
+        its(:stdout) { should match /(AUTO_START|DEMAND_START|DISABLED)/ }
       end
     end
   end
