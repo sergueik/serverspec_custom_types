@@ -95,7 +95,71 @@ context 'JDBC tests' do
     end
   end
   # https://jdbc.postgresql.org/documentation/81/connect.html
+  context 'Connection check (slightly different syntax)' do
+    class_name = 'PostgreSQLJDBCNoPasswordiConnectionPropertiesTest'
+    source_file = "#{class_name}.java"
+
+    source = <<-EOF
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+      import java.util.Properties;
+
+      public class #{class_name} {
+        public static void main(String[] argv) throws Exception {
+         String className = "#{jdbc_driver_class_name}";
+         try {
+            Class driverObject = Class.forName(className);
+            System.out.println("driverObject=" + driverObject);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            Properties properties = new Properties();
+            properties.setProperty("user", username);
+            properties.setProperty("password", password);
+            // properties.setProperty("ssl","false");
+            Connection connection = DriverManager.getConnection(url, properties);
+            if (connection != null) {
+              System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
+              System.out.println("Connected to catalog: " + connection.getCatalog());
+              // System.out.println("Connected to: " + connection.getSchema());
+              // java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc4.Jdbc4Connection.getSchema() is not yet implemented.
+            } else {
+              System.out.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      }
+
+    EOF
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      echo '#{source}' > '#{source_file}'
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+
+      its(:stdout) { should contain 'driverObject=class org.postgresql.Driver'}
+      its(:stdout) { should contain 'Connected to product: PostgreSQL'}
+      its(:stdout) { should match /Connected to catalog: #{database_name}/}
+      its(:stderr) { should_not contain 'Exception: Communications link failure' } # mysql server is not running
+      its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
+      its(:stderr) { should_not contain 'Not supported' }
+      its(:stderr) { should_not contain 'The server does not support SSL' }
+    end
+  end
 end
+
 
 
 
