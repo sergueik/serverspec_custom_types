@@ -166,6 +166,92 @@ context 'JDBC tests' do
         end
       end
     end
+    table_name = 'sys.columns'
+    class_name = 'TestPreparedStatement'
+    sourcfile = "#{class_name}.java"
+    # origin:  http://www.java2s.com/Code/JavaAPI/java.sql/PreparedStatementsetBooleanintparameterIndexbooleanx.htm
+      context 'Prepared Statement' do
+        # uses Powerhell to interpolate local system environment into the java source code
+        source = <<-EOF
+          import java.sql.Connection;
+          import java.sql.DriverManager;
+          import java.sql.PreparedStatement;
+          import java.sql.ResultSet;
+          import java.sql.Statement;
+
+          import java.lang.reflect.*;
+
+          public class #{class_name} {
+            private static Connection connection = null;
+            private static Statement statement = null;
+            private static ResultSet resultSet = null;
+
+            public static void main(String[] argv) throws Exception {
+              String className = "#{jdbc_driver_class_name}";
+              String tableName = "#{table_name}";
+              // not working ?
+              System.setProperty("java.library.path",
+                  "$($env:USERPROFILE -replace '\\\\', '\\\\')\\\\Downloads\\\\Microsoft JDBC Driver 6.0 for SQL Server\\\\sqljdbc_6.0\\\\enu\\\\auth\\\\x86\\\\");
+              final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
+              sysPathsField.setAccessible(true);
+              sysPathsField.set(null, null);
+              try {
+                Class driverObject = Class.forName(className);
+                System.out.println("driverObject=" + driverObject);
+
+                String serverName = "#{database_host}";
+                String databaseName = "#{database_name}";
+                String url = "jdbc:#{jdbc_prefix}://" + serverName + ":1434;domain=${env:COMPUTERNAME};databaseName="
+                    + databaseName + ";integratedSecurity=true;";
+                try {
+                  connection = DriverManager.getConnection(url);
+                  statement = connection.createStatement();
+                  statement.executeUpdate("create table survey (id int, text varchar(16) );");
+
+                  String sql = "INSERT INTO survey (id,text) VALUES(?,?)";
+                  PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+                  preparedStatement.setInt(1, 12);
+                  preparedStatement.setString(2, "test");
+                  preparedStatement.executeUpdate();
+    
+                  resultSet = statement.executeQuery("SELECT * FROM survey");
+                  while (resultSet.next()) {
+                    System.out.println(resultSet.getString(2));
+                  }
+                  resultSet.close();
+                  statement.close();
+                  preparedStatement.close();
+                } catch (Exception e1) {
+                  System.out.println("Exception: " + e1.getMessage());
+                } finally {
+                  if (connection != null)
+                    try {
+                      connection.close();
+                    } catch (Exception e3) { }
+                }
+              } catch (Exception e2) {
+                System.out.println("Exception: " + e2.getMessage());
+              }
+            }
+          }
+        EOF
+        describe command(<<-EOF
+          pushd $env:USERPROFILE
+          $source = @"
+#{source}
+"@
+          write-output "${source}" | out-file #{class_name}.java -encoding ASCII
+          $env:PATH = "${env:PATH};c:\\java\\jdk1.8.0_101\\bin"
+          javac '#{class_name}.java'
+          cmd %%- /c "java  -Djava.library.path=C:\\windows\\system32 -cp #{jars_cp}#{path_separator}. #{class_name}"
+        EOF
+        ) do
+          its(:exit_status) { should eq 0 }
+          its(:stdout) { should match Regexp.new('\d+, (name|filename|status|column_guid|queuing_order|minoccur), \d+$', Regexp::IGNORECASE) }
+        end
+    end
+
   end
   context 'MySQL', :if => os[:family] == 'windows' do
     context 'Passing connection parameters directly' do
@@ -194,7 +280,7 @@ context 'JDBC tests' do
         'zeroDateTimeBehavior' => 'convertToNull',
         'useUnicode' => 'yes',
         'characterEncoding' => 'UTF-8',
-      }.each { |k,v| options.push k + '&' + v.to_s }
+      }.each { |k,v| options_array.push k + '&' + v.to_s }
 
       options = options_array.join('&')
       username = 'root'

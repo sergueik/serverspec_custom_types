@@ -8,7 +8,6 @@ require 'fileutils'
 
 
 context 'JDBC tests' do
-  # yum install -qy mariadb-server
   # yum install -qy postgresql-jdbc.noarch
   # rpm -ql $(rpm -qa |  grep postgresql-jdbc) | grep .jar
   # NOTE: several versons of protocol exist
@@ -243,6 +242,90 @@ context 'JDBC tests' do
       its(:stderr) { should_not contain 'Exception: Access denied for user' } # configuration mismatch
       its(:stderr) { should_not contain 'Not supported' }
       its(:stderr) { should_not contain 'The server does not support SSL' }
+    end
+  end
+  context 'Prepared Statement' do
+    class_name = 'PostgreSQLJDBCPreparedStatementTest'
+    source_file = "#{class_name}.java"
+
+    source = <<-EOF
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+          import java.sql.PreparedStatement;
+          import java.sql.Connection;
+          import java.sql.DriverManager;
+          import java.sql.PreparedStatement;
+          import java.sql.ResultSet;
+          import java.sql.Statement;
+      public class #{class_name} {
+            private static String className = "#{jdbc_driver_class_name}";
+            private static Connection connection = null;
+            private static Statement statement = null;
+            private static ResultSet resultSet = null;
+        public static void main(String[] argv) throws Exception {
+         try {
+            Class driverObject = Class.forName(className);
+            System.out.println("driverObject=" + driverObject);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" + databaseName;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            // when password is blank JDBC will attempt to connect without using password.
+            // as opposed to calling the DriverManager.getConnection with just url which fails.
+            connection = DriverManager.getConnection(url, username, "");
+            if (connection != null) {
+                try {
+                
+                  statement = connection.createStatement();
+                  statement.executeUpdate("create table if not exists survey (id int, text varchar(16) );");
+
+                  String sql = "INSERT INTO survey (id,text) VALUES(?,?)";
+                  PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+                  preparedStatement.setInt(1, 12);
+                  preparedStatement.setString(2, "test");
+                  preparedStatement.executeUpdate();
+    
+                  resultSet = statement.executeQuery("SELECT * FROM survey");
+                  while (resultSet.next()) {
+                    System.out.println("text: " + resultSet.getString(2));
+                  }
+                  resultSet.close();
+                  statement.close();
+                  preparedStatement.close();
+                } catch (Exception e1) {
+                  System.out.println("Exception: " + e1.getMessage());
+                } finally {
+                  if (connection != null)
+                    try {
+                      connection.close();
+                    } catch (Exception e3) { }
+                }
+            } else {
+              System.out.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      }
+
+    EOF
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      echo '#{source}' > '#{source_file}'
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should contain 'text: test'}
     end
   end
 end
