@@ -264,29 +264,19 @@ context 'JDBC tests' do
 
               statement
                   .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
-              statement.executeUpdate(String.format("CREATE TABLE `%s` (`ID` INTEGER PRIMARY KEY AUTOINCREMENT, `NAME` TEXT NOT NULL)", tableName));
-              // NOTE:
-              // Exception org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: COMPANY)
-
-              statement
-                  .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
               statement.executeUpdate(String.format("CREATE TABLE `%s`"
-                  + "(`ID` INT PRIMARY KEY NOT NULL, `NAME` TEXT NOT NULL)", tableName));
-
+                  + "(`ID` INT PRIMARY KEY NOT NULL, `NAME` TEXT NOT NULL, AGE INT,"
+                  + "ADDRESS CHAR(50), SALARY REAL)", tableName));
               System.out.println(
                   String.format("Table %s was created successfully", tableName));
-              Thread.sleep(2000);
               PreparedStatement preparedStatement = connection.prepareStatement(
-               String.format("INSERT INTO %s (NAME,id) VALUES (?,?)", tableName));
+                  String.format("INSERT INTO %s (NAME, ID, AGE) VALUES (?, ?, ?)", tableName));
+
               preparedStatement.setString(1, "redhat");
-              preparedStatement.setInt(1, 1);
-              // preparedStatement.executeUpdate();
-
-
+              preparedStatement.setInt(2, 2);
+              preparedStatement.setInt(3, 42);
               preparedStatement.execute();
 
-              System.out.println(
-                  String.format("Inserted data unto Table %s successfully", tableName));
             OrderComponent comp = new OrderComponent();
             
             try(CachedRowSet rowSet1 = comp.ordersByStatus();
@@ -304,8 +294,9 @@ context 'JDBC tests' do
               
               // Print out CachedRowSet
               while (rowSet2.next()) {
-                String name = rowSet2.getString("name");
-                System.out.println("name: " + name);
+                System.out.println("rowid = " + rowSet2.getString("ROWID") + "\\t"
+                    + " name = " + rowSet2.getString("NAME") + "\\t" + "id = "
+                    + rowSet2.getInt("ID"));
               }
               
             }} catch (Exception e) {
@@ -319,7 +310,7 @@ context 'JDBC tests' do
 
           public CachedRowSet ordersByStatus() throws Exception {
 
-            String queryString = "SELECT * FROM " + tableName;
+            String queryString = "SELECT ROWID, NAME, ID FROM " + tableName;
             
             RowSetFactory rowSetProvider = RowSetProvider.newFactory();
             CachedRowSet rowSet = rowSetProvider.createCachedRowSet();
