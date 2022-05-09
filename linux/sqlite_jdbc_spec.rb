@@ -13,15 +13,14 @@ context 'JDBC tests' do
   # https://docs.oracle.com/javase/tutorial/jdbc/basics/sqlrowid.html
   # https://www.sqlitetutorial.net/sqlite-java/sqlite-jdbc-driver/
   # https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-  # https://github.com/xerial/sqlite-jdbc/releases/tag/3.30.1
+  # https://github.com/xerial/sqlite-jdbc/releases/tag/3.28.0
   # https://www.sqlite.org/download.html
-  # https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/
+  # https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.28.0/
   context 'SQLite' do
     context 'Basic test' do
       jdbc_prefix = 'sqlite'
       jdbc_path = '/usr/share/java'
-      version = '3.8.7'
-      version = '3.30.1'
+      version = '3.28.0'
       jars = ["sqlite-jdbc-#{version}.jar"]
       jdbc_driver_class_name = 'org.sqlite.JDBC'
       path_separator = ':'
@@ -67,16 +66,13 @@ context 'JDBC tests' do
 
               statement
                   .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
-              statement.executeUpdate(String.format("CREATE TABLE %s"
-                  + "(ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL, AGE INT,"
+              statement.executeUpdate(String.format("CREATE TABLE `%s`"
+                  + "(`ID` INT PRIMARY KEY NOT NULL, `NAME` TEXT NOT NULL, AGE INT,"
                   + "ADDRESS CHAR(50), SALARY REAL)", tableName));
               System.out.println(
                   String.format("Table %s was created successfully", tableName));
-              statement.executeUpdate(
-                  "INSERT INTO COMPANY (NAME, ID, AGE, SALARY) VALUES ('microsoft', 1, 1, 0.0)");
-                  // TODO: no such column: microsoft error from using shell to write the source
               PreparedStatement preparedStatement = connection.prepareStatement(
-                  "INSERT INTO COMPANY (NAME, ID, AGE) VALUES (?, ?, ?)");
+                  String.format("INSERT INTO %s (NAME, ID, AGE) VALUES (?, ?, ?)", tableName));
 
               preparedStatement.setString(1, "redhat");
               preparedStatement.setInt(2, 2);
@@ -89,7 +85,7 @@ context 'JDBC tests' do
                     + " name = " + resultSet.getString("NAME") + "\\t" + "id = "
                     + resultSet.getInt("ID"));
               }
-
+              resultSet.close();
             } catch (SQLException e) {
               System.err.println(e.getMessage());
             } finally {
@@ -117,12 +113,13 @@ context 'JDBC tests' do
           its(:stderr) { should_not contain /exception|failure/i }
       end
     end
-    context 'Blob test' do
+    # temporarily disabled : expects the chrome profile ofspecific user
+    context 'Blob test' , :if => false do
+
       jdbc_prefix = 'sqlite'
       jdbc_path = '/usr/share/java'
       jdbc_driver_class_name = 'org.sqlite.JDBC'
-      version = '3.8.7'
-      version = '3.30.1'
+      version = '3.28.0'
       jars = ["sqlite-jdbc-#{version}.jar"]
       path_separator = ':'
       jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
@@ -174,6 +171,7 @@ context 'JDBC tests' do
 
               System.out.println("Writing BLOB to file " + file.getAbsolutePath());
               InputStream input = resultSet.getBinaryStream("password_value");
+              resultSet.close();
               byte[] readBuffer = new byte[1024];
               byte[] keepBufer = null;
 
@@ -188,7 +186,7 @@ context 'JDBC tests' do
                 System.out.println("Read " +  readCnt + " bytes");
               }
               } catch(IOException e) {
-                System.out.println("Excption " + e.toString());
+                System.out.println("Exception " + e.toString());
               }
 
               byte[] blob = resultSet.getBytes("password_value");
@@ -215,5 +213,142 @@ context 'JDBC tests' do
           its(:stderr) { should_not contain 'java.sql.SQLFeatureNotSupportedException' }
       end
     end
+    context 'CachedRowSet - Java JDBC' do
+    # http://www.java2s.com/example/java/jdbc/retrieving-data-using-a-cachedrowset.html
+    #
+      jdbc_prefix = 'sqlite'
+      jdbc_path = '/usr/share/java'
+      jdbc_driver_class_name = 'org.sqlite.JDBC'
+      version = '3.28.0'
+      jars = ["sqlite-jdbc-#{version}.jar"]
+      path_separator = ':'
+      jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
+      class_name = 'SQLiteJDBCCachedRowSetTest'
+      table_name = 'COMPANY'
+      source_file = "#{class_name}.java"
+
+      source = <<-EOF
+
+        import java.sql.Connection;
+        import java.sql.DriverManager;
+        import java.sql.PreparedStatement;
+        import java.sql.ResultSet;
+        import java.sql.SQLException;
+        import java.sql.SQLFeatureNotSupportedException;
+        import java.sql.Statement;
+        import java.sql.Blob;
+        import javax.sql.rowset.RowSetFactory;
+        import javax.sql.rowset.RowSetProvider;
+        import javax.sql.rowset.CachedRowSet;
+        import java.io.FileInputStream;
+        import java.io.FileOutputStream;
+        import java.io.ObjectInputStream;
+        import java.io.ObjectOutputStream;
+
+        import javax.sql.rowset.CachedRowSet;
+
+        public class #{class_name} {
+            final static String tableName = "#{table_name}";
+          public static void main(String[] args) throws ClassNotFoundException, SQLException,InterruptedException {
+
+            final String className = "#{jdbc_driver_class_name}";
+
+            Class.forName(className);
+
+            // in memory
+            String url = "jdbc:sqlite::memory:";
+
+              Connection connection = DriverManager.getConnection(url);
+              Statement statement = connection.createStatement();
+              statement.setQueryTimeout(30);
+
+              statement
+                  .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
+              statement.executeUpdate(String.format("CREATE TABLE `%s` (`ID` INTEGER PRIMARY KEY AUTOINCREMENT, `NAME` TEXT NOT NULL)", tableName));
+              // NOTE:
+              // Exception org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: COMPANY)
+
+              statement
+                  .executeUpdate(String.format("DROP TABLE IF EXISTS %s", tableName));
+              statement.executeUpdate(String.format("CREATE TABLE `%s`"
+                  + "(`ID` INT PRIMARY KEY NOT NULL, `NAME` TEXT NOT NULL)", tableName));
+
+              System.out.println(
+                  String.format("Table %s was created successfully", tableName));
+              Thread.sleep(2000);
+              PreparedStatement preparedStatement = connection.prepareStatement(
+               String.format("INSERT INTO %s (NAME,id) VALUES (?,?)", tableName));
+              preparedStatement.setString(1, "redhat");
+              preparedStatement.setInt(1, 1);
+              // preparedStatement.executeUpdate();
+
+
+              preparedStatement.execute();
+
+              System.out.println(
+                  String.format("Inserted data unto Table %s successfully", tableName));
+            OrderComponent comp = new OrderComponent();
+            
+            try(CachedRowSet rowSet1 = comp.ordersByStatus();
+            FileOutputStream fout = new FileOutputStream("row_set_serialized.ser");
+            ObjectOutputStream oos = new ObjectOutputStream(fout);){
+            
+            oos.writeObject(rowSet1);
+            fout.close();
+            oos.close();
+            
+            // Read CachedRowSet from file
+            try(FileInputStream fin = new FileInputStream("row_set_serialized.ser");
+              ObjectInputStream ois = new ObjectInputStream(fin);
+              CachedRowSet rowSet2 = (CachedRowSet)ois.readObject();){
+              
+              // Print out CachedRowSet
+              while (rowSet2.next()) {
+                String name = rowSet2.getString("name");
+                System.out.println("name: " + name);
+              }
+              
+            }} catch (Exception e) {
+                System.out.println("Exception " + e.toString());
+
+            }
+          }
+        public static class OrderComponent {
+
+            final String tableName = "#{table_name}";
+
+          public CachedRowSet ordersByStatus() throws Exception {
+
+            String queryString = "SELECT * FROM " + tableName;
+            
+            RowSetFactory rowSetProvider = RowSetProvider.newFactory();
+            CachedRowSet rowSet = rowSetProvider.createCachedRowSet();
+            
+            // in memory
+            String url = "jdbc:sqlite::memory:";
+            rowSet.setUrl(url);
+
+            rowSet.setCommand(queryString);            
+            // rowSet.setString(1, status);            
+            rowSet.execute();
+            return rowSet;
+          }
+        }
+        }
+
+        EOF
+      describe command(<<-EOF
+        1>/dev/null 2>/dev/null cd /tmp
+        echo '#{source}' > '#{source_file}'
+        javac -cp #{jars_cp}#{path_separator}. '#{source_file}'
+        java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      EOF
+      ) do
+          its(:exit_status) { should eq 0 }
+          its(:stderr) { should_not contain 'java.sql.SQLFeatureNotSupportedException' }
+          its(:stdout) { should match /name: redhat/}
+      end
+    end
   end
 end
+
