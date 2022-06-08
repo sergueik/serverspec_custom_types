@@ -35,6 +35,9 @@ END
     # https://www.geeksforgeeks.org/xml-parsing-python/
     # https://docs.python.org/3/library/xml.etree.elementtree.html
     # https://stackoverflow.com/questions/13412496/python-elementtree-module-how-to-ignore-the-namespace-of-xml-files-to-locate-ma
+    # in Python 3.8, one can simply use a wildcard ({*}) for the namespace:
+    # https://stackoverflow.com/questions/62110439/how-to-use-python-xml-findall-to-find-vimagedata-rid-rid7-otitle-1-ren/62117710#62117710
+
     scriptfile = "/tmp/process.py"
     data = <<-EOF
 import xml.etree.ElementTree as ET
@@ -54,7 +57,9 @@ def parseXML(xmlfile):
   # this will print many lines of text, from "/dependency/version" nodes in particular
   for item in root.findall('.//{http://maven.apache.org/POM/4.0.0}version'):
     print(item.text)
-
+  # the following only work with Python 3.8
+  for item in root.findall('.//{*}version'):
+    print(item.text)
 if __name__ == '__main__':
    parseXML('#{datafile}')
 
