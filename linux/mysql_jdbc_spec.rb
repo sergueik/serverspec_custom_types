@@ -16,13 +16,17 @@ context 'JDBC tests' do
   # https://support.rackspace.com/how-to/mysql-resetting-a-lost-mysql-root-password/
   jdbc_prefix = 'mysql'
   jdbc_path = '/usr/share/java'
-  # jar tvf /usr/share/java/mysql-connector-java.jar |  grep Driver.class
-  #  com/mysql/jdbc/Driver.class
-  #  org/gjt/mm/mysql/Driver.class
+  # jar tvf /usr/share/java/mysql-connector-java.jar | grep Driver.class
+  # com/mysql/jdbc/Driver.class
+  # com/mysql/cj/jdbc/Driver.class
 
   # jdbc_driver_class_name = 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
-  jdbc_driver_class_name = 'org.gjt.mm.mysql.Driver'
+  jdbc_driver_class_name = 'com.mysql.cj.jdbc.Driver'
   jars = ['mysql-connector-java.jar'] # installed by yum
+  # on a vanilla Ubuntu system
+  # cp ~sergueik/mysql-connector-java-8.0.28.jar /usr/share/java/
+  # cd /usr/share/java/
+  # ln -fs mysql-connector-java-8.0.28.jar mysql-connector-java.jar
   path_separator = ':'
   jars_cp = jars.collect{|jar| "#{jdbc_path}/#{jar}"}.join(path_separator)
   database_host = 'localhost'
@@ -33,7 +37,7 @@ context 'JDBC tests' do
   username = 'root'
   # Will exercise attempt to connect on JDBC without password:
   # experiencing challenges setting one on Centos / MariaDB
-  password =  ''
+  password = 'password'
 
   context 'Connection check', :if => false do
     class_name = 'MySQLJDBCNoPasswordTest'
@@ -497,6 +501,12 @@ context 'JDBC tests' do
     options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8'
     source_file = "#{class_name}.java"
     # NOTE when a SQL is embedded in the Java code of the test snippet need to write the source file via File class
+    # TODO: With 8.0.28 getting
+
+    # Exception: Parameter number 1 is not an OUT parameter
+    # java.sql.SQLException: Parameter number 1 is not an OUT parameter
+    # in callableStatement.registerOutParameter(1, java.sql.Types.INTEGER);
+
 
     source_data = <<-EOF
       import java.sql.Connection;
