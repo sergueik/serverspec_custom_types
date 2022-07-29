@@ -287,6 +287,163 @@ context 'JDBC tests' do
     end
   end
 
+  context 'Batch Insert' do
+    class_name = 'MySQLJDBCBatchInsertTest'
+    database_name = 'test'
+    options = 'allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&useServerPrepStmts=false&rewriteBatchedStatements=true'
+    source_file = "#{class_name}.java"
+
+    source_data = <<-EOF
+
+      import java.io.File;
+      import java.io.FileWriter;
+      import java.io.IOException;
+      import java.net.URL;
+      import java.nio.file.Files;
+      import java.nio.file.Path;
+      import java.nio.file.Paths;
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+      import java.sql.PreparedStatement;
+      import java.sql.ResultSet;
+      import java.sql.SQLException;
+      import java.sql.Statement;
+      import java.time.Instant;
+      import java.util.ArrayList;
+      import java.util.Arrays;
+      import java.util.HashMap;
+      import java.util.List;
+      import java.util.Map;
+      import java.util.Properties;
+      import java.util.Random;
+      import java.util.stream.Collectors;
+      import java.util.stream.Stream;
+
+      import java.sql.Connection;
+      import java.sql.DriverManager;
+      import java.sql.ResultSet;
+      import java.sql.Statement;
+      import java.sql.PreparedStatement;
+      import java.sql.CallableStatement;
+
+      public class #{class_name} {
+	private static final Random randomId = new Random();
+            private static  List<Map<String, String>> metricsData = new ArrayList<>();
+private static String[] metricNames = { "memory", "cpu", "disk",
+			"load_average" };
+
+      private static Map<String, String> data = new HashMap<>();
+        public static void main(String[] argv) throws Exception {
+          String className = "#{jdbc_driver_class_name}";
+          try {
+            Class driverObject = Class.forName(className);
+            System.out.println("driverObject=" + driverObject);
+
+            final String serverName = "#{database_host}";
+            final String databaseName = "#{database_name}";
+            final String options = "#{options}";
+            // Exception: Communications link failure
+            final String url = "jdbc:#{jdbc_prefix}://" + serverName + "/" +
+            databaseName + "?" + options;
+            final String username = "#{username}";
+            final String password = "#{password}";
+            Connection connection = DriverManager.getConnection(url, username, password);
+
+            if (connection != null) {
+              System.out.println("Connected to product: " + connection.getMetaData().getDatabaseProductName());
+              System.out.println("Connected to catalog: " + connection.getCatalog());
+
+
+              
+
+
+            String query = "INSERT INTO `metric_table` " + "( " + "`id`" + "," + "`hostname`" + ","
+									+ "`timestamp`" + "," + "`memory`" + "," + "`cpu`" + ","
+									+ "`disk`" + "," + "`load_average`" + ")"
+									+ " VALUES (?, ?, FROM_UNIXTIME(?), ?, ?, ?, ?);";
+
+                  
+              // connection.setAutoCommit(false);
+
+              PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+      			for (int cnt = 0 ; cnt != 3; cnt++) {
+    for (String column: metricNames) { 
+	data.put(column,"14.12");
+    }  
+data.put("hostname", String.format("hostname%02d" , cnt )) ;
+data.put("timestamp","1659053173");
+      metricsData.add(data);
+		}
+// TODO: Error in executing batch statement: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(1463218191485237894, 'hostname02', FROM_UNIXTIME(1659053173), 14.12, 14.12, ...' at line 1
+      			for (int cnt = 0 ; cnt != 100; cnt++) {
+			metricsData.stream().forEach(row -> {
+				String hostname = row.get("hostname");
+				String timestamp = row.get("timestamp");
+				String memory = row.get("memory");
+				String cpu = row.get("cpu");
+				String disk = row.get("disk");
+				String load_average = row.get("load_average");
+				System.out.println(
+					"about to insert data row: " + Arrays.asList(new String[] {
+					hostname, timestamp, memory, cpu, disk, load_average }));
+
+				long id = randomId.nextLong();
+				try {
+					preparedStatement.setLong(1, id);
+					preparedStatement.setString(2, hostname);
+					preparedStatement.setLong(3, Long.parseLong(timestamp));
+					preparedStatement.setFloat(4, Float.parseFloat(memory));
+					preparedStatement.setFloat(5, Float.parseFloat(cpu));
+					preparedStatement.setFloat(6, Float.parseFloat(disk));
+					preparedStatement.setFloat(7, Float.parseFloat(load_average));
+					preparedStatement.addBatch();
+				} catch (SQLException e) {
+					// Values not bound to statement
+					System.err
+							.println("Error in preparing batch statement: " + e.getMessage());
+				}
+			});
+		}
+      try {
+			preparedStatement.executeBatch();
+		} catch (SQLException e) {
+			System.err
+					.println("Error in executing batch statement: " + e.getMessage());
+		}
+
+              preparedStatement.close();
+              connection.close();
+            } else {
+              System.out.println("Failed to connect");
+            }
+          } catch (Exception e) {
+            // java.sql.SQLNonTransientConnectionException:
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      }
+    EOF
+    before(:each) do
+      $stderr.puts "Writing #{source_file}"
+      Dir.chdir '/tmp'
+      file = File.open(source_file, 'w')
+      file.puts source_data.strip
+      file.close
+    end
+    describe command(<<-EOF
+      1>/dev/null 2>/dev/null pushd /tmp
+      javac '#{source_file}'
+      java -cp #{jars_cp}#{path_separator}. '#{class_name}'
+      1>/dev/null 2>/dev/null popd
+    EOF
+    ) do
+      its(:exit_status) { should eq 0 }
+      its(:stdout) { should contain 'about to insert data row: [hostname, 1659053173, 14.12, 14.12, 14.12, 14.12]'}
+      its(:stderr) { should be_empty }
+    end
+  end
 
   context 'Count Queries' do
     class_name = 'MySQLJDBCCountQueryTest'
@@ -575,6 +732,7 @@ context 'JDBC tests' do
     end
   end
 end
+
 
 
 
