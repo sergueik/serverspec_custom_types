@@ -50,16 +50,56 @@ context 'Standard' do
         its(:stdout) { should contain key }
       end
     end	
+    scheme = 'org.gnome.Vino'
+    describe command "gsettings list-keys #{scheme}" do
+      %w|
+        notify-on-connect
+        alternative-port
+        disable-background
+        use-alternative-port
+        icon-visibility
+        use-upnp
+        view-only
+        prompt-enabled
+        disable-xdamage
+        authentication-methods
+        network-interface
+        require-encryption
+        mailto
+        lock-screen-on-disconnect
+        vnc-password
+      |.each do |key|
+        its(:stdout) { should contain key }
+      end
+    end
+    # NOTE: omitted sudo
+    describe command( <<-EOF
+      echo $(gsettings get org.gnome.Vino vnc-password ) | tr -d "'" | base64 -d - > /dev/null
+    EOF
+    ) do
+        its(:exit_status) { should eq 0 }
+    end
+
     # vino-preference needs a display to list configuration details
+    # see also
+    # https://www.xmodulo.com/enable-configure-desktop-sharing-linux-mint-cinnamon-desktop.html
+    # https://hex.ro/wp/blog/fedora-20-remote-desktop-with-tightvnc-viewer-from-windows-7/
+    # https://wpcademy.com/how-to-install-vnc-server-on-ubuntu-18-04-lts/
+    # https://stackoverflow.com/questions/18878117/using-vagrant-to-run-virtual-machines-with-desktop-environment
+    # on bionic 18.04 comes unconfigured and observed when connecting:
+    # error in  tightvnc viewer: no security types supported.
+    # server sent security types but we do not support any of them
     {
-      'vnc-password' => '[a-z0-9]+=*$', #  $(echo -n "#{password}"|base64)
+      'vnc-password' => '[a-zA-Z0-9]+=*$', #  $(echo -n "#{password}"|base64)
       'network-interface' => '',
+      'require-encryption' => false,
       'enabled' => true,
+      'authentication-methods' => "\\['vnc'\\]",
       'notify-on-connect' => true,
       'prompt-enabled' => true, # can be configured to false
     }.each do |key,value|
       describe command "gsettings get org.gnome.Vino #{key}" do
-        its(:sterr) { should_not contain "No such schema 'org.gnome.Vino'" }
+        its(:stderr) { should_not contain "No such schema 'org.gnome.Vino'" }
         if value.eql? ''
           its(:stdout) { should contain '' }
         else
