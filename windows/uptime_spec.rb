@@ -50,12 +50,28 @@ context 'Uptime' do
   # origin: https://github.com/singlestone/Windows_Scripts_Examples/blob/master/WindowsServerSpec_Example/Script_Modules/Eventlog_Functions.psm1
   # TODO: https://rubygems.org/gems/win32-eventlog/versions/0.6.5, https://github.com/chef/win32-eventlog
   context 'Eventlog' do
+    # gets relevant eventlog message
+    # origin: https://richardspowershellblog.wordpress.com/2017/03/06/windows-10-uptime/
+    # NOTE: cannot select by EventId:
+    # Get-EventLog : A parameter cannot be found that matches parameter name 'EventID'.
 
+    describe command(<<-EOF
+      get-EventLog -LogName system -Source 'eventlog' -After '11/20/2022' -InstanceId 2147489661 |
+      select-object -first 1 |
+      select-object -property TimeWritten,Message,EventId |
+      format-list
+    EOF
+    ) do
+      its(:stdout) { should match /The system uptime is/io }
+      its(:stdout) { should match /TimeWritten\s+:/io }
+    end
+    # computes the server uptime hours
     describe command(<<-EOF
 
       $serverName = '.'
-      # computes the server uptime hours
-      $lastBoot = Get-EventLog -ComputerName $serverName -newest 1  -LogName System -Source 'EventLog' -InstanceID 2147489653
+
+      #
+      $lastBoot = Get-EventLog -ComputerName $serverName -newest 1 -LogName System -Source 'EventLog' -InstanceID 2147489653
       $upTime = new-timespan -Start (get-date $lastBoot.TimeGenerated) -End (get-date)
       # message posted when 'the Event Log service is restarted.'
       # write-output ('Uptime: {0} hours' -f ($upTime.TotalHours).tostring('#.#')  )
