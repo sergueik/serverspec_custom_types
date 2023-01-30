@@ -21,13 +21,17 @@ end
 # rundll32.exe Shell32.dll,Control_RunDLL input.dll,,{C07337D3-DB2C-4D0B-9A93-B722A6C106E2}
 # see also: https://ss64.com/nt/rundll32.html 
 # NOTE: on localized versions of Windows the "Switch Input Language" group may remain unassigned yet the "Switch Keyboard Layout" may be present and its default value on vanilla system is unknown. 
-# On EN Windows with extra languages installed, need to set the "Language Hotkey" to 1/3 to disable/enable
+# On EN Windows with extra languages installed, need to set the "Language Hotkey" to 1/3 to enable/disable
 
 # On non-EN Windows with EN added as keyboard layout, need to set the "Language Hotkey" to 3 then set the "Layout Hotkey" to 3/1 to disable/enable
 
+# no logoff required after enable/disable programmatically
+# see also: https://superuser.com/questions/1450202/disable-windows-10-language-popup/1763358#1763358
+# about Windows 10 specific annoying lannguage switch notificstion
 # new-itemproperty -path "HKCU:\Keyboard Layout\Toggle" -name 'Layout Hotkey' -Value 1
 # set-itemproperty -path "HKCU:\Keyboard Layout\Toggle" -name 'Layout Hotkey' -Value 1
 # set-itemproperty -path "HKCU:\Keyboard Layout\Toggle" -name 'Layout Hotkey' -Value 3
+
 context 'Language' do
   describe command(<<-EOF
     $data = @{
@@ -52,8 +56,12 @@ context 'Language' do
     write-output $data | convertto-json
     EOF
   ) do
-    its(:stdout) { should match Regexp.new(/"Language Hotkey":\s+"[1-4]"/ ) }
-    its(:stdout) { should match Regexp.new(/"Hotkey":\s+"[1-4]"/ ) }
-    its(:stdout) { should match Regexp.new(/"Layout Hotkey":\s+"[1-4]"/ ) }
+    [
+      'Language Hotkey',
+      'Layout Hotkey',
+      'Hotkey',
+    ].each do |key|
+      its(:stdout) { should match Regexp.new(/"#{key}":\s+"[1-4]"/ ) }
+    end
   end
 end
