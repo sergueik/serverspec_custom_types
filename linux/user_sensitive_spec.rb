@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://www.ruby-forum.com/t/get-current-user-logged-in-to-local-computer/136885/2
 

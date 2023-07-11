@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://docs.appdynamics.com/display/PRO42/Install+the+Java+Agent
 context 'AppDynamics signature spec' do

@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'Encoded Command' do
   # http://blogs.msdn.com/b/timid/archive/2014/03/26/powershell-encodedcommand-and-round-trips.aspx
   #

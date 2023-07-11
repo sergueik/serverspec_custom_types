@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'fileutils'
 
 # examine configuration file, e.g. desktop application launcher

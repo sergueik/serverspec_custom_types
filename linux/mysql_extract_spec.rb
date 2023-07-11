@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Mysql' do
   # https://stackoverflow.com/questions/16711598/get-the-sql-query-result-without-the-table-format

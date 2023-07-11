@@ -1,4 +1,5 @@
 require 'pp'
+# Copyright (c) Serguei Kouzmine
 
 header_line = '|A |  B |    C|D_E|'
 

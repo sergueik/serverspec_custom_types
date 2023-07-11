@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # Xenial based 2 node consul cluster https://github.com/chavo1/consul-lab
 context 'consul checks' do

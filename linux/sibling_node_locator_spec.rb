@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Relative XPath' do
     xmlfile = '/tmp/context.xml'

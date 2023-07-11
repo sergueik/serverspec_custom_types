@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Domain Membership' do
   domain = '<DOMAIN NAME>'

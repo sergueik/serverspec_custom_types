@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 # http://www.thewindowsclub.com/assign-default-credential-provider-windows-10
 # http://social.technet.microsoft.com/wiki/contents/articles/11844.find-out-if-a-smart-card-was-used-for-logon.aspx
 # https://blogs.technet.microsoft.com/askpfeplat/2013/08/04/how-to-determine-if-smart-card-authentication-provider-was-used/

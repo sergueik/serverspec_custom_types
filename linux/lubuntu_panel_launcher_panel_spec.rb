@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # NOTE: window manager-specific
 # origin: http://www.cyberforum.ru/shell/thread2492044.html

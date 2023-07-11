@@ -1,4 +1,5 @@
 # Custom type to perform inspection of Puppet lastrun reports
+# Copyright (c) Serguei Kouzmine
 $LOAD_PATH.insert(0, '/opt/puppetlabs/puppet/lib/ruby/vendor_ruby/')
 begin
   require 'json_pure' # support no-rubydev gems

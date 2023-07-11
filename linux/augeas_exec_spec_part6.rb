@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'erb'
 
 # https://www.stuartellis.name/articles/erb/

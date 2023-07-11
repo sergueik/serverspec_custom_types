@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://www.sqlitetutorial.net/sqlite-import-csv/
 # (geany:19574): Geany-WARNING **: 13:14:19.096: Geany tried to access the Unix Domain socket of another instance running as another user.

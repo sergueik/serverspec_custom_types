@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'IP Address' do
   # NOTE:` is the Powershell escape character, required here for parenthesis

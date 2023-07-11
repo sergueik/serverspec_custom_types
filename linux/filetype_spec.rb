@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on https://www.cyberforum.ru/shell/thread3021773.html#post16457085
 # NOTE: not matching the semantics of https://serverspec.org/resource_types.html#file

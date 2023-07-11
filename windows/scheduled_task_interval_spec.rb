@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on: http://www.cyberforum.ru/powershell/thread2516509.html
 context 'Scheduled Task Intervals' do

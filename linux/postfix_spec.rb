@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # origin: https://github.com/Pravkhande/serverspec/blob/master/Security/spec/CIS_audit/centos7_spec.rb
 context 'Postfix Local-Only Modtest' do

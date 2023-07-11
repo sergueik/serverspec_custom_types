@@ -1,4 +1,5 @@
   context 'Configuration' do
+# Copyright (c) Serguei Kouzmine
     prefix = '/opt/splunkforwarder'
     describe command(<<-EOF
 

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require_relative '../type/port_retry'
 describe port(22) do
   # NOTE: regular expectation starts to fail after inclusion of the custom type

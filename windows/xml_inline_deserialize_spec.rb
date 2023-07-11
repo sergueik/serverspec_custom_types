@@ -1,4 +1,5 @@
 # origin: http://www.cyberforum.ru/powershell/thread2399334.html
+# Copyright (c) Serguei Kouzmine
 # a lot of alternatives, varying cryptic
 # use
 # <?xml version="1.0" encoding="utf-8"?>

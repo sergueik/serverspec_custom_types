@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'verify set of patch directories' do
   # some applications notably the wso2 store patches in their staging directory

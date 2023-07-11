@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Desktop Window Size' do
   context 'Windows Forms' do

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # examine apache virtual host and confirm that it has specific rues and they are not commented out
 context 'Apache configuration' do

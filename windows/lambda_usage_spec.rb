@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Using Lambda Ruby syntax to compose serverspec' do
   # Introduced in Ruby 2.3, the squiggly heredoc removes extra indentation

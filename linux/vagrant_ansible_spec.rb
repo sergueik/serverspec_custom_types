@@ -1,4 +1,5 @@
 require 'spec_helper'
+"# Copyright (c) Serguei Kouzmine"
 
 # https://www.youtube.com/watch?v=7QEp1UbP4GA
 # see also: https://habr.com/ru/post/195048/

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # origin: http://activemq.apache.org/hello-world.html
 # see also: https://github.com/fanlychie/activemq-samples/blob/master/activemq-quickstart/src/main/java/org/fanlychie/mq/Consumer.java

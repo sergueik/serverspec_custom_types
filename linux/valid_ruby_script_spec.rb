@@ -1,4 +1,5 @@
 require 'spec_helper'
+"# Copyright (c) Serguei Kouzmine"
 require 'fileutils'
 
 # Puppet-generated cron jobs may run Ruby scripts,

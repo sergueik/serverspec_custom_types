@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 describe 'Puppet lastrun report' do
   changed_resources_count = 7

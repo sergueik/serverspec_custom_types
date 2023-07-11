@@ -1,4 +1,5 @@
 # https://qna.habr.com/q/789375
+# Copyright (c) Serguei Kouzmine
 # https://stackoverflow.com/questions/4075753/how-to-delete-a-folder-that-name-ended-with-a-dot
 #  the recipe offered there does not work on Windows 8.1
 #  build a full UNC-style path and put an extra slash ate the end - 

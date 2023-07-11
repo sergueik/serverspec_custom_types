@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'using ss to display socker information'  do
   # NOTE: -p requires sudo

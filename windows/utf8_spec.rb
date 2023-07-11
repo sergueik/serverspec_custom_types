@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # http://www.utf8-chartable.de/unicode-utf8-table.pl?start=1024
 # http://utf8checker.codeplex.com

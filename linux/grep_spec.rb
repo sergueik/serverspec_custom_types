@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'fileutils'
 
 # based on: https://www.cyberforum.ru/shell/thread2600637.html

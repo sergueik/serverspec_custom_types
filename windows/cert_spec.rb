@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'Certificate' do
   context 'Certificate Thumbprint Check' do
     cert_path = '\CurrentUser\TrustedPublisher'

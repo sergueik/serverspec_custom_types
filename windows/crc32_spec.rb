@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'crc32 check' do
   filepath = 'C:/Windows/system32/WindowsPowerShell/v1.0/powershell.exe'

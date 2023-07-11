@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # origin: http://poshcode.org/6459
 context 'Mac Addresses' do

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Using Lambda Ruby syntax to compose serverspec' do
   # squiggly heredoc removes extra indentation

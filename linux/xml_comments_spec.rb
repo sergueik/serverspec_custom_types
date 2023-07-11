@@ -1,4 +1,5 @@
 require 'spec_helper'
+"# Copyright (c) Serguei Kouzmine"
 require 'rexml/document'
 begin
   # http://www.w3big.com/ruby/ruby-xml-xslt-xpath.html

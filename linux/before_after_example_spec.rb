@@ -1,4 +1,5 @@
 # encoding: utf-8
+# Copyright (c) Serguei Kouzmine
 
 require 'spec_helper'
 require 'fileutils'

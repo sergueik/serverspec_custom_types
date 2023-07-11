@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # NOTE: the rspecvariables are not explosed 
 # the following few examples print 'Skipped some test:' regardless of the value of test_xxx variable

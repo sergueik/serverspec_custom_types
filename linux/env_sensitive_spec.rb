@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # Illustration of decorating the rspec with environment checks in various ways
 

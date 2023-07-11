@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # validate that the fixes made by profile to Splunk configuration files are observed
 context 'Spulnk Configuration Files' do

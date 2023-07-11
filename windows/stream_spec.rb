@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on: https://www.cyberforum.ru/powershell/thread2632563.html
 

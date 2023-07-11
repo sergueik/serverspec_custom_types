@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 # quick command to build expectation of a certain TCP port be listen by a specific application
 context 'App listening remote port' do
   remote_port = '8090'

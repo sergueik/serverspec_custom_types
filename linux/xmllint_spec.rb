@@ -1,4 +1,5 @@
 require 'spec_helper'
+"# Copyright (c) Serguei Kouzmine"
 require 'rexml/document'
 require 'fileutils'
 include REXML

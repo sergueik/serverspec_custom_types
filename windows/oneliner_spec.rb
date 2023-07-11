@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 $DEBUG = false
 # based on http://forum.oszone.net/thread-340860.html
 context 'Partially debugged Powershell one-liner' do

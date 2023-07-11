@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on: https://github.com/singlestone/Vagrant_DSC_CHEF_Example/blob/master/KMXSANDBOX/Scripts/Nic_Config.ps1
 context 'WMI Network configuration' do

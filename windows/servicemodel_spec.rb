@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://www.google.com/search?q=what+is+WCF+service+model&ie=utf-8&oe=utf-8
 

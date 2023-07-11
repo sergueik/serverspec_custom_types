@@ -1,4 +1,5 @@
 
+# Copyright (c) Serguei Kouzmine
 
 if File.exists?( 'spec/windows_spec_helper.rb')
   require_relative '../windows_spec_helper'

@@ -1,4 +1,5 @@
 context 'Apache vhosts' do
+"# Copyright (c) Serguei Kouzmine"
   domain_suffix = '.puppet.localdomain'
   node_role = 'consul'
   filecount = 0

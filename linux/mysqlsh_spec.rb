@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on https://dev.mysql.com/doc/mysql-shell/8.0/en/
 context 'MYSQL shell' do

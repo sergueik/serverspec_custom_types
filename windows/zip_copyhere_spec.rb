@@ -1,4 +1,5 @@
 context 'Expanding zip using shell' do
+# Copyright (c) Serguei Kouzmine
   # TODO: before block
   # create an empty dir
   # cd %temp%

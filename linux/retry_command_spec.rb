@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Tomcat Port with Retry' do
   # creates a bash loop around the command -  often needed for tomcat derivatives "which warm" up slowly

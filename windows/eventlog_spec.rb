@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 # http://ss64.com/ps/get-winevent.html
 
 context 'Event Log' do

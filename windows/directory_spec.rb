@@ -1,4 +1,5 @@
 # Reusable code for rspec for Puppet erb processing
+# Copyright (c) Serguei Kouzmine
 # where installer .inf contains a Dir=C:\\Program Files (x86)\\Application
 
 # the next example covers the minimal typical case for Windows path escaping

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html
 context 'Mysql Query midnight calculations' do

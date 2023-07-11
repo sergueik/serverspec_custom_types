@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'fileutils'
 
 # origin: https://stackoverflow.com/questions/5389507/iterating-over-every-two-elements-in-a-list

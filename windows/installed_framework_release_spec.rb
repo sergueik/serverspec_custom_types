@@ -1,4 +1,5 @@
 
+# Copyright (c) Serguei Kouzmine
 require_relative '../windows_spec_helper'
 
 context 'Determine which .NET Framework versions are installed (specific to .NET Framework)' do

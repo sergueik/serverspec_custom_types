@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 $DEBUG = true
 $CLEAN = (ENV.fetch('CLEAN', false) =~ (/^(true|t|yes|y|1)$/i))

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Bash tests for unless' do
   # collecting exit code for subsequent filtering ignorable nonzero exit codes like e.g. 130 for ping

@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 require_relative '../type/command'
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_data_sections?view=powershell-7
 # https://docs.microsoft.com/en-us/previous-versions/dd347681(v=technet.10)

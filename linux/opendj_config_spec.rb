@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Opendj config' do
   # opendj dsconfig command returns a long list of configuration details

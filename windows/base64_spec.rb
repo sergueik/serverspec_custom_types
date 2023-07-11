@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Base64 data' do
   temp_path = 'C:\windows\temp'

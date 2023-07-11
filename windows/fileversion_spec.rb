@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'File version' do # example of handling the convertto_json format
   # based on:  http://forum.oszone.net/thread-336138.html (* russian)

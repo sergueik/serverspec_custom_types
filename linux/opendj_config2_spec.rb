@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Advanced opendj config' do
   # This serverspec exercises one-liner commands used for Puppet to deal with opendj application configuration

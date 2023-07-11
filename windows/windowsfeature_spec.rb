@@ -1,4 +1,5 @@
 require_relative  '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
   # This server spec is intended to run in Windows Server 2012 environment
   # to confirm that the 'Windows Search Service' was installed

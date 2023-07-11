@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://en.wikipedia.org/wiki/Year_2038_problem
 context 'linux end date in Splunk license file' do

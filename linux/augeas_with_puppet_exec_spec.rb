@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'Augeas Resource Execution' do
   systemd_home = '/usr/lib/systemd/system'
   unit_name = 'mysqld.service'

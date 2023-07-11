@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Command Line Arguments of Windows Process' do
   # NOTE: error in http://serverspec.org/resource_types.html#process

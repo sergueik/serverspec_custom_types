@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'win32/security'
 
 # based on https://windowsnotes.ru/cmd/kak-uznat-sid-polzovatelya/

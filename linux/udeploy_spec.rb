@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'udeploy' do
   # udeploy or buildforge agent are provisioned by Puppet but later may

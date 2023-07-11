@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 # require docker'
 # based on https://github.com/apolloclark/packer-elk-docker/blob/master/tomcat/spec/Dockerfile_spec.rb
 # uses RSpec 3.x syntax

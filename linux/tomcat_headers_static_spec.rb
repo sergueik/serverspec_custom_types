@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 
 # vanilla tomcat application comes out of the box with static welcome pages in $CATALINA_HOME/webapps/ROOT and is testable through

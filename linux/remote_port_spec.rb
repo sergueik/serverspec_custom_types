@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # test that application (e.g. AppDynamics jar) listens to a known tcp port of its server
   context 'Remote TCP port check' do

@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'mysite' do
   describe iis_app_pool('my_application_pool') do
     it{ should exist }

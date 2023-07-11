@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Sockets' do
   # https://wiki.archlinux.org/index.php/Systemd/User

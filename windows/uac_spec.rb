@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'UAC' do
   # based on: https://github.com/SHIFT-ware/shift_ware/blob/master/Serverspec/spec/2-0001_Base/ID/2-0001-013_Uac_spec.rb

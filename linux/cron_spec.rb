@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 cronjob_user = 'cronjob_user'
 port = '1873'

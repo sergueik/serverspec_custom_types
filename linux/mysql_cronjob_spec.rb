@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # The below represents a set of expecttions on mysql scheduled command
 # which is typically provisioned into the node by Puppet, Chef and the like in a

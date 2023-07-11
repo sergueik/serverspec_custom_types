@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # A verbose alternative to
 # https://blogs.technet.microsoft.com/heyscriptingguy/2015/02/27/get-process-owner-and-other-info-with-wmi-and-powershell/

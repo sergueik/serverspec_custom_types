@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Escaping backticks and special varialbles' do
   describe command ("upower -i $(upower -e | grep -i battery | head -1)| grep -e '[ a-z-]*: *[^ ][^ ]*.*$'") do

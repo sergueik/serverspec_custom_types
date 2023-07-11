@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'ACLs' do
   dir = 'c:\ProgramData\Microsoft\Crypto\RSA\MachineKeys'
   context 'Command' do

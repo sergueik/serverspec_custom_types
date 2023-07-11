@@ -1,4 +1,5 @@
 context 'Execute embedded Ruby from Puppet Agent' do
+# Copyright (c) Serguei Kouzmine
   context 'With LOAD_PATH' do
     lines = [
       'answer: 42',

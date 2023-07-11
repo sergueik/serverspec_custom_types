@@ -1,4 +1,5 @@
 require_relative '../spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # Tested after Puppet run on Centos 6.5 x86 box / Puppet 3.2.3, CPAN modules install,
 # which was a failure

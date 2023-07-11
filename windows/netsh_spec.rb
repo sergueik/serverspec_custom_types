@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'Inspecting netsh command' do
   describe command (<<-EOF
     $o = netsh.exe interface show interface | select-string -pattern '(enabled|disabled)'|convertfrom-string

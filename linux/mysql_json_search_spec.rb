@@ -1,4 +1,5 @@
 # https://database.guide/json_search-find-the-path-to-a-string-in-a-json-document-in-mysql/
+# Copyright (c) Serguei Kouzmine
 # https://www.baeldung.com/java-in-memory-databases
 
 # NOTE: need MySQL 8.x 

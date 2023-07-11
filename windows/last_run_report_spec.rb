@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # This example inspects the Puppet Last Run report on the instance
 context 'Confirm Reboot During Pupppet Run' do

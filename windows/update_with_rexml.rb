@@ -1,4 +1,5 @@
 
+# Copyright (c) Serguei Kouzmine
 require 'rexml/document'
 require 'pp'
 include REXML

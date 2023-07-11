@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # NOTE: will only work on Windows 8.1, Windows 10 and later - will fail on Windows 7
 # see also: https://qna.habr.com/q/1177088

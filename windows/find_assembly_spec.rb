@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 # see also: https://github.com/gregzakh/alt-p
 s# http://referencesource.microsoft.com/#mscorlib/microsoft/win32/fusionwrap.cs,0c272b085a297194,references
 

@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 # origin: http://poshcode.org/6517
 context 'Domain user credentials' do
   username = ''

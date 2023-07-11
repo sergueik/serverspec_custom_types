@@ -1,4 +1,5 @@
 # http://www.utf8-chartable.de/unicode-utf8-table.pl?start=1024
+# Copyright (c) Serguei Kouzmine
 utf8string = ''
 sample = []
 (1040..1071).each do |charcode|

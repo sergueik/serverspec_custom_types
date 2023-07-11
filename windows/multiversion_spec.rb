@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Multiple Product Versions Acceptable' do
   package_name = 'Java 8 Update 101'

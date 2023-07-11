@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 # origin: https://github.com/joyent/lx-brand-image-tests/blob/master/spec/ubuntu-certified/dtrace_spec.rb
 
 # Test DTrace commmands

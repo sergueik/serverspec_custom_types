@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'systemd path configuration' do
   # see also: https://www.putorius.net/systemd-path-units.html

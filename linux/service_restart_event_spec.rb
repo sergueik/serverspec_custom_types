@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # Verify of Puppet was notifying / restarting the service after the configuration file change was made.
 # This is possible by computing and comparing the age of config file with the age of the process that runs the known jar of the service

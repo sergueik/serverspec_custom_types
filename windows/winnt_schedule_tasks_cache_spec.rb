@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Registry' do
   task = '{8A2CE4D0-352E-43FE-8FB1-05140580EA96}'

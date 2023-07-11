@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Inspecting netstat.exe command' do
   # The command below is the equivalent of a linux shell command

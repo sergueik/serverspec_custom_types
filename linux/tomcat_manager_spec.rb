@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'base64'
 
 # vanilla tomcat application comes out of the box with manager in $CATALINA_HOME/webapps/manager

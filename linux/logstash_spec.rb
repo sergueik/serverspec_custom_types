@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require_relative '../type/command'
 context 'LogStash processing' do
   conf = <<-EOF

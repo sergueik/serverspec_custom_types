@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'fileutils'
 
 # ~/.gitconfig autocrlf = false switch often cause provision errors from \r in the file resources

@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # http://stackoverflow.com/questions/29368414/need-script-to-find-server-activation-status
 # http://blog.tyang.org/2015/01/08/detecting-windows-license-activation-status-using-configmgr-dcm-opsmgr/

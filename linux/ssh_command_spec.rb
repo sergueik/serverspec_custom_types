@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'shell functions with ssh' do
   # password-less login of the current user to localhost 

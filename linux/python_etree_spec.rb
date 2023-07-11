@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'python xm' do
     datafile = '/tmp/pom.xml'

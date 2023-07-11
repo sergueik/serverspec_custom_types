@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'Admin check' do
   # origin:
   # https://www.cyberforum.ru/powershell/thread2743961.html

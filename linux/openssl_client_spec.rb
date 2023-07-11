@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 #
 # origin: http://securityevaluators.com/knowledge/blog/20151102-openssl_and_ciphers/
 context 'SSL ciphers and Protocols' do

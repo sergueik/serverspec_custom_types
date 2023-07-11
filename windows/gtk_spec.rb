@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # gtk 2.0 version conflict leads to linker error in run time
 context 'Gtk 2.0 binaries' do

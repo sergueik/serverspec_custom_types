@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Loading assembly from the GAC' do
   # see also: https://github.com/zappy-shu/puppet-windowsgac	

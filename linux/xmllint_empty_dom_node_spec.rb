@@ -1,4 +1,5 @@
 require 'spec_helper'
+"# Copyright (c) Serguei Kouzmine"
 
 context 'Bad Constructor Argument Match' do
 

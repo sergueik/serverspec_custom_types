@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'NDP Versions' do
   # based on https://raw.githubusercontent.com/lazywinadmin/PowerShell/master/TOOL-Get-NetFramework/Get-NetFramework.ps1

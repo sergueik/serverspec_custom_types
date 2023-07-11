@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Inspecting registry key created by the installer' do
   describe command ( <<-EOF

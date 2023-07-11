@@ -1,4 +1,5 @@
 # https://raw.githubusercontent.com/ripienaar/puppet-reportprint/master/report_print.rb
+# Copyright (c) Serguei Kouzmine
 # the repository consists of a single file
 # that can be included inline
 # this is done in this spec.

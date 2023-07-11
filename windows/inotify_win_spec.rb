@@ -1,4 +1,5 @@
 # https://stackoverflow.com/questions/3517460/is-there-anything-like-inotify-on-windows
+# Copyright (c) Serguei Kouzmine
 # origin:
 # https://github.com/thekid/inotify-win/blob/master/src/Runner.cs
 add-type -typeDefinition @'

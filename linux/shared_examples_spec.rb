@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 # based on: https://relishapp.com/rspec/rspec-core/docs/example-groups/shared-examples
 # https://github.com/mizzy/serverspec/blob/master/lib/serverspec/type/user.rb
 # https://github.com/supercaracal/kitchen-pocapoca/blob/master/spec/shared/home/vim.rb

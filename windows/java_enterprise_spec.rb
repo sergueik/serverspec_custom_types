@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Java launchers', :if => os[:family] == 'windows' do
 # this will only pass in enterprise environment with complex policies

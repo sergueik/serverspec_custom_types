@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on: https://toster.ru/q/676382
 context 'Shortcuts' do

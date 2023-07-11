@@ -1,4 +1,5 @@
 # -*- mode: ruby -*-
+# Copyright (c) Serguei Kouzmine
 # # vi: set ft=ruby :
 
 require 'docker_helper'

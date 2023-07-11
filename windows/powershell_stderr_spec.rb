@@ -1,4 +1,5 @@
   require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
   # based on:
   # https://stackoverflow.com/questions/4998173/how-do-i-write-to-standard-error-in-powershell

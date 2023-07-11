@@ -1,4 +1,5 @@
 # https://access.redhat.com/solutions/1535573
+# Copyright (c) Serguei Kouzmine
 # https://www.thegeekdiary.com/unix-linux-how-crontab-validates-the-access-based-on-the-cron-allow-and-cron-deny-files/
 
 context 'Allowed users' do

@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 require_relative '../type/port_retry'
 
 context 'Port Retry' do

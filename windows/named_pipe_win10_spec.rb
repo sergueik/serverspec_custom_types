@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/finding-powershell-named-pipes
 # requies Windows 8.1 and Powershell 5.0

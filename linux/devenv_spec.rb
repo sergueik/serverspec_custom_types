@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 # based on: https://github.com/rejasupotaro/android-dev-env-serverspec
 config = Hash.new({})
 config['file_cache_path']             = '/tmp'

@@ -1,4 +1,5 @@
 # Application init.d script is a wrapper for java runtime launching a certain class via classpath,
+# Copyright (c) Serguei Kouzmine
 # but is not returning its own status correctly -
 # preventing one from using specinfra 'service' resource
 

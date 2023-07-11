@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 context 'Execute Facter Ruby' do
   context 'With Environment' do
 

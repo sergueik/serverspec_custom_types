@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 
 # http://www.cyberforum.ru/shell/thread2526703.html

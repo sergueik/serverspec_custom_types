@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 # origin http://poshcode.org/3252
 context 'Discover ASCII Files Corrupt with Unicode Fragments' do
 	before(:each) do

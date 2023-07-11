@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Disk filesystem spec' do
   # https://fibrevillage.com/storage/53-lsblk-command-examples

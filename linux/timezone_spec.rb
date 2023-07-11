@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 # based on https://github.com/emmafass/serverspec-custom-types/blob/master/lib/serverspec-custom-types/timezone.rb
 content 'TimeZone' do

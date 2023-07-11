@@ -1,4 +1,5 @@
 # origin: http://www.cyberforum.ru/powershell/thread1950301.html
+# Copyright (c) Serguei Kouzmine
 function Get-MembersLocalAdmins {
 Param (
     [Parameter(ValueFromPipeline=$true, ValueFrompipelinebyPropertyName=$True)]

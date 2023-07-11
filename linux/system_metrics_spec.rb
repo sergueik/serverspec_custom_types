@@ -1,4 +1,5 @@
 # based on https://qna.habr.com/q/780041
+# Copyright (c) Serguei Kouzmine
 context 'system metrics' do
 
 # who -b - последнее включение

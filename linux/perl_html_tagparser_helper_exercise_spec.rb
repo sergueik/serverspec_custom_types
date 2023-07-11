@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'fileutils'
 
 # loading HTML::TagParser - HTML document parser with DOM-like methods written in pure Perl monolithic module

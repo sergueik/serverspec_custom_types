@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'ansible paybook' do
   # sudo -H pip3 install  pyyaml --upgrade

@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require 'fileutils'
 
 # NOTE:  line-endin-sensitive, run throuh sed -i 's/\r//' json_bash_processor_spec.rb

@@ -1,4 +1,5 @@
 
+# Copyright (c) Serguei Kouzmine
 
 
 if ENV.has_key?('URU_INVOKER')

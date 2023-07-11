@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Examine result of Puppet Apply run' do
   list_of_dirs = [

@@ -1,4 +1,5 @@
 require 'yaml'
+# Copyright (c) Serguei Kouzmine
 
 if => ENV.has_key?('URU_INVOKER')
   if File.exists?( 'spec/windows_spec_helper.rb')

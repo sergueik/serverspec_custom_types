@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Tomcat server.xml test' do
   catalina_home = '/usr/share/tomcat'

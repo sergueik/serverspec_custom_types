@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 require_relative '../type/puppet_helper'
 context 'Puppet run' do
   describe  puppet_helper( 'filename' ) do

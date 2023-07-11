@@ -1,4 +1,5 @@
 require 'spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Application directory polluted with past release directories' do
   # a.k.a. "side by side"

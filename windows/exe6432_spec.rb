@@ -1,4 +1,5 @@
 require_relative  '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Executable header Test' do
   filepath = 'c:/Ruby23/bin/ruby.exe'

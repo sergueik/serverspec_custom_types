@@ -1,4 +1,5 @@
 require_relative '../windows_spec_helper'
+# Copyright (c) Serguei Kouzmine
 
 context 'Execute embedded Ruby from Puppet Agent' do
   context 'With Helper' do
