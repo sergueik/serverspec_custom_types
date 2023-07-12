@@ -8,7 +8,12 @@ context 'Scheduled Task Intervals' do
       param(
         [String] $interval
       )
-      if ($interval -match 'PT(\\d+)(\\w)'){
+      if ($interval -match 'P(\\d+)(\\w)'){
+        $TimeSpan = switch ($Matches[2])
+        {
+          'D' {New-TimeSpan -Days $Matches[1]}
+        }
+      } elseif ($interval -match 'PT(\\d+)(\\w)'){
         $TimeSpan = switch ($Matches[2])
         {
           'D' {New-TimeSpan -Days $Matches[1]}

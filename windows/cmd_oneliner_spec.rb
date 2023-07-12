@@ -2,7 +2,7 @@ require_relative '../windows_spec_helper'
 # Copyright (c) Serguei Kouzmine
 
 # based on  https://toster.ru/q/658135
-# single-line cmd scripts are not popular but may exist in legacy environments
+# "one-liner" scripts are not popular with cmd but may exist in legacy environments
 
 require 'fileutils'
 

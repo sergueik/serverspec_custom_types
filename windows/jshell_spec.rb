@@ -8,7 +8,8 @@ require 'spec_helper'
 context 'Jshell' do
 
   context 'Basic' do
-    # Tested with https://www.azul.com/downloads/zulu-community/
+    # Tested with free builds of OpenJDK by Zulu Community
+    # https://www.azul.com/downloads/zulu-community/
     java_basedir = 'c:/java'
     {
       'zulu9.0.7.1-jdk9.0.7-win_i686' => '9.0.7.1',

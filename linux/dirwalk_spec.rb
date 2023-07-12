@@ -52,3 +52,9 @@ context 'release enum command' do
     end
   end
 end
+# TODO: sorting exercise
+# by age (pick latest):
+# ls -1dtr * | tail -1
+# by 'release version, build' (pick greatest relese version / build number):
+# ls -1d * | tail -1
+

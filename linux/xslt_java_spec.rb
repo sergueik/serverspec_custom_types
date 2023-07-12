@@ -10,6 +10,9 @@ context 'XSLT tests' do
   tmp_path = '/tmp'
   xslt_file = "#{tmp_path}/transform.xsl"
 
+  # origins: 
+  # https://stackoverflow.com/questions/17607602/comment-a-single-node
+  # https://stackoverflow.com/questions/4964152/xslt-script-doesnt-work-when-a-namespace-is-declared-in-the-root-node
   # NOTE: indent sensitive
   xslt_data = <<-EOF
     <?xml version="1.0" encoding="utf-8"?>

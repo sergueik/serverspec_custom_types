@@ -28,9 +28,7 @@ this is a test this is a test this is a test this is a test this is a test
 "@
 			write-output $content | out-file '#{file_path}' -encoding Ascii
 			write-output $content | out-file '#{file_path}' -append
-			write-output $content | out-file '#{file_path}' -encoding Ascii -
-
-append
+			write-output $content | out-file '#{file_path}' -encoding Ascii -append
 		END_COMMAND
 		)
 	end
@@ -54,14 +52,11 @@ append
       [System.IO.FileStream]$content = New-Object System.IO.FileStream ($file_path,
 
 [System.IO.FileMode]::Open)
-      [byte[]]$byte_content = (New-Object System.IO.BinaryReader ($content)).ReadBytes
-
-([convert]::ToInt32($content.Length))
+      [byte[]]$byte_content = (New-Object System.IO.BinaryReader ($content)).ReadBytes([convert]::ToInt32($content.Length))
       $content.Close()
       $offset = 0
-      for ([int]$cnt = 0; $cnt -ne $byte_content.Length; $cnt++) { if ($byte_content[$cnt]
-
--eq 0) {
+      for ([int]$cnt = 0; $cnt -ne $byte_content.Length; $cnt++) { 
+        if ($byte_content[$cnt] -eq 0) {
           if ($offset -eq 0) {
             $offset = $cnt + 1
           } } }

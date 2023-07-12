@@ -34,7 +34,7 @@ context 'Zabbix Server and Web' do
     EOF
     ) do
       its (:stdout) { shoud_not match /Unknown database/ }
-      its(:exit_status) { should eq 0 }
+      its (:exit_status) { should eq 0 }
     end
   end
   context 'Processes' do
@@ -64,7 +64,7 @@ context 'Zabbix Server and Web' do
           'unreachable poller', # ?
         ].each |role|
           its(:stdout) { should contain role }
-           its(:exit_status) { should eq 0 }
+          its(:exit_status) { should eq 0 }
         end
       end
       describe proces(process_name) do
@@ -130,7 +130,7 @@ context 'Zabbix Server and Web' do
     context 'Agentd' do
       config_file = "#{conf_dir}/zabbix_agentd.conf"
       describe file config_file do
-        its { should be_file }
+        it { should be_file }
       end
       %w|
         Server=#{zabbix_server},#{zabbix_server_2}
@@ -141,21 +141,21 @@ context 'Zabbix Server and Web' do
         EnableRemoteCommands=1
       |.each do |line|
         describe file config_file do
-          its { should be_file }
+          it { should be_file }
           its(:content) { should match /^#{conf}/ }
         end
       end
       describe file "#{conf_dir}/zabbix_agentd.d" do
-        its { should be_directory }
+        it { should be_directory }
       end
       describe file "#{conf_dir}/zabbix_agentd.d/userparameter_mysql.conf" do
-        its { should be_file }
+        it { should be_file }
       end
     end
     context 'Server' do
       config_file = "#{conf_dir}/zabbix_server.conf"
       describe file config_file do
-        its { should be_file }
+        it { should be_file }
       end
       {
         'LogFile' => '/var/log/zabbix/zabbix_server.log',

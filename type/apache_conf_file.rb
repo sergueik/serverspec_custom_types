@@ -1,5 +1,6 @@
 require 'serverspec'
 require 'serverspec/type/base'
+# Copyright (c) Serguei Kouzmine
 
 module Serverspec::Type
   class ApacheConfFile < Base

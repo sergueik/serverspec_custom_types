@@ -276,6 +276,8 @@ context 'JDBC tests' do
               preparedStatement.setString(1, "redhat");
               preparedStatement.setInt(2, 2);
               preparedStatement.setInt(3, 42);
+              // Exception org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: COMPANY)
+              // preparedStatement.executeUpdate();
               preparedStatement.execute();
 
             OrderComponent comp = new OrderComponent();
@@ -312,7 +314,8 @@ context 'JDBC tests' do
           public CachedRowSet ordersByStatus() throws Exception {
 
             String queryString = "SELECT ROWID, NAME, ID FROM " + tableName;
-            
+            // using globs is OK
+            // String queryString = "SELECT * FROM " + tableName;
             RowSetFactory rowSetProvider = RowSetProvider.newFactory();
             CachedRowSet rowSet = rowSetProvider.createCachedRowSet();
             

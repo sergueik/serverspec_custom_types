@@ -6,7 +6,7 @@ context 'Disk filesystem spec' do
   # https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
   # https://thoughtbot.com/blog/jq-is-sed-for-json
   context 'JSON output format', :if=> ['debian', 'ubuntu'].include?(os[:family]) do
-    describe command("lsblk -J -f -e 0,11 | jq --slurp '.[]|.blockdevices[]| .name'")
+    describe command("lsblk -J -f -e 0,11 | jq --slurp '.[]|.blockdevices[]| .name'") do
       its(:stdout) { should contain 'sda' }
     end
     # https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
@@ -18,24 +18,13 @@ context 'Disk filesystem spec' do
       its(:stdout) { should contain '"mountpoint": "/"' }
     end
   end
-  context 'Pair output format', :if => ['centos', 'redhat'].include?(os[:family]) do
+  context 'Pair output format' , :if => ['centos', 'redhat'].include?(os[:family]) do
+    # TODO: https://www.commandlinefu.com/commands/view/24698/convert-tab-separate-file-tsv-to-json-with-jq
     describe command(<<-EOF
-      lsblk -P -f -e 0,11 | | grep 'MOUNTPOINT="/"'
+      lsblk -P -f -e 0,11 | grep 'MOUNTPOINT="/"'
     EOF
-    )
+    ) do
       its(:stdout) { should contain 'FSTYPE="xfs"' }
     end
   end
 end
-
-
-
-
-
-
-
-
-
-
-
-

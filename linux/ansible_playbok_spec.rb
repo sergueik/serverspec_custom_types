@@ -54,6 +54,7 @@ except TypeError as e:
         # exception will be thrown
         # because the value of the "ansible shorthand notation" expression
         # playbook['tasks'][0]['package'] is tokenized by ansible not yaml
+	# NOTE: another ansible "shorthand nodation" is json, without quotes around keys and values
         its(:stdout) { should contain "'name=jdk state=installed'"}
       end
     end

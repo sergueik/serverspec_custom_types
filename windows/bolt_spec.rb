@@ -154,6 +154,7 @@ plan profiles::nginx_install(
     its(:stdout) { should_not contain 'plan' }
     its(:stderr) { should be_empty }
   end
+  # TODO: https://puppet.com/blog/introducing-masterless-puppet-bolt
 end
 
 # https://devhints.io/bolt

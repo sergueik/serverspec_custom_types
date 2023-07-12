@@ -87,3 +87,9 @@ context 'Pipes' do
   # https://chromium.googlesource.com/chromium/src/+/master/mojo/public/cpp/platform/README.md
   # //./pipe/mojo.3684.5972.3468193222387870433
 end
+# https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/finding-powershell-named-pipes
+# reauies Windows 8.1 and Powershell 5.0
+Get-ChildItem -Path "\\.\pipe\" -Filter '*demo*' |
+ForEach-Object {
+    Get-Process -Id $_.Name.Split('.')[2]
+}

@@ -7,7 +7,8 @@ require 'base64'
 # http://localhost:8080/index.jsp
 # but the enterprise version is likely move the manager into a different location and
 # manager user already configured in node configuration
-
+# for host valve see
+# https://stackoverflow.com/questions/36703856/access-tomcat-manager-app-from-different-host
 context 'Tomcat Manager Script test' do
   tomcat_boot_delay = 5
   puppet_home = '/opt/puppetlabs/puppet/bin'

@@ -52,10 +52,9 @@ context 'Scheduled Tasks' do
       end
       describe command(<<-EOF
         get-jobtrigger -name '#{name}'
-               EOF
-               ) do
-        its(:exit_status) { should eq 0 }
-
+          EOF
+        ) do
+          its(:exit_status) { should eq 0 }
         # [Microsoft.PowerShell.ScheduledJob.ScheduledJobTrigger] properties
         {
           'At' => '...',
@@ -75,8 +74,8 @@ context 'Scheduled Tasks' do
       end
       describe command(<<-EOF
         get-scheduledjoboption -name '#{name}'
-               EOF
-               ) do
+      EOF
+      ) do
         its(:exit_status) { should eq 0 }
         # [Microsoft.PowerShell.ScheduledJob.ScheduledJobOptions] properties
         {
