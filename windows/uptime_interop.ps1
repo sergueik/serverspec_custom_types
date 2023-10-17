@@ -61,7 +61,7 @@ $ksystem_time = {
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;
-public class UpimeHelper {
+public class UptimeHelper {
 
 [DllImport("kernel32.dll")]
 static extern uint GetTickCount();
@@ -70,8 +70,8 @@ public Int64 EntryTick { get { return entryTick; }}
 	}
 '@ -ReferencedAssemblies 'System.Runtime.InteropServices.dll'
 
-$o = new-object UpimeHelper
-$u = $o.EntryTick/1000
+$o = new-object UptimeHelper
+$tickCount= $o.EntryTick/1000
 
 [System.DateTime]::Now.AddSeconds(-1 * $u)
 write-output('{0:0.#0} weeks {1:0.#0} days {2:0.#0} hours {3:0.#0} minutes' -f ($u/86400/7), ($u/86400), ($u/3600), ($u/60))
